@@ -17,9 +17,13 @@ word-sys | Barın Güzeldemirci
 
 sudo apt install python3-pip python3-venv python3-all-dev build-essential cmake libcairo2-dev libgirepository-2.0-dev
 
-4.Adım Terminal'i açın: python3 -m venv venv 
-                        source venv/bin/activate 
-                        pip install pygobject pillow pymupdf numpy
+4.Adım Terminal'i açın:
+
+python3 -m venv venv 
+
+source venv/bin/activate 
+
+pip install pygobject pillow pymupdf numpy
                         
 5.Adım Dosyayı çıkarttığınız yerde python3 run-editor.py
 
