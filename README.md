@@ -11,9 +11,9 @@ word-sys | Barın Güzeldemirci
 
 # Otomatik Kurulum
 
-RELEASES bölümünden .deb indirin, ardından .deb i indirdiğiniz yere gelip Terminal açın
+RELEASES bölümünden pardus-pdf-editor_0.1.0-1_all.deb indirin, ardından pardus-pdf-editor_0.1.0-1_all.deb i indirdiğiniz yere gelip Terminal açın
 
-sudo apt install ./.deb
+sudo apt install ./pardus-pdf-editor_0.1.0-1_all.deb
 
 # Manual Kurulum
 
