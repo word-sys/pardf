@@ -9,6 +9,14 @@ word-sys | Barın Güzeldemirci
 
 # Nasıl Kurulur?
 
+# Otomatik Kurulum
+
+RELEASES bölümünden .deb indirin, ardından .deb i indirdiğiniz yere gelip Terminal açın
+
+sudo apt install ./.deb
+
+# Manual Kurulum
+
 1.Adım RELEASES bölümünden son sürüm .zip veya .tar.xz indirin.
 
 2.Adım .zip veya .tar.xz yi dışarı çıkartın.
