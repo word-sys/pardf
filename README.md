@@ -13,7 +13,9 @@ word-sys | Barın Güzeldemirci
 
 2.Adım .zip veya .tar.xz yi dışarı çıkartın.
 
-3.Adım Sisteminizde python3-pip python3-venv python3-all-dev build-essential cmake libcairo2-dev libgirepository-2.0-dev paketinin yüklü olduğuna emin olun. Eğer yüklü değilse sudo apt install python3-pip python3-venv python3-all-dev build-essential cmake libcairo2-dev libgirepository-2.0-dev
+3.Adım Sisteminizde python3-pip python3-venv python3-all-dev build-essential cmake libcairo2-dev libgirepository-2.0-dev paketinin yüklü olduğuna emin olun. Eğer yüklü değilse
+
+sudo apt install python3-pip python3-venv python3-all-dev build-essential cmake libcairo2-dev libgirepository-2.0-dev
 
 4.Adım Terminal'i açın: python3 -m venv venv 
                         source venv/bin/activate 
