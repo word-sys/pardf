@@ -1,0 +1,11 @@
+cf10e2691fd770ab91eccd3bc04f71b4  usr/bin/pardus-pdf-editor
+d41d8cd98f00b204e9800998ecf8427e  usr/lib/python3/dist-packages/pardus_pdf_editor/__init__.py
+fa1ea3e5c47be1e35b0c217d9c0d5ed2  usr/lib/python3/dist-packages/pardus_pdf_editor/main.py
+7b1c87a0a8281a5fe134bfeaed03a407  usr/lib/python3/dist-packages/pardus_pdf_editor/models.py
+42793d6aef5798be08dcd410500b326f  usr/lib/python3/dist-packages/pardus_pdf_editor/pdf_handler.py
+e935c870beda49fa6a6c2c9ed2407748  usr/lib/python3/dist-packages/pardus_pdf_editor/ui_components.py
+00fd21cfcd273a445ab361adbb5f352c  usr/lib/python3/dist-packages/pardus_pdf_editor/utils.py
+194a5f36a48b421847bdcc7d9ff8c2df  usr/lib/python3/dist-packages/pardus_pdf_editor/window.py
+3b1cd5145d74f36bf1dd80fab9a940a5  usr/share/applications/pardus-pdf-editor.desktop
+56affa5e3138bae1a6674690c520c23a  usr/share/doc/pardus-pdf-editor/changelog.Debian.gz
+f17ecfc54d7f154f3d49cf2a0a8375c7  usr/share/doc/pardus-pdf-editor/copyright
