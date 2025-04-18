@@ -37,7 +37,4 @@ pip install pygobject pillow pymupdf numpy
 
 TEBRİKLER UYGULAMAYI ÇALIŞTIRDINIZ!
 
-# !Bilinen Problemler!
-Kaydetme button'u PDF düzenlemeden sonra kaydetme fonksiyonunda hata veriyor. Düzeltilmeye çalışılıyor. Geçici çözüm ise PDF'i kaydetmek için Seçenekler (3 Çizgi) bölümünden 'PDF'i Dışa Aktar' seçeneğini kullanarak PDF'i kaydedebilirsiniz.
-
                         
