@@ -17,23 +17,17 @@ sudo apt install ./pardus-pdf-editor_0.1.0-1_all.deb
 
 # Manual Kurulum
 
-1.Adım RELEASES bölümünden son sürüm .zip veya .tar.xz indirin.
+1.Adım RELEASES bölümünden son sürüm .zip .tar.xz veya Source Code indirin.
 
 2.Adım .zip veya .tar.xz yi dışarı çıkartın.
 
-3.Adım Sisteminizde python3-pip python3-venv python3-all-dev build-essential cmake libcairo2-dev libgirepository-2.0-dev paketinin yüklü olduğuna emin olun. Eğer yüklü değilse
+3.Adım Sisteminizde python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 python3-numpy python3-fitz python3-dev libcairo2-dev build-essential libreoffice-common fonts-dejavu-core paketinin yüklü olduğuna emin olun. Eğer yüklü değilse
 
-sudo apt install python3-pip python3-venv python3-all-dev build-essential cmake libcairo2-dev libgirepository-2.0-dev
+sudo apt update && sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 python3-numpy python3-fitz python3-dev libcairo2-dev build-essential libreoffice-common fonts-dejavu-core
 
 4.Adım Terminal'i açın:
-
-python3 -m venv venv 
-
-source venv/bin/activate 
-
-pip install pygobject pillow pymupdf numpy
                         
-5.Adım Dosyayı çıkarttığınız yerde python3 run-editor.py
+Dosyayı çıkarttığınız yerde python3 run-editor.py
 
 TEBRİKLER UYGULAMAYI ÇALIŞTIRDINIZ!
 
