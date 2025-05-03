@@ -1,0 +1,13 @@
+# debian/pardus-pdf-editor.desktop
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Pardus PDF Editor
+Comment=Edit text content in PDF files
+Exec=pardus-pdf-editor %F
+Icon=pardus-pdf-editor
+Terminal=false
+Categories=Office;Graphics;GTK;
+Keywords=PDF;Editor;Text;Pardus;
+MimeType=application/pdf;
+StartupNotify=true
