@@ -1,7 +1,5 @@
 # ParDF - Pardus PDF Düzenleyicisi
 
-![ParDF Logo (Varsa Buraya Ekleyin)](link_to_your_logo.png) <!-- Opsiyonel: Logonuz varsa ekleyin -->
-
 **ParDF**, Pardus ve diğer Linux dağıtımları için geliştirilmiş, PDF dosyalarındaki metin içeriğini düzenlemeye odaklanan basit ve kullanıcı dostu bir araçtır. #MilliTeknolojiHamlesi ve TEKNOFEST ruhuyla, Pardus ekosistemindeki bir ihtiyacı karşılamak üzere sıfırdan geliştirilmiştir.
 
 Geliştirici: **Barın Güzeldemirci (word-sys)**
