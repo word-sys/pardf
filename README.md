@@ -101,7 +101,7 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
     ```bash
     sudo apt update
     sudo apt install python3 python3-pip python3-venv \
-                     python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 libgirepository2.0-dev\
+                     python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 libgirepository-2.0-dev\
                      python3-numpy \
                      python3-dev libcairo2-dev build-essential \
                      fonts-noto-core fonts-liberation2
