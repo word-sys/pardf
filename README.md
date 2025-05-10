@@ -28,7 +28,7 @@ ParDF'i sisteminize kurmanın iki yolu vardır:
 
 ### 1. Otomatik Kurulum (Önerilen Yöntem)
 
-Bu yöntem, Pardus 23.4 ve Debian 12 tabanlı diğer Linux dağıtımları için en kolay kurulum yoludur.
+Bu yöntem, Linux dağıtımları için en kolay kurulum yoludur.
 
 1.  En son `.deb` paketini [**GitHub Releases**](https://github.com/word-sys/pardf/releases) sayfasından indirin. Genellikle `pardus-pdf-editor_X.Y.Z_all.deb` şeklinde bir dosya adı olacaktır (X.Y.Z sürüm numarasını temsil eder).
 2.  Terminali, `.deb` dosyasını indirdiğiniz dizinde açın.
