@@ -44,7 +44,7 @@ Bu yöntem, Pardus ve Debian tabanlı diğer Linux dağıtımları için en kola
     ```
 5.  Kurulum tamamlandıktan sonra ParDF'i uygulama menünüzden başlatabilirsiniz.
 
-## (Pardus ve Debian'da python3-fitz 1.21.1 sorunlu pakettir, paket güncellenene kadar ParDF te sorun yaşayabilirsiniz)
+## !Pardus ve Debian'da python3-fitz 1.21.1 sorunlu pakettir, paket güncellenene kadar ParDF DEB versiyonunda sorun yaşayabilirsiniz. Manuel kurulum tavsiye edilir!
 
 ### 2. Manuel Kurulum (Geliştiriciler veya Kaynaktan Derlemek İsteyenler İçin)
 
