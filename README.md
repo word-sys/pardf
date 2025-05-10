@@ -87,7 +87,6 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
     ```bash
     pip install PyMuPDF numpy pygobject==3.50.0
     ```
-    *(Not: `python3-gi`, `python3-gi-cairo` gibi paketler sistem yöneticisi (apt) aracılığıyla kurulduğu için `pip` ile tekrar kurulmazlar.)*
 
 5.  **Uygulamayı Çalıştırın:**
     Proje ana dizinindeyken (kaynak kodlarını çıkarttığınız veya klonladığınız yerde) aşağıdaki komutu çalıştırın:
@@ -132,7 +131,6 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
     ```bash
     pip install PyMuPDF numpy pygobject
     ```
-    *(Not: `python3-gi`, `python3-gi-cairo` gibi paketler sistem yöneticisi (apt) aracılığıyla kurulduğu için `pip` ile tekrar kurulmazlar.)*
 
 5.  **Uygulamayı Çalıştırın:**
     Proje ana dizinindeyken (kaynak kodlarını çıkarttığınız veya klonladığınız yerde) aşağıdaki komutu çalıştırın:
