@@ -44,19 +44,23 @@ Bu yöntem, Pardus ve Debian tabanlı diğer Linux dağıtımları için en kola
     ```
 5.  Kurulum tamamlandıktan sonra ParDF'i uygulama menünüzden başlatabilirsiniz.
 
+   (Pardus ve Debian'da python3-fitz 1.21.1 sorunlu pakettir, paket güncellenene kadar ParDF te sorun yaşayabilirsiniz)
+
 ### 2. Manuel Kurulum (Geliştiriciler veya Kaynaktan Derlemek İsteyenler İçin)
 
 Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştirme yapmak isteyen kullanıcılar için uygundur.
+
+### Pardus 23.4 ve Debian 12 için Manuel Kurulum
 
 1.  **Gerekli Bağımlılıkları Kurun:**
     Öncelikle sisteminizde aşağıdaki paketlerin kurulu olduğundan emin olun. Terminale şu komutu yazarak kurabilirsiniz:
     ```bash
     sudo apt update
     sudo apt install python3 python3-pip python3-venv \
-                     python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 \
-                     python3-numpy python3-fitz \
+                     python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 libgirepository1.0-dev\
+                     python3-numpy \
                      python3-dev libcairo2-dev build-essential \
-                     ttf-dejavu-core # Veya fonts-noto-core, fonts-liberation2
+                     fonts-noto-core fonts-liberation2
     ```
     *İsteğe Bağlı (DOCX Dışa Aktarma İçin):*
     ```bash
@@ -81,7 +85,52 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
 4.  **Python Bağımlılıklarını Kurun:**
     Projenin temel Python kütüphanesi olan PyMuPDF'i (ve numpy'ı, eğer sistemden kurulmadıysa) kurun:
     ```bash
-    pip install PyMuPDF numpy
+    pip install PyMuPDF numpy pygobject==3.50.0
+    ```
+    *(Not: `python3-gi`, `python3-gi-cairo` gibi paketler sistem yöneticisi (apt) aracılığıyla kurulduğu için `pip` ile tekrar kurulmazlar.)*
+
+5.  **Uygulamayı Çalıştırın:**
+    Proje ana dizinindeyken (kaynak kodlarını çıkarttığınız veya klonladığınız yerde) aşağıdaki komutu çalıştırın:
+    ```bash
+    python3 run-editor.py
+    ```
+
+### Diğer Dağıtımlar (Ubuntu, Fedora, Arch vb.) Manuel Kurulum
+
+1.  **Gerekli Bağımlılıkları Kurun:**
+    Öncelikle sisteminizde aşağıdaki paketlerin kurulu olduğundan emin olun. Terminale şu komutu yazarak kurabilirsiniz:
+    ```bash
+    sudo apt update
+    sudo apt install python3 python3-pip python3-venv \
+                     python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 libgirepository2.0-dev\
+                     python3-numpy \
+                     python3-dev libcairo2-dev build-essential \
+                     fonts-noto-core fonts-liberation2
+    ```
+    *İsteğe Bağlı (DOCX Dışa Aktarma İçin):*
+    ```bash
+    sudo apt install libreoffice-common
+    ```
+
+2.  **Kaynak Kodunu İndirin:**
+    En son kaynak kodunu [**GitHub Releases**](https://github.com/word-sys/pardf/releases) sayfasından `.zip` veya `.tar.gz` (veya `.tar.xz`) formatında indirin ya da depoyu klonlayın:
+    ```bash
+    git clone https://github.com/word-sys/pardf.git
+    cd pardf
+    ```
+
+3.  **Sanal Ortam Oluşturun ve Aktifleştirin (Önerilir):**
+    Proje dizininde bir sanal ortam oluşturmak, Python bağımlılıklarını sistem genelindeki kurulumlardan izole etmenize yardımcı olur.
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+    *(Sanal ortamdan çıkmak için daha sonra `deactivate` komutunu kullanabilirsiniz.)*
+
+4.  **Python Bağımlılıklarını Kurun:**
+    Projenin temel Python kütüphanesi olan PyMuPDF'i (ve numpy'ı, eğer sistemden kurulmadıysa) kurun:
+    ```bash
+    pip install PyMuPDF numpy pygobject
     ```
     *(Not: `python3-gi`, `python3-gi-cairo` gibi paketler sistem yöneticisi (apt) aracılığıyla kurulduğu için `pip` ile tekrar kurulmazlar.)*
 
