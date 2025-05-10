@@ -4,7 +4,6 @@
 
 Geliştirici: **Barın Güzeldemirci (word-sys)**
 Lisans: **GPL-3.0-or-later**
-Proje Sayfası: [word-sys.github.io/pardf](https://word-sys.github.io/pardf) <!-- Web sitenizin linki -->
 GitHub: [github.com/word-sys/pardf](https://github.com/word-sys/pardf)
 
 ---
