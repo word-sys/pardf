@@ -1,0 +1,34 @@
+#!/usr/bin/make -f
+
+PKGDDIR=debian/pardus-pdf-editor
+PY_INSTALL_DIR=usr/lib/python3/dist-packages
+
+ICON_NAME=pardus-pdf-editor
+ICON_SOURCE_PATH=pardus_pdf_editor/img/icon.png
+ICON_SIZE_DIR=512x512
+ICON_INSTALL_DIR=$(PKGDDIR)/usr/share/icons/hicolor/$(ICON_SIZE_DIR)/apps
+
+%:
+	dh $@ --with python3
+
+override_dh_auto_install:
+
+override_dh_install:
+	install -d $(PKGDDIR)/usr/share/applications
+	install -m 644 debian/pardus-pdf-editor.desktop $(PKGDDIR)/usr/share/applications/
+
+	install -d $(PKGDDIR)/usr/bin
+	install -m 755 run-editor.py $(PKGDDIR)/usr/bin/pardus-pdf-editor
+
+	install -d $(ICON_INSTALL_DIR)
+	install -m 644 $(ICON_SOURCE_PATH) $(ICON_INSTALL_DIR)/$(ICON_NAME).png
+
+	install -d $(PKGDDIR)/$(PY_INSTALL_DIR)/pardus_pdf_editor
+	cp -pr --exclude='fonts' pardus_pdf_editor/* $(PKGDDIR)/$(PY_INSTALL_DIR)/pardus_pdf_editor/
+
+	install -d $(PKGDDIR)/$(PY_INSTALL_DIR)/pardus_pdf_editor/fonts
+	if [ -d "pardus_pdf_editor/fonts" ] && [ -n "$(ls -A pardus_pdf_editor/fonts)" ]; then \
+	    cp -pr pardus_pdf_editor/fonts/* $(PKGDDIR)/$(PY_INSTALL_DIR)/pardus_pdf_editor/fonts/; \
+	fi
+
+override_dh_python3:
