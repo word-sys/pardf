@@ -12,6 +12,8 @@ Lisans: **GPL-3.0-or-later**
 *   Sayfa içinde var olan metin bloklarını seçme
 *   Seçili metinleri düzenleme veya silme
 *   Sayfaya yeni metin blokları ekleme
+*   Sayfaya resim ekleme
+*   PDF'teki objelerin yerini değiştirme/taşıma
 *   Yazı tipi, boyutu ve rengini değiştirme
 *   Düzenlenmiş PDF'leri kaydetme
 *   PDF'leri DOCX (LibreOffice gerektirir) ve TXT formatlarında dışa aktarma
