@@ -13,6 +13,7 @@ Lisans: **GPL-3.0-or-later**
 *   Seçili metinleri düzenleme veya silme
 *   Sayfaya yeni metin blokları ekleme
 *   Sayfaya resim ekleme
+*   Font genişliği/topluluğu
 *   PDF'teki objelerin yerini değiştirme/taşıma
 *   Yazı tipi, boyutu ve rengini değiştirme
 *   Düzenlenmiş PDF'leri kaydetme
