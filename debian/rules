@@ -24,7 +24,7 @@ override_dh_install:
 	install -m 644 $(ICON_SOURCE_PATH) $(ICON_INSTALL_DIR)/$(ICON_NAME).png
 
 	install -d $(PKGDDIR)/$(PY_INSTALL_DIR)/pardus_pdf_editor
-	cp -pr --exclude='fonts' pardus_pdf_editor/* $(PKGDDIR)/$(PY_INSTALL_DIR)/pardus_pdf_editor/
+	cp -pr pardus_pdf_editor/* $(PKGDDIR)/$(PY_INSTALL_DIR)/pardus_pdf_editor/
 
 	install -d $(PKGDDIR)/$(PY_INSTALL_DIR)/pardus_pdf_editor/fonts
 	if [ -d "pardus_pdf_editor/fonts" ] && [ -n "$(ls -A pardus_pdf_editor/fonts)" ]; then \
