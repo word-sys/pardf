@@ -26,6 +26,8 @@ class EditableText:
         self.font_size = float(font_size)
         self.is_new = is_new
 
+        self.original_bbox = span_data.get("bbox") if span_data else None
+
         pdf_font_name_original = "Helvetica"
         flags = 0
         
@@ -92,7 +94,11 @@ class EditableText:
                 self.pdf_fontname_base14 = base14_val
                 break
         
-        self.color = normalize_color(color)
+        pdf_color = color
+        if span_data and 'color' in span_data:
+            pdf_color = span_data['color']
+
+        self.color = normalize_color(pdf_color)
         self.original_color = self.color
 
         self.selected = False
@@ -119,6 +125,16 @@ class EditableText:
         self.dragging = False
         self.drag_start_x = 0
         self.drag_start_y = 0
+
+class EditableImage:
+    def __init__(self, bbox, page_number, xref, image_bytes):
+        self.bbox = bbox
+        self.original_bbox = bbox
+        self.page_number = page_number
+        self.xref = xref
+        self.image_bytes = image_bytes
+        self.selected = False
+        self.modified = False
 
 class PdfPage(GObject.GObject):
     __gtype_name__ = 'PdfPage'

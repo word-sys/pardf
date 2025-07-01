@@ -1,8 +1,9 @@
-pardus-pdf-editor (1.6.0-2) stable; urgency=medium
+pardus-pdf-editor (1.6.1-1) stable; urgency=medium
 
   * Yenilikler:
-    - Resim ekleme eklendi!
-    - Obje taşıma eklendi!
-    - Sık kullanılan fontlar eklendi!
+    - Hızlı Kılavuz Eklendi!
+    - UI Düzeltmeleri Yapıldı!
+    - Karşılama Ekranı Eklendi!
+    - Son Kullanılanlar Eklendi!
 
- -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 8 Jun 2025 23:51:00 +0000
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Tue, 1 Jul 2025 13:07:42 +0000

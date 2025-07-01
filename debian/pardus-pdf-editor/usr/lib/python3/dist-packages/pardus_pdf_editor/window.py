@@ -6,13 +6,15 @@ import threading
 import math
 import re
 from pathlib import Path
+import fitz
 
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Gio, GLib, Adw, Gdk, GdkPixbuf, Pango, GObject, PangoCairo
 
 from . import pdf_handler
-from .models import PdfPage, EditableText, BASE14_FALLBACK_MAP
+from .welcome_view import WelcomeView 
+from .models import PdfPage, EditableText, BASE14_FALLBACK_MAP, EditableImage
 from .ui_components import PageThumbnailFactory, show_error_dialog, show_confirm_dialog
 from . import utils
 
@@ -29,10 +31,15 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.zoom_level = 1.0
         self.pages_model = Gio.ListStore(item_type=PdfPage)
         self.editable_texts = [] 
+        self.editable_images = []
         self.selected_text = None
+        self.selected_image = None
         self.text_edit_popover = None
         self.text_edit_view = None
         self.is_saving = False
+        self.dragged_object = None
+        self.drag_start_pos = (0, 0)
+        self.drag_object_start_pos = (0, 0)
         self.document_modified = False 
         self.tool_mode = "select" 
         self.current_pdf_page_width = 0
@@ -148,32 +155,39 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         popover_menu = Gtk.PopoverMenu.new_from_model(menu)
         menu_button.set_popover(popover_menu)
 
-        self.paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, wide_handle=True, vexpand=True)
-        self.main_box.append(self.paned)
+        self.stack = Gtk.Stack()
+        self.stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+        self.main_box.append(self.stack)
 
+        welcome_view = WelcomeView(parent_window=self)
+        self.stack.add_named(welcome_view, "welcome")
+
+        self.paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, wide_handle=True, vexpand=True)
+        
         self._create_sidebar()
 
         content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0, vexpand=True)
         self._create_main_toolbar()
         content_box.append(self.main_toolbar)
-
-        self.overlay = Gtk.Overlay(vexpand=True, hexpand=True)
+        
         self.pdf_scroll = Gtk.ScrolledWindow(hexpand=True, vexpand=True,
-                                             hscrollbar_policy=Gtk.PolicyType.AUTOMATIC,
-                                             vscrollbar_policy=Gtk.PolicyType.AUTOMATIC)
+                                            hscrollbar_policy=Gtk.PolicyType.AUTOMATIC,
+                                            vscrollbar_policy=Gtk.PolicyType.AUTOMATIC)
         self.pdf_view = Gtk.DrawingArea(content_width=1, content_height=1,
                                         hexpand=True, vexpand=True)
         self.pdf_view.set_draw_func(self.draw_pdf_page)
         self.pdf_view.add_css_class('pdf-view')
 
-        self.pdf_viewport = Gtk.Viewport() 
+        self.pdf_viewport = Gtk.Viewport()
         self.pdf_viewport.set_child(self.pdf_view)
         self.pdf_scroll.set_child(self.pdf_viewport)
-        self.overlay.set_child(self.pdf_scroll)
-        content_box.append(self.overlay)
+        
+        content_box.append(self.pdf_scroll)
 
         self.paned.set_end_child(content_box)
-        self.paned.set_position(200) 
+        self.paned.set_position(200)
+
+        self.stack.add_named(self.paned, "editor")
 
         status_bar_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, vexpand=False)
         status_bar_box.add_css_class('statusbar')
@@ -181,32 +195,45 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         status_bar_box.append(self.status_label)
         self.main_box.append(status_bar_box)
 
-        self.empty_label = Gtk.Label(label="Bir PDF dosyasını açın veya bırakın.", vexpand=True,
-                                     halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
-        self.empty_label.add_css_class("dim-label")
-        self.overlay.add_overlay(self.empty_label)
-
     def _create_sidebar(self):
-        sidebar_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6,
-                              margin_start=6, margin_end=6, margin_top=6, margin_bottom=6)
-        sidebar_box.set_size_request(180, -1)
+        sidebar_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10,
+                            margin_start=6, margin_end=6, margin_top=10, margin_bottom=6)
+        sidebar_box.set_size_request(190, -1)
 
         tools_label = Gtk.Label(label="Araçlar", xalign=0.0)
         tools_label.add_css_class('title-4')
         sidebar_box.append(tools_label)
 
-        tools_grid = Gtk.Grid(row_spacing=6, column_spacing=6)
+        tools_grid = Gtk.Grid(
+            row_spacing=6, 
+            column_spacing=6,
+            column_homogeneous=True
+        )
+        
         self.select_tool_button = Gtk.Button(icon_name="input-mouse-symbolic", label="Seç")
-        self.select_tool_button.set_tooltip_text("Metin Seç (Varsayılan)")
+        self.select_tool_button.set_tooltip_text("Nesneleri Seç ve Düzenle (V)")
         self.select_tool_button.connect('clicked', self.on_tool_selected, "select")
         self.select_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.select_tool_button, 0, 0, 1, 1)
 
         self.add_text_tool_button = Gtk.Button(icon_name="insert-text-symbolic", label="Metin Ekle")
-        self.add_text_tool_button.set_tooltip_text("Yeni Metin Kutusu Ekle")
+        self.add_text_tool_button.set_tooltip_text("Yeni Metin Kutusu Ekle (T)")
         self.add_text_tool_button.connect('clicked', self.on_tool_selected, "add_text")
         self.add_text_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.add_text_tool_button, 1, 0, 1, 1)
+
+        self.add_image_tool_button = Gtk.Button(icon_name="insert-image-symbolic", label="Resim Ekle")
+        self.add_image_tool_button.set_tooltip_text("Yeni Resim Ekle (I)")
+        self.add_image_tool_button.connect('clicked', self.on_tool_selected, "add_image")
+        self.add_image_tool_button.add_css_class("tool-button")
+        tools_grid.attach(self.add_image_tool_button, 0, 1, 1, 1)
+
+        self.drag_tool_button = Gtk.Button(icon_name="object-move-symbolic", label="Taşı")
+        self.drag_tool_button.set_tooltip_text("Nesneleri Sürükle ve Taşı (M)")
+        self.drag_tool_button.connect('clicked', self.on_tool_selected, "drag")
+        self.drag_tool_button.add_css_class("tool-button")
+        tools_grid.attach(self.drag_tool_button, 1, 1, 1, 1)
+        
         sidebar_box.append(tools_grid)
 
         sidebar_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL, margin_top=6, margin_bottom=6))
@@ -315,6 +342,13 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         key_controller.connect('key-pressed', self.on_key_pressed)
         self.add_controller(key_controller)
 
+        drag_controller = Gtk.GestureDrag.new()
+        drag_controller.set_button(Gdk.BUTTON_PRIMARY)
+        drag_controller.connect("drag-begin", self.on_drag_begin)
+        drag_controller.connect("drag-update", self.on_drag_update)
+        drag_controller.connect("drag-end", self.on_drag_end)
+        self.pdf_view.add_controller(drag_controller)
+
     def _connect_actions(self):
         action_save_as = Gio.SimpleAction.new('save_as', None)
         action_save_as.connect('activate', self.on_save_as)
@@ -328,9 +362,13 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         action_about.connect('activate', self.on_about_activated)
         self.add_action(action_about)
 
+        action_quick_guide = Gio.SimpleAction.new('quick_guide', None)
+        action_quick_guide.connect('activate', self._on_quick_guide_activated)
+        self.add_action(action_quick_guide)
+
     def _update_ui_state(self):
         has_doc = self.doc is not None
-        page_count = pdf_handler.get_page_count(self.doc)
+        page_count = pdf_handler.get_page_count(self.doc) if self.doc else 0
         has_pages = page_count > 0
         can_go_prev = has_pages and self.current_page_index > 0
         can_go_next = has_pages and self.current_page_index < page_count - 1
@@ -343,7 +381,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         text_tool_active = self.tool_mode == "add_text"
         text_selected = self.selected_text is not None
-        format_enabled_base = (self.selected_text is not None) or (self.tool_mode == "add_text")
+        format_enabled_base = ((self.selected_text is not None) or (self.tool_mode == "add_text")) and (self.selected_image is None)
+        
         self.font_combo.set_sensitive(format_enabled_base and not self.font_scan_in_progress)
         self.font_size_spin.set_sensitive(format_enabled_base)
         self.color_button.set_sensitive(format_enabled_base)
@@ -351,32 +390,43 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if self.italic_button: self.italic_button.set_sensitive(format_enabled_base)
 
         if text_selected:
-             self._update_text_format_controls(self.selected_text)
+            self._update_text_format_controls(self.selected_text)
         elif not (self.text_edit_popover and self.text_edit_popover.is_visible()):
-             self._update_text_format_controls(None)
+            self._update_text_format_controls(None)
 
         self.select_tool_button.get_style_context().remove_class('active')
         self.add_text_tool_button.get_style_context().remove_class('active')
+        self.add_image_tool_button.get_style_context().remove_class('active')
+        self.drag_tool_button.get_style_context().remove_class('active')
+        
         if self.tool_mode == "select":
             self.select_tool_button.get_style_context().add_class('active')
             self.pdf_view.set_cursor(None)
         elif self.tool_mode == "add_text":
             self.add_text_tool_button.get_style_context().add_class('active')
             self.pdf_view.set_cursor(Gdk.Cursor.new_from_name("crosshair"))
+        elif self.tool_mode == "add_image":
+            self.add_image_tool_button.get_style_context().add_class('active')
+            self.pdf_view.set_cursor(Gdk.Cursor.new_from_name("cell"))
+        elif self.tool_mode == "drag":
+            self.drag_tool_button.get_style_context().add_class('active')
+            self.pdf_view.set_cursor(Gdk.Cursor.new_from_name("move"))
 
-        self.empty_label.set_visible(not has_doc)
-        self.pdf_scroll.set_visible(has_doc)
+        if has_doc:
+            self.stack.set_visible_child_name("editor")
+        else:
+            self.stack.set_visible_child_name("welcome")
 
         if has_doc:
             self.update_page_label()
             if self.document_modified and not self.get_title().endswith("*"):
-                 self.set_title(self.get_title() + "*")
+                self.set_title(self.get_title() + "*")
             elif not self.document_modified and self.get_title().endswith("*"):
-                 self.set_title(self.get_title()[:-1])
+                self.set_title(self.get_title()[:-1])
         else:
             self.page_label.set_text("Sayfa 0 / 0")
             self.zoom_label.set_text("100%")
-            self.status_label.set_text("Hiçbir belge yüklenmedi.")
+            self.status_label.set_text("Bir dosya açın veya sürükleyip bırakın.")
             self.set_title("Pardus PDF Düzenleyicisi")
             self.document_modified = False
 
@@ -384,7 +434,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         about_dialog = Gtk.AboutDialog(transient_for=self, modal=True)
 
         about_dialog.set_program_name("ParDF - Pardus PDF Düzenleyicisi")
-        about_dialog.set_version("1.5.1")
+        about_dialog.set_version("1.6.1-1")
         about_dialog.set_authors(["Barın Güzeldemirci (word-sys)"])
 
         try:
@@ -422,11 +472,11 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         try:
             app_icon_path = Path(__file__).resolve().parent / "img" / "icon.png"
             if app_icon_path.exists():
-                 pixbuf = GdkPixbuf.Pixbuf.new_from_file(str(app_icon_path))
-                 about_dialog.set_logo(pixbuf)
+                texture = Gdk.Texture.new_from_filename(str(app_icon_path))
+                about_dialog.set_logo(texture)
             else:
-                 print(f"Warning: Local icon not found at {app_icon_path}, relying on system icon theme for 'pardus-pdf-editor'")
-                 about_dialog.set_logo_icon_name("pardus-pdf-editor")
+                print(f"Warning: Local icon not found at {app_icon_path}, relying on system icon theme for 'pardus-pdf-editor'")
+                about_dialog.set_logo_icon_name("pardus-pdf-editor")
         except GLib.Error as e:
             print(f"Warning: Could not load application icon for About dialog: {e}")
             about_dialog.set_logo_icon_name("pardus-pdf-editor")
@@ -467,8 +517,7 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         self.color_button.set_sensitive(False)
         self.select_tool_button.set_sensitive(False)
         self.add_text_tool_button.set_sensitive(False)
-        self.empty_label.set_visible(True)
-        self.pdf_scroll.set_visible(False)
+        self.stack.set_visible_child_name("welcome")
 
     def _finish_loading(self, doc, error_msg, filepath):
         if error_msg:
@@ -498,22 +547,24 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         self.thumb_load_iter = 0
         def _load_next_thumb():
             if self.thumb_load_iter < page_count:
-                 index = self.thumb_load_iter
-                 thumb = pdf_handler.generate_thumbnail(self.doc, index)
-                 if thumb:
-                     pdf_page_obj = PdfPage(index=index, thumbnail=thumb)
-                     self.pages_model.append(pdf_page_obj)
-                 self.thumb_load_iter += 1
-                 if index % 5 == 0 or index == page_count - 1:
-                     self.status_label.set_text(f"Küçük resim yüklendi {index + 1}/{page_count}")
-                 return GLib.SOURCE_CONTINUE 
+                index = self.thumb_load_iter
+                
+                thumb = pdf_handler.generate_thumbnail(self.doc, index, target_width=150)
+
+                if thumb:
+                    pdf_page_obj = PdfPage(index=index, thumbnail=thumb)
+                    self.pages_model.append(pdf_page_obj)
+                self.thumb_load_iter += 1
+                if index % 5 == 0 or index == page_count - 1:
+                    self.status_label.set_text(f"Küçük resim yüklendi {index + 1}/{page_count}")
+                return GLib.SOURCE_CONTINUE 
             else:
-                 self.status_label.set_text(f"Yüklendi: {os.path.basename(self.current_file_path)}")
-                 if page_count > 0:
-                      self._load_page(0)
-                 else:
-                     self._update_ui_state()
-                 return GLib.SOURCE_REMOVE
+                self.status_label.set_text(f"Yüklendi: {os.path.basename(self.current_file_path)}")
+                if page_count > 0:
+                    self._load_page(0)
+                else:
+                    self._update_ui_state()
+                return GLib.SOURCE_REMOVE
 
         GLib.idle_add(_load_next_thumb)
 
@@ -525,6 +576,7 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
             self.current_pdf_page_height = 0
             self.editable_texts = []
             self.selected_text = None
+            self.selected_image = None
             self.hide_text_editor()
             if hasattr(self, 'pdf_view'):
                  self.pdf_view.set_content_width(1)
@@ -543,6 +595,12 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
              self.editable_texts = []
         else:
              self.editable_texts = texts
+        images, error = pdf_handler.extract_editable_images(self.doc, page_index)
+        if error:
+            show_error_dialog(self, f"Sayfa {page_index + 1} içinden resimler çıkarılamadı.\n{error}")
+            self.editable_images = []
+        else:
+            self.editable_images = images
 
         page = self.doc.load_page(page_index)
         self.current_pdf_page_width = int(page.rect.width * self.zoom_level)
@@ -563,7 +621,9 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         self.current_file_path = None
         self.current_page_index = 0
         self.editable_texts = []
+        self.editable_images = []
         self.selected_text = None
+        self.selected_image = None
         self.hide_text_editor()
         self.pages_model.remove_all()
         self.document_modified = False
@@ -571,6 +631,7 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         self.pdf_view.set_content_height(1)
         self.pdf_view.queue_draw()
         self._update_ui_state()
+
 
     def save_document(self, save_path, incremental=False):
         if not self.doc or self.is_saving:
@@ -587,10 +648,9 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         if success:
             if save_path == self.current_file_path or self.current_file_path is None:
                 self.current_file_path = save_path
-
             self.document_modified = False
             self.set_title(f"Pardus PDF Editor - {os.path.basename(save_path)}")
-            self.status_label.set_text(f"Doküman kaydedildi: {os.path.basename(save_path)}")
+            self.status_label.set_text(f"Belge kaydedildi: {os.path.basename(save_path)}")
         else:
             show_error_dialog(self, f"PDF kaydedilirken hata oluştu: {error_msg}")
             self.status_label.set_text("Kaydetme başarısız oldu.")
@@ -598,92 +658,122 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         self._update_ui_state()
 
     def draw_pdf_page(self, area, cr, width, height):
-        if not self.doc or self.current_pdf_page_width <= 0 or self.current_pdf_page_height <= 0:
+        if not self.doc or self.current_pdf_page_width <= 0:
+            cr.set_source_rgb(0.42, 0.42, 0.42)
+            cr.paint()
             return
 
         page_w = self.current_pdf_page_width
         page_h = self.current_pdf_page_height
-
         page_offset_x = max(0, (width - page_w) / 2.0)
         page_offset_y = max(0, (height - page_h) / 2.0)
 
-        page_rect_x = page_offset_x
-        page_rect_y = page_offset_y
+        cr.set_source_rgb(0.42, 0.42, 0.42)
+        cr.paint()
 
-        shadow_offset = 4.0 
-        shadow_color = (0.0, 0.0, 0.0, 0.15)
         cr.save()
-        cr.set_source_rgba(*shadow_color)
-        cr.rectangle(page_rect_x + shadow_offset,
-                     page_rect_y + shadow_offset,
-                     page_w,
-                     page_h)
+        cr.set_source_rgba(0, 0, 0, 0.15)
+        cr.rectangle(page_offset_x + 4.0, page_offset_y + 4.0, page_w, page_h)
         cr.fill()
         cr.restore()
 
         cr.save()
-        cr.translate(page_rect_x, page_rect_y)
-
-        page_surface = None
+        cr.translate(page_offset_x, page_offset_y)
         try:
-            original_target_surface = cr.get_target()
-            page_surface = original_target_surface.create_similar_image(
-                cairo.FORMAT_ARGB32, int(page_w), int(page_h)
-            )
-        except Exception as e_surf:
-              print(f"Warning: Error creating similar image surface ({e_surf}). Falling back.")
-              try:
-                  page_surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(page_w), int(page_h))
-              except Exception as e_surf_fb:
-                   print(f"CRITICAL ERROR: Failed to create even basic image surface: {e_surf_fb}")
-                   cr.restore()
-                   return
+            page_surface = cr.get_target().create_similar_image(cairo.FORMAT_ARGB32, int(page_w), int(page_h))
+        except Exception:
+            page_surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(page_w), int(page_h))
 
         page_cr = cairo.Context(page_surface)
-        success, msg = pdf_handler.draw_page_to_cairo(page_cr, self.doc, self.current_page_index, self.zoom_level)
-        if not success:
-            print(f"Warning from pdf_handler.draw_page_to_cairo: {msg}")
+        pdf_handler.draw_page_to_cairo(page_cr, self.doc, self.current_page_index, self.zoom_level)
 
         cr.set_source_surface(page_surface, 0, 0)
         cr.paint()
         cr.restore()
 
-        if self.selected_text and self.selected_text.bbox and \
-           not (self.text_edit_popover and self.text_edit_popover.is_visible()):
+        if self.dragged_object:
+            if self.dragged_object.original_bbox:
+                orig_x1, orig_y1, orig_x2, orig_y2 = self.dragged_object.original_bbox
+                cr.save()
+                cr.set_source_rgb(1, 1, 1)
+                cr.rectangle(page_offset_x + (orig_x1 * self.zoom_level),
+                            page_offset_y + (orig_y1 * self.zoom_level),
+                            (orig_x2 - orig_x1) * self.zoom_level,
+                            (orig_y2 - orig_y1) * self.zoom_level)
+                cr.fill()
+                cr.restore()
 
-            style_context = area.get_style_context()
-            found_color, rgba_accent = style_context.lookup_color("accent_color")
-            if not found_color:
-                 rgba_accent = Gdk.RGBA()
-                 rgba_accent.parse("#3584e4")
-
-            x1, y1, x2, y2 = self.selected_text.bbox
-            rect_x_unpadded = page_offset_x + (x1 * self.zoom_level)
-            rect_y_unpadded = page_offset_y + (y1 * self.zoom_level)
-            rect_w_unpadded = (x2 - x1) * self.zoom_level
-            rect_h_unpadded = (y2 - y1) * self.zoom_level
-
-            padding = 3.0
-            rect_x = rect_x_unpadded - padding
-            rect_y = rect_y_unpadded - padding
-            rect_w = rect_w_unpadded + 2 * padding
-            rect_h = rect_h_unpadded + 2 * padding
-
-            radius = 5.0
-            line_width = 2.0
-            radius = min(radius, rect_w / 2.0, rect_h / 2.0)
+            x1, y1, x2, y2 = self.dragged_object.bbox
+            ghost_x = page_offset_x + (x1 * self.zoom_level)
+            ghost_y = page_offset_y + (y1 * self.zoom_level)
+            ghost_w = (x2 - x1) * self.zoom_level
+            ghost_h = (y2 - y1) * self.zoom_level
 
             cr.save()
-            cr.set_source_rgba(rgba_accent.red, rgba_accent.green, rgba_accent.blue, 0.95)
-            cr.set_line_width(line_width)
+            if isinstance(self.dragged_object, EditableImage) and self.dragged_object.image_bytes:
+                loader = GdkPixbuf.PixbufLoader.new()
+                try:
+                    loader.write(self.dragged_object.image_bytes)
+                    pixbuf = loader.get_pixbuf()
+                    if pixbuf:
+                        scaled_pixbuf = pixbuf.scale_simple(int(ghost_w), int(ghost_h), GdkPixbuf.InterpType.BILINEAR)
+                        Gdk.cairo_set_source_pixbuf(cr, scaled_pixbuf, ghost_x, ghost_y)
+                        cr.paint_with_alpha(0.6)
+                except GLib.Error as e:
+                    cr.set_source_rgba(0.2, 0.5, 0.8, 0.5)
+                    cr.rectangle(ghost_x, ghost_y, ghost_w, ghost_h)
+                    cr.fill()
+                finally:
+                    loader.close()
+            elif isinstance(self.dragged_object, EditableText):
+                layout = PangoCairo.create_layout(cr)
+                font_desc_str = f"{self.dragged_object.font_family_base} {self.dragged_object.font_size}"
+                if self.dragged_object.is_bold: font_desc_str += " Bold"
+                if self.dragged_object.is_italic: font_desc_str += " Italic"
 
+                font_desc = Pango.FontDescription(font_desc_str)
+                layout.set_font_description(font_desc)
+                layout.set_text(self.dragged_object.text, -1)
+
+                r, g, b = self.dragged_object.color
+                cr.set_source_rgba(r, g, b, 0.6)
+
+                cr.move_to(ghost_x, ghost_y)
+                PangoCairo.show_layout(cr, layout)
+            cr.restore()
+
+        selected_obj = self.selected_text or self.selected_image
+        if selected_obj and not self.dragged_object:
+            is_image = isinstance(selected_obj, EditableImage)
+            style_context = area.get_style_context()
+            color_name = "accent_color"
+            default_color = "#3584e4"
+
+            found, rgba = style_context.lookup_color(color_name)
+            if not found:
+                rgba = Gdk.RGBA()
+                rgba.parse(default_color)
+
+            x1, y1, x2, y2 = selected_obj.bbox
+            padding = 3.0
+            rect_x = page_offset_x + (x1 * self.zoom_level) - padding
+            rect_y = page_offset_y + (y1 * self.zoom_level) - padding
+            rect_w = (x2 - x1) * self.zoom_level + (2 * padding)
+            rect_h = (y2 - y1) * self.zoom_level + (2 * padding)
+
+            cr.save()
+            cr.set_source_rgba(rgba.red, rgba.green, rgba.blue, 0.95)
+            cr.set_line_width(2.5 if is_image else 2.0)
+            if is_image:
+                cr.set_dash([4.0, 4.0])
+
+            radius = min(5.0, rect_w / 2.0, rect_h / 2.0)
             cr.new_sub_path()
             cr.arc(rect_x + radius, rect_y + radius, radius, math.pi, 1.5 * math.pi)
             cr.arc(rect_x + rect_w - radius, rect_y + radius, radius, 1.5 * math.pi, 2.0 * math.pi)
-            cr.arc(rect_x + rect_w - radius, rect_y + rect_h - radius, radius, 0.0 * math.pi, 0.5 * math.pi)
-            cr.arc(rect_x + radius, rect_y + rect_h - radius, radius, 0.5 * math.pi, 1.0 * math.pi)
+            cr.arc(rect_x + rect_w - radius, rect_y + rect_h - radius, radius, 0, 0.5 * math.pi)
+            cr.arc(rect_x + radius, rect_y + rect_h - radius, radius, 0.5 * math.pi, math.pi)
             cr.close_path()
-
             cr.stroke()
             cr.restore()
 
@@ -696,6 +786,59 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
                (y1 - tolerance) <= page_y <= (y2 + tolerance):
                 return text_obj
         return None
+
+    def _find_image_at_pos(self, page_x, page_y):
+        for img_obj in reversed(self.editable_images):
+            if not img_obj.bbox: continue
+            x1, y1, x2, y2 = img_obj.bbox
+            if x1 <= page_x <= x2 and y1 <= page_y <= y2:
+                return img_obj
+        return None
+
+
+    def _handle_add_image_action(self, page_x_unzoomed, page_y_unzoomed):
+        dialog = Gtk.FileChooserDialog(
+            title="Lütfen bir resim dosyası seçin",
+            transient_for=self, modal=True, action=Gtk.FileChooserAction.OPEN
+        )
+        dialog.add_buttons("_İptal", Gtk.ResponseType.CANCEL, "_Aç", Gtk.ResponseType.ACCEPT)
+
+        filter_img = Gtk.FileFilter(name="Resim dosyaları")
+        for mime in ["image/png", "image/jpeg", "image/gif", "image/bmp"]:
+            filter_img.add_mime_type(mime)
+        dialog.add_filter(filter_img)
+
+        def on_response(d, response_id):
+            if response_id == Gtk.ResponseType.ACCEPT:
+                file = d.get_file()
+                if file:
+                    image_path = file.get_path()
+                    try:
+                        pixbuf = GdkPixbuf.Pixbuf.new_from_file(image_path)
+                        img_w, img_h = pixbuf.get_width(), pixbuf.get_height()
+
+                        target_w = 150.0
+                        target_h = (img_h / img_w) * target_w if img_w > 0 else 150.0
+
+                        rect = fitz.Rect(page_x_unzoomed, page_y_unzoomed,
+                                        page_x_unzoomed + target_w, page_y_unzoomed + target_h)
+
+                        self.status_label.set_text("Resim ekleniyor...")
+                        success, msg = pdf_handler.add_image_to_page(
+                            self.doc, self.current_page_index, image_path, rect
+                        )
+                        if success:
+                            self.document_modified = True
+                            self._load_page(self.current_page_index)
+                            self.status_label.set_text("Resim eklendi.")
+                        else:
+                            show_error_dialog(self, f"Resim eklenemedi: {msg}", "Hata")
+                    except Exception as e:
+                        show_error_dialog(self, f"Resim dosyası işlenirken bir hata oluştu:\n{e}", "Resim Hatası")
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.present()
 
     def _update_text_format_controls(self, text_obj):
         if not text_obj or self.font_scan_in_progress:
@@ -897,7 +1040,8 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         if force_apply or text_actually_changed or text_obj_to_apply.modified:
             self.status_label.set_text("Metin değişiklikleri uygulanıyor...")
 
-            success, error_msg = pdf_handler.apply_text_edit(self.doc, text_obj_to_apply, new_text)
+            text_obj_to_apply.text = new_text
+            success, error_msg = pdf_handler.apply_object_edit(self.doc, text_obj_to_apply)
 
             if success:
                 self.document_modified = True
@@ -1106,17 +1250,18 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
          self.thumbnail_selection_model.set_selected(self.current_page_index)
          self._syncing_thumb = False
 
+
     def on_pdf_view_pressed(self, gesture, n_press, x, y):
         if not self.doc or self.current_pdf_page_width == 0 or self.current_pdf_page_height == 0:
-             return
+            return
 
-        if self.font_scan_in_progress: 
-             show_error_dialog(self, "Fontlar hala taranıyor. Lütfen bekleyin.", "Font Tarama")
-             return
+        if self.font_scan_in_progress:
+            show_error_dialog(self, "Fontlar hala taranıyor. Lütfen bekleyin.", "Font Tarama")
+            return
 
         drawing_area_width = self.pdf_view.get_allocated_width()
         drawing_area_height = self.pdf_view.get_allocated_height()
-        
+
         page_w_zoomed = self.current_pdf_page_width
         page_h_zoomed = self.current_pdf_page_height
 
@@ -1126,111 +1271,88 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         click_x_on_page_zoomed = x - page_offset_x
         click_y_on_page_zoomed = y - page_offset_y
 
-        page_x_unzoomed = click_x_on_page_zoomed / self.zoom_level
-        page_y_unzoomed = click_y_on_page_zoomed / self.zoom_level
-        
-        if not (0 <= click_x_on_page_zoomed < page_w_zoomed and 0 <= click_y_on_page_zoomed < page_h_zoomed):
-            if self.selected_text:
-                if self.text_edit_popover and self.text_edit_popover.is_visible():
-                    self._apply_and_hide_editor()
-                else:
-                    self.selected_text = None
-                    self.hide_text_editor()
-                    self.pdf_view.queue_draw()
-                    self._update_text_format_controls(None)
+        is_on_page = (0 <= click_x_on_page_zoomed < page_w_zoomed and
+                    0 <= click_y_on_page_zoomed < page_h_zoomed)
+
+        if not is_on_page:
+            if self.text_edit_popover and self.text_edit_popover.is_visible():
+                self._apply_and_hide_editor()
+            self.selected_text = None
+            self.selected_image = None
+            self.pdf_view.queue_draw()
             self._update_ui_state()
             return
 
+        page_x_unzoomed = click_x_on_page_zoomed / self.zoom_level
+        page_y_unzoomed = click_y_on_page_zoomed / self.zoom_level
+
+
         if self.tool_mode == "select":
+            if self.text_edit_popover and self.text_edit_popover.is_visible():
+                self._apply_and_hide_editor()
+
+            clicked_image = self._find_image_at_pos(page_x_unzoomed, page_y_unzoomed)
             clicked_text = self._find_text_at_pos(page_x_unzoomed, page_y_unzoomed)
 
-            if clicked_text:
+            if clicked_image:
+                self.selected_image = clicked_image
+                self.selected_text = None
+            elif clicked_text:
+                self.selected_image = None
                 if clicked_text == self.selected_text and n_press > 1:
                     self._setup_text_editor(clicked_text, drawing_area_click_x=x, drawing_area_click_y=y)
-                elif self.selected_text != clicked_text:
-                    if self.text_edit_popover and self.text_edit_popover.is_visible():
-                        self._apply_and_hide_editor() 
+                else:
                     self.selected_text = clicked_text
-                    self.hide_text_editor()
-                    self.pdf_view.queue_draw()
-                    self._update_text_format_controls(self.selected_text)
-            else: 
-                if self.selected_text:
-                    if self.text_edit_popover and self.text_edit_popover.is_visible():
-                        self._apply_and_hide_editor()
-                    else:
-                        self.selected_text = None
-                        self.hide_text_editor()
-                        self.pdf_view.queue_draw()
-                        self._update_text_format_controls(None) 
+            else:
+                self.selected_text = None
+                self.selected_image = None
+
+            self.pdf_view.queue_draw()
             self._update_ui_state()
 
         elif self.tool_mode == "add_text":
             if self.text_edit_popover and self.text_edit_popover.is_visible():
-                 self._apply_and_hide_editor()
-                 return 
+                self._apply_and_hide_editor()
+                return
 
-            font_fam_display_from_combo_key, font_pdf_base14_category_from_combo, font_size, color, is_bold, is_italic = self._get_current_format_settings()
-
+            font_fam_display, font_pdf_name, font_size, color, is_bold, is_italic = self._get_current_format_settings()
             baseline_y_unzoomed = page_y_unzoomed + (font_size * 0.9)
-            
-            target_family_key_for_new_text = font_fam_display_from_combo_key
-            target_base14_for_new_text = font_pdf_base14_category_from_combo
 
-            current_combo_iter = self.font_combo.get_active_iter()
-            is_placeholder_selected = True
-            if current_combo_iter is not None:
-                current_combo_key = self.font_store[current_combo_iter][1]
-                if current_combo_key and current_combo_key != "Fontlar yükleniyor...":
-                    is_placeholder_selected = False
-            
-            if is_placeholder_selected:
-                default_sans_family = "Sans"
-                sans_candidates = ["DejaVu Sans", "Noto Sans", "Liberation Sans", "Arial", "Sans"]
-                found_default_sans = False
-                if utils.FONT_FAMILY_LIST_SORTED:
-                    for candidate in sans_candidates:
-                        if candidate in utils.FONT_FAMILY_LIST_SORTED:
-                            target_family_key_for_new_text = candidate
-                            lower_clean_base = re.sub(r'[^a-zA-Z]', '', target_family_key_for_new_text).lower()
-                            target_base14_for_new_text = 'helv'
-                            for name_k, base_v in BASE14_FALLBACK_MAP.items():
-                                if name_k in lower_clean_base:
-                                    target_base14_for_new_text = base_v
-                                    break
-                            found_default_sans = True
-                            break
-                    if not found_default_sans and utils.FONT_FAMILY_LIST_SORTED:
-                        target_family_key_for_new_text = utils.FONT_FAMILY_LIST_SORTED[0]
-                        lower_clean_base = re.sub(r'[^a-zA-Z]', '', target_family_key_for_new_text).lower()
-                        target_base14_for_new_text = 'helv'
-                        for name_k, base_v in BASE14_FALLBACK_MAP.items():
-                            if name_k in lower_clean_base:
-                                target_base14_for_new_text = base_v
-                                break
-                else: 
-                    target_family_key_for_new_text = "Sans" 
-                    target_base14_for_new_text = "helv"
-            
+            target_family_key = font_fam_display
+            target_base14 = 'helv'
+            iter = self.font_combo.get_active_iter()
+            if iter:
+                model_key = self.font_store[iter][1]
+                normalized_for_base14 = re.sub(r'[^a-zA-Z0-9]', '', model_key).lower()
+                for name_key, base14_val in BASE14_FALLBACK_MAP.items():
+                    if name_key in normalized_for_base14:
+                        target_base14 = base14_val
+                        break
+
             new_text_obj = EditableText(
-                x=page_x_unzoomed, 
-                y=page_y_unzoomed, 
-                text="Yeni Metin", 
+                x=page_x_unzoomed,
+                y=page_y_unzoomed,
+                text="Yeni Metin",
                 font_size=font_size,
-                color=color, 
-                is_new=True, 
+                color=color,
+                is_new=True,
                 baseline=baseline_y_unzoomed
             )
-            new_text_obj.font_family_base = target_family_key_for_new_text
-            new_text_obj.font_family_original = f"{target_family_key_for_new_text} (Kullanıcı Ekledi)"
+            new_text_obj.font_family_base = target_family_key
+            new_text_obj.font_family_original = f"{target_family_key} (Kullanıcı Ekledi)"
             new_text_obj.is_bold = is_bold
             new_text_obj.is_italic = is_italic
-            new_text_obj.pdf_fontname_base14 = target_base14_for_new_text 
+            new_text_obj.pdf_fontname_base14 = target_base14
+            new_text_obj.page_number = self.current_page_index
 
-            self.selected_text = new_text_obj 
-            self._update_text_format_controls(self.selected_text) 
+            self.selected_text = new_text_obj
+            self.selected_image = None
+            self._update_text_format_controls(self.selected_text)
             self._setup_text_editor(new_text_obj, drawing_area_click_x=x, drawing_area_click_y=y)
             self._update_ui_state()
+
+        elif self.tool_mode == "add_image":
+            self._handle_add_image_action(page_x_unzoomed, page_y_unzoomed)
 
     def on_text_format_changed(self, widget, *args):
         if self.font_scan_in_progress: return
@@ -1309,6 +1431,20 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
                        self.selected_text = None
                        self._update_ui_state()
                   return True
+             elif self.selected_image:
+                confirm = show_confirm_dialog(self, "Seçilen resmi silmek istediğinizden emin misiniz?", "Resmi Sil")
+                if confirm:
+                    self.status_label.set_text("Resim siliniyor...")
+                    success, error_msg = pdf_handler.delete_image_from_page(self.doc, self.selected_image)
+                    if success:
+                        self.document_modified = True
+                        self._load_page(self.current_page_index)
+                        self.status_label.set_text("Resim silindi.")
+                    else:
+                        show_error_dialog(self, f"Resim silinemedi: {error_msg}", "Silme Hatası")
+                    self.selected_image = None
+                    self._update_ui_state()
+                return True
         return False
 
     def on_tool_selected(self, button, tool_name):
@@ -1318,15 +1454,165 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
 
         if self.selected_text:
             self.selected_text = None
-            self.pdf_view.queue_draw()
+
+        if self.selected_image:
+            self.selected_image = None
+
+        self.pdf_view.queue_draw()
 
         self.tool_mode = tool_name
         print(f"Araç şu şekilde değiştirildi: {self.tool_mode}")
         self._update_ui_state() 
+
+    def on_drag_begin(self, gesture, start_x, start_y):
+        if self.tool_mode != "drag" or not self.doc:
+            return
+
+        page_w, page_h = self.current_pdf_page_width, self.current_pdf_page_height
+        page_offset_x = max(0, (self.pdf_view.get_allocated_width() - page_w) / 2)
+        page_offset_y = max(0, (self.pdf_view.get_allocated_height() - page_h) / 2)
+
+        page_x = (start_x - page_offset_x) / self.zoom_level
+        page_y = (start_y - page_offset_y) / self.zoom_level
+
+        self.dragged_object = self._find_image_at_pos(page_x, page_y) or self._find_text_at_pos(page_x, page_y)
+
+        if self.dragged_object:
+            gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+            self.drag_start_pos = (start_x, start_y)
+
+            if not self.dragged_object.original_bbox:
+                self.dragged_object.original_bbox = self.dragged_object.bbox
+
+            x1, y1, _, _ = self.dragged_object.bbox
+            self.drag_object_start_pos = (x1, y1)
+        else:
+            gesture.set_state(Gtk.EventSequenceState.DENIED)
+
+    def on_drag_update(self, gesture, offset_x, offset_y):
+        if not self.dragged_object:
+            return
+
+        delta_x = offset_x / self.zoom_level
+        delta_y = offset_y / self.zoom_level
+
+        start_obj_x, start_obj_y = self.drag_object_start_pos
+        new_x = start_obj_x + delta_x
+        new_y = start_obj_y + delta_y
+
+        if isinstance(self.dragged_object, EditableText):
+            self.dragged_object.x = new_x
+            self.dragged_object.y = new_y
+
+            original_baseline_offset = self.dragged_object.baseline - self.drag_object_start_pos[1]
+            self.dragged_object.baseline = new_y + original_baseline_offset
+
+            w = self.dragged_object.bbox[2] - self.dragged_object.bbox[0]
+            h = self.dragged_object.bbox[3] - self.dragged_object.bbox[1]
+            self.dragged_object.bbox = (new_x, new_y, new_x + w, new_y + h)
+
+            self.selected_text = self.dragged_object
+            self.selected_image = None
+
+        elif isinstance(self.dragged_object, EditableImage):
+            w = self.dragged_object.bbox[2] - self.dragged_object.bbox[0]
+            h = self.dragged_object.bbox[3] - self.dragged_object.bbox[1]
+            self.dragged_object.bbox = (new_x, new_y, new_x + w, new_y + h)
+
+            self.selected_image = self.dragged_object
+            self.selected_text = None
+
+        self.pdf_view.queue_draw()
+
+
+    def on_drag_end(self, gesture, offset_x, offset_y):
+        if not self.dragged_object:
+            return
+
+        self.status_label.set_text("Nesne konumu güncelleniyor...")
+
+        self.dragged_object.modified = True
+
+        success, msg = pdf_handler.apply_object_edit(self.doc, self.dragged_object)
+
+        if success:
+            self.document_modified = True
+
+            self._load_page(self.current_page_index)
+            self.status_label.set_text("Nesne taşındı. Kaydetmeyi unutmayın.")
+        else:
+            show_error_dialog(self, f"Nesne taşınamadı: {msg}")
+            self._load_page(self.current_page_index)
+
+        self.dragged_object = None
+        self.selected_image = None
+        self.selected_text = None
+        self._update_ui_state()
+
+    def _on_quick_guide_activated(self, action, param):
+        dialog = Gtk.Dialog(transient_for=self, modal=True)
+        dialog.set_default_size(500, 420)
+        
+        header = Gtk.HeaderBar()
+        
+        dialog.set_titlebar(header)
+
+        title_label = Gtk.Label(label="Hızlı Başlangıç Kılavuzu")
+        title_label.add_css_class("title-4")
+        header.set_title_widget(title_label)
+        
+        content_area = dialog.get_content_area()
+        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window.set_vexpand(True) 
+        scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        content_area.append(scrolled_window)
+        
+        clamp = Adw.Clamp(maximum_size=450)
+        scrolled_window.set_child(clamp)
+        
+        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
+        content_box.set_margin_top(20)
+        content_box.set_margin_bottom(20)
+        clamp.set_child(content_box)
+        
+        guide_select_label = Gtk.Label(
+            use_markup=True,
+            label="<b>1. Seç ve Düzenle Aracı (V)</b>\n"
+                "Varsayılan araçtır. Sayfadaki metin veya resimlere tıklayarak seçin. "
+                "Seçili bir metne <i>çift tıklayarak</i> düzenleme penceresini açın.",
+            xalign=0, wrap=True
+        )
+        guide_add_text_label = Gtk.Label(
+            use_markup=True,
+            label="<b>2. Metin Ekle Aracı (T)</b>\n"
+                "Sayfada metin eklemek istediğiniz yere tıklayın. Açılan pencereye metninizi "
+                "yazın ve üst araç çubuğundan font, boyut ve renk ayarlarını yapın.",
+            xalign=0, wrap=True
+        )
+        guide_add_image_label = Gtk.Label(
+            use_markup=True,
+            label="<b>3. Resim Ekle Aracı (I)</b>\n"
+                "Sayfada resim eklemek istediğiniz yere tıklayın. Açılacak dosya seçme "
+                "ekranından resminizi seçin.",
+            xalign=0, wrap=True
+        )
+        guide_move_label = Gtk.Label(
+            use_markup=True,
+            label="<b>4. Taşıma Aracı (M)</b>\n"
+                "Bu aracı seçtikten sonra, sayfadaki herhangi bir metin veya resim "
+                "öğesini tıklayıp sürükleyerek yerini değiştirebilirsiniz.",
+            xalign=0, wrap=True
+        )
+        content_box.append(guide_select_label)
+        content_box.append(guide_add_text_label)
+        content_box.append(guide_add_image_label)
+        content_box.append(guide_move_label)
+        
+        dialog.present()
 
     def do_close_request(self):
         if self.check_unsaved_changes():
             return True
         else:
             self.close_document()
-            return False 
+            return False

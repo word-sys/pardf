@@ -12,7 +12,7 @@ import re
 
 from gi.repository import GdkPixbuf, Gdk, Pango, PangoCairo
 
-from .models import EditableText, FLAG_BOLD, FLAG_ITALIC
+from .models import EditableText, FLAG_BOLD, FLAG_ITALIC, EditableImage
 from .utils import find_specific_font_variant, get_default_unicode_font_path
 
 _surface_cache = {"surface": None, "data_ref": None}
@@ -37,13 +37,19 @@ def close_pdf_document(doc):
 def get_page_count(doc):
     return doc.page_count if doc else 0
 
-def generate_thumbnail(doc, page_index, size=128):
+def generate_thumbnail(doc, page_index, target_width=150):
     if not doc or not (0 <= page_index < doc.page_count):
         return None
     try:
         page = doc.load_page(page_index)
-        zoom_factor = min(size / page.rect.width, size / page.rect.height)
+        
+        page_w = page.rect.width
+        if page_w == 0: 
+            page_w = 1 
+            
+        zoom_factor = target_width / page_w
         matrix = fitz.Matrix(zoom_factor, zoom_factor)
+
         pix = page.get_pixmap(matrix=matrix, alpha=False)
         gdk_pixbuf = GdkPixbuf.Pixbuf.new_from_data(
             pix.samples, GdkPixbuf.Colorspace.RGB, False, 8,
@@ -51,10 +57,10 @@ def generate_thumbnail(doc, page_index, size=128):
         )
         return gdk_pixbuf
     except Exception as thumb_error:
-         print(f"Warning: Could not generate thumbnail for page {page_index+1}: {thumb_error}")
-         placeholder_pixbuf = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, int(size * 0.8), size)
-         placeholder_pixbuf.fill(0xaaaaaaFF)
-         return placeholder_pixbuf
+        print(f"Warning: Could not generate thumbnail for page {page_index+1}: {thumb_error}")
+        placeholder_pixbuf = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, target_width, int(target_width * 1.414))
+        placeholder_pixbuf.fill(0xaaaaaaFF)
+        return placeholder_pixbuf
 
 def pixmap_to_cairo_surface(pix):
     data = None
@@ -212,7 +218,7 @@ def apply_text_edit(doc, text_obj: EditableText, new_text: str):
     if not doc or text_obj.page_number is None:
         print("Error: Invalid document or page number for editing.")
         return False, "Invalid document or page number for editing."
-    
+
     print(f"Apply edit for: '{text_obj.font_family_original}', Base: '{text_obj.font_family_base}', B:{text_obj.is_bold}, I:{text_obj.is_italic}")
 
     font_arg = {}
@@ -227,7 +233,7 @@ def apply_text_edit(doc, text_obj: EditableText, new_text: str):
         if text_obj.is_bold: style_suffix += "Bold"
         if text_obj.is_italic: style_suffix += "Italic"
         if not style_suffix: style_suffix = "Regular"
-        
+
         safe_family_name = re.sub(r'\W+', '', text_obj.font_family_base or "UnknownFont")
         internal_font_name = f"Pardus_{safe_family_name}_{style_suffix}"
         font_arg = {"fontfile": font_to_embed_path, "fontname": internal_font_name}
@@ -247,7 +253,7 @@ def apply_text_edit(doc, text_obj: EditableText, new_text: str):
             print(f"CRITICAL WARNING: No TTF found. Falling back to Base 14 font: '{base14_name}'. Unicode may fail, style approximate.")
             if any(ord(c) > 127 for c in new_text):
                  return False, "Cannot save non-ASCII text: No suitable Unicode font found and Base14 fallback selected."
-    
+
     try:
         page = doc.load_page(text_obj.page_number)
         if not text_obj.is_new and text_obj.bbox:
@@ -268,7 +274,7 @@ def apply_text_edit(doc, text_obj: EditableText, new_text: str):
             fontsize = text_obj.font_size
             color = text_obj.color
             lines = new_text.split('\n')
-            line_height_factor = 1.2 
+            line_height_factor = 1.2
             line_height = fontsize * line_height_factor
             current_y = text_obj.baseline
 
@@ -286,7 +292,7 @@ def apply_text_edit(doc, text_obj: EditableText, new_text: str):
                 if rc < 0:
                     print(f"Warning: PyMuPDF insert_text returned error {rc} for line: {line_text}")
                 current_y += line_height
-        
+
         text_obj.text = new_text
         text_obj.modified = True
         text_obj.is_new = False
@@ -465,3 +471,127 @@ def export_pdf_as_text(doc, output_txt_path):
         return True, None
     except Exception as e:
         return False, f"Error exporting as text: {e}"
+
+def extract_editable_images(doc, page_index):
+    editable_images = []
+    if not doc or not (0 <= page_index < doc.page_count):
+        return [], "Görüntü çıkarma için geçersiz belge veya sayfa dizini."
+    
+    try:
+        page = doc.load_page(page_index)
+        image_info_list = page.get_image_info(xrefs=True)
+        
+        for img_info in image_info_list:
+            try:
+                bbox = img_info['bbox']
+                xref = img_info['xref']
+
+                rect = fitz.Rect(bbox)
+                if rect.is_empty or not rect.is_valid:
+                    continue
+
+                image_bytes = doc.extract_image(xref)["image"]
+                
+                image_obj = EditableImage(
+                    bbox=bbox,
+                    page_number=page_index,
+                    xref=xref,
+                    image_bytes=image_bytes
+                )
+                editable_images.append(image_obj)
+            except (ValueError, TypeError) as e:
+                print(f"Uyarı: Sayfa {page_index+1} içindeki bir resim (xref={img_info.get('xref')}) atlandı: {e}")
+                continue
+        return editable_images, None
+    except Exception as e:
+        error_msg = f"Sayfa {page_index+1} içinden resimler çıkarılırken hata oluştu: {e}"
+        print(error_msg)
+        traceback.print_exc()
+        return [], error_msg
+
+def add_image_to_page(doc, page_number, image_path, rect):
+    if not doc or page_number is None:
+        return False, "Resim eklemek için geçersiz belge veya sayfa numarası."
+    try:
+        page = doc.load_page(page_number)
+        page.insert_image(rect, filename=image_path)
+        return True, None
+    except FileNotFoundError:
+        return False, f"Resim dosyası bulunamadı: {image_path}"
+    except Exception as e:
+        print(f"HATA resim ekleniyor: {e}")
+        traceback.print_exc()
+        return False, f"Resim yerleştirme sırasında hata: {e}"
+
+def delete_image_from_page(doc, image_obj: EditableImage):
+    if not doc or image_obj.page_number is None:
+        return False, "Resim silmek için geçersiz belge veya sayfa numarası."
+    try:
+        page = doc.load_page(image_obj.page_number)
+
+        redact_rect = fitz.Rect(image_obj.bbox)
+        if not redact_rect.is_empty and redact_rect.is_valid:
+            page.add_redact_annot(redact_rect)
+            page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_REMOVE)
+            doc.load_page(image_obj.page_number) # Değişikliklerin yansıması için sayfayı yeniden yükle
+            return True, None
+        else:
+            return False, "Resim sınırlayıcı kutusu geçersiz."
+    except Exception as e:
+        print(f"HATA resim siliniyor: {e}")
+        traceback.print_exc()
+        return False, f"Resim silme sırasında hata: {e}"
+
+def apply_object_edit(doc, obj):
+    if not doc or not hasattr(obj, 'page_number') or obj.page_number is None:
+        return False, "Geçersiz nesne veya sayfa numarası."
+
+    try:
+        page = doc.load_page(obj.page_number)
+
+        original_bbox_to_clear = obj.original_bbox
+
+        if original_bbox_to_clear:
+            redact_rect = fitz.Rect(original_bbox_to_clear)
+            if not redact_rect.is_empty and redact_rect.is_valid:
+                img_flag = fitz.PDF_REDACT_IMAGE_REMOVE if isinstance(obj, EditableImage) else fitz.PDF_REDACT_IMAGE_NONE
+                page.add_redact_annot(redact_rect)
+                page.apply_redactions(images=img_flag)
+                page = doc.load_page(obj.page_number)
+
+        if isinstance(obj, EditableText):
+            if obj.text:
+                font_path = find_specific_font_variant(obj.font_family_base, obj.is_bold, obj.is_italic)
+                if not font_path:
+                    font_path = get_default_unicode_font_path()
+                if not font_path:
+                    return False, "Yazmak için uygun font bulunamadı."
+
+                estimated_baseline = obj.y + (obj.font_size * 0.9)
+
+                lines = obj.text.split('\n')
+                line_height = obj.font_size * 1.2
+
+                for i, line in enumerate(lines):
+                    pos = fitz.Point(obj.x, estimated_baseline + (i * line_height))
+                    page.insert_text(pos,
+                                    line,
+                                    fontsize=obj.font_size,
+                                    color=obj.color,
+                                    fontfile=font_path,
+                                    overlay=True)
+
+        elif isinstance(obj, EditableImage):
+            page.insert_image(obj.bbox, stream=obj.image_bytes)
+
+        obj.original_bbox = obj.bbox
+        obj.modified = False
+        if isinstance(obj, EditableText):
+            obj.is_new = False
+
+        return True, None
+
+    except Exception as e:
+        print(f"HATA: Nesne düzenlemesi uygulanırken hata oluştu: {e}")
+        traceback.print_exc()
+        return False, f"Nesne düzenlemesi uygulanırken hata: {e}"
