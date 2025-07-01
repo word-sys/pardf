@@ -37,13 +37,19 @@ def close_pdf_document(doc):
 def get_page_count(doc):
     return doc.page_count if doc else 0
 
-def generate_thumbnail(doc, page_index, size=128):
+def generate_thumbnail(doc, page_index, target_width=150):
     if not doc or not (0 <= page_index < doc.page_count):
         return None
     try:
         page = doc.load_page(page_index)
-        zoom_factor = min(size / page.rect.width, size / page.rect.height)
+        
+        page_w = page.rect.width
+        if page_w == 0: 
+            page_w = 1 
+            
+        zoom_factor = target_width / page_w
         matrix = fitz.Matrix(zoom_factor, zoom_factor)
+
         pix = page.get_pixmap(matrix=matrix, alpha=False)
         gdk_pixbuf = GdkPixbuf.Pixbuf.new_from_data(
             pix.samples, GdkPixbuf.Colorspace.RGB, False, 8,
@@ -51,10 +57,10 @@ def generate_thumbnail(doc, page_index, size=128):
         )
         return gdk_pixbuf
     except Exception as thumb_error:
-         print(f"Warning: Could not generate thumbnail for page {page_index+1}: {thumb_error}")
-         placeholder_pixbuf = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, int(size * 0.8), size)
-         placeholder_pixbuf.fill(0xaaaaaaFF)
-         return placeholder_pixbuf
+        print(f"Warning: Could not generate thumbnail for page {page_index+1}: {thumb_error}")
+        placeholder_pixbuf = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, target_width, int(target_width * 1.414))
+        placeholder_pixbuf.fill(0xaaaaaaFF)
+        return placeholder_pixbuf
 
 def pixmap_to_cairo_surface(pix):
     data = None
@@ -470,25 +476,32 @@ def extract_editable_images(doc, page_index):
     editable_images = []
     if not doc or not (0 <= page_index < doc.page_count):
         return [], "Görüntü çıkarma için geçersiz belge veya sayfa dizini."
+    
     try:
         page = doc.load_page(page_index)
         image_info_list = page.get_image_info(xrefs=True)
+        
         for img_info in image_info_list:
-            bbox = img_info['bbox']
-            xref = img_info['xref']
+            try:
+                bbox = img_info['bbox']
+                xref = img_info['xref']
 
-            rect = fitz.Rect(bbox)
-            if rect.is_empty or not rect.is_valid:
+                rect = fitz.Rect(bbox)
+                if rect.is_empty or not rect.is_valid:
+                    continue
+
+                image_bytes = doc.extract_image(xref)["image"]
+                
+                image_obj = EditableImage(
+                    bbox=bbox,
+                    page_number=page_index,
+                    xref=xref,
+                    image_bytes=image_bytes
+                )
+                editable_images.append(image_obj)
+            except (ValueError, TypeError) as e:
+                print(f"Uyarı: Sayfa {page_index+1} içindeki bir resim (xref={img_info.get('xref')}) atlandı: {e}")
                 continue
-
-            image_bytes = doc.extract_image(xref)["image"]
-            image_obj = EditableImage(
-                bbox=bbox,
-                page_number=page_index,
-                xref=xref,
-                image_bytes=image_bytes
-            )
-            editable_images.append(image_obj)
         return editable_images, None
     except Exception as e:
         error_msg = f"Sayfa {page_index+1} içinden resimler çıkarılırken hata oluştu: {e}"

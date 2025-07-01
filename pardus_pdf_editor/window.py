@@ -13,6 +13,7 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Gio, GLib, Adw, Gdk, GdkPixbuf, Pango, GObject, PangoCairo
 
 from . import pdf_handler
+from .welcome_view import WelcomeView 
 from .models import PdfPage, EditableText, BASE14_FALLBACK_MAP, EditableImage
 from .ui_components import PageThumbnailFactory, show_error_dialog, show_confirm_dialog
 from . import utils
@@ -154,32 +155,39 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         popover_menu = Gtk.PopoverMenu.new_from_model(menu)
         menu_button.set_popover(popover_menu)
 
-        self.paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, wide_handle=True, vexpand=True)
-        self.main_box.append(self.paned)
+        self.stack = Gtk.Stack()
+        self.stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+        self.main_box.append(self.stack)
 
+        welcome_view = WelcomeView(parent_window=self)
+        self.stack.add_named(welcome_view, "welcome")
+
+        self.paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, wide_handle=True, vexpand=True)
+        
         self._create_sidebar()
 
         content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0, vexpand=True)
         self._create_main_toolbar()
         content_box.append(self.main_toolbar)
-
-        self.overlay = Gtk.Overlay(vexpand=True, hexpand=True)
+        
         self.pdf_scroll = Gtk.ScrolledWindow(hexpand=True, vexpand=True,
-                                             hscrollbar_policy=Gtk.PolicyType.AUTOMATIC,
-                                             vscrollbar_policy=Gtk.PolicyType.AUTOMATIC)
+                                            hscrollbar_policy=Gtk.PolicyType.AUTOMATIC,
+                                            vscrollbar_policy=Gtk.PolicyType.AUTOMATIC)
         self.pdf_view = Gtk.DrawingArea(content_width=1, content_height=1,
                                         hexpand=True, vexpand=True)
         self.pdf_view.set_draw_func(self.draw_pdf_page)
         self.pdf_view.add_css_class('pdf-view')
 
-        self.pdf_viewport = Gtk.Viewport() 
+        self.pdf_viewport = Gtk.Viewport()
         self.pdf_viewport.set_child(self.pdf_view)
         self.pdf_scroll.set_child(self.pdf_viewport)
-        self.overlay.set_child(self.pdf_scroll)
-        content_box.append(self.overlay)
+        
+        content_box.append(self.pdf_scroll)
 
         self.paned.set_end_child(content_box)
-        self.paned.set_position(200) 
+        self.paned.set_position(200)
+
+        self.stack.add_named(self.paned, "editor")
 
         status_bar_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, vexpand=False)
         status_bar_box.add_css_class('statusbar')
@@ -187,44 +195,45 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         status_bar_box.append(self.status_label)
         self.main_box.append(status_bar_box)
 
-        self.empty_label = Gtk.Label(label="Bir PDF dosyasını açın veya bırakın.", vexpand=True,
-                                     halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
-        self.empty_label.add_css_class("dim-label")
-        self.overlay.add_overlay(self.empty_label)
-
     def _create_sidebar(self):
-        sidebar_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6,
-                              margin_start=6, margin_end=6, margin_top=6, margin_bottom=6)
-        sidebar_box.set_size_request(180, -1)
+        sidebar_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10,
+                            margin_start=6, margin_end=6, margin_top=10, margin_bottom=6)
+        sidebar_box.set_size_request(190, -1)
 
         tools_label = Gtk.Label(label="Araçlar", xalign=0.0)
         tools_label.add_css_class('title-4')
         sidebar_box.append(tools_label)
 
-        tools_grid = Gtk.Grid(row_spacing=6, column_spacing=6)
+        tools_grid = Gtk.Grid(
+            row_spacing=6, 
+            column_spacing=6,
+            column_homogeneous=True
+        )
+        
         self.select_tool_button = Gtk.Button(icon_name="input-mouse-symbolic", label="Seç")
-        self.select_tool_button.set_tooltip_text("Metin Seç (Varsayılan)")
+        self.select_tool_button.set_tooltip_text("Nesneleri Seç ve Düzenle (V)")
         self.select_tool_button.connect('clicked', self.on_tool_selected, "select")
         self.select_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.select_tool_button, 0, 0, 1, 1)
 
         self.add_text_tool_button = Gtk.Button(icon_name="insert-text-symbolic", label="Metin Ekle")
-        self.add_text_tool_button.set_tooltip_text("Yeni Metin Kutusu Ekle")
+        self.add_text_tool_button.set_tooltip_text("Yeni Metin Kutusu Ekle (T)")
         self.add_text_tool_button.connect('clicked', self.on_tool_selected, "add_text")
         self.add_text_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.add_text_tool_button, 1, 0, 1, 1)
 
         self.add_image_tool_button = Gtk.Button(icon_name="insert-image-symbolic", label="Resim Ekle")
-        self.add_image_tool_button.set_tooltip_text("Yeni Resim Ekle")
+        self.add_image_tool_button.set_tooltip_text("Yeni Resim Ekle (I)")
         self.add_image_tool_button.connect('clicked', self.on_tool_selected, "add_image")
         self.add_image_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.add_image_tool_button, 0, 1, 1, 1)
 
         self.drag_tool_button = Gtk.Button(icon_name="object-move-symbolic", label="Taşı")
-        self.drag_tool_button.set_tooltip_text("Nesneleri Sürükle ve Taşı")
+        self.drag_tool_button.set_tooltip_text("Nesneleri Sürükle ve Taşı (M)")
         self.drag_tool_button.connect('clicked', self.on_tool_selected, "drag")
         self.drag_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.drag_tool_button, 1, 1, 1, 1)
+        
         sidebar_box.append(tools_grid)
 
         sidebar_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL, margin_top=6, margin_bottom=6))
@@ -353,9 +362,13 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         action_about.connect('activate', self.on_about_activated)
         self.add_action(action_about)
 
+        action_quick_guide = Gio.SimpleAction.new('quick_guide', None)
+        action_quick_guide.connect('activate', self._on_quick_guide_activated)
+        self.add_action(action_quick_guide)
+
     def _update_ui_state(self):
         has_doc = self.doc is not None
-        page_count = pdf_handler.get_page_count(self.doc)
+        page_count = pdf_handler.get_page_count(self.doc) if self.doc else 0
         has_pages = page_count > 0
         can_go_prev = has_pages and self.current_page_index > 0
         can_go_next = has_pages and self.current_page_index < page_count - 1
@@ -369,6 +382,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         text_tool_active = self.tool_mode == "add_text"
         text_selected = self.selected_text is not None
         format_enabled_base = ((self.selected_text is not None) or (self.tool_mode == "add_text")) and (self.selected_image is None)
+        
         self.font_combo.set_sensitive(format_enabled_base and not self.font_scan_in_progress)
         self.font_size_spin.set_sensitive(format_enabled_base)
         self.color_button.set_sensitive(format_enabled_base)
@@ -376,14 +390,15 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if self.italic_button: self.italic_button.set_sensitive(format_enabled_base)
 
         if text_selected:
-             self._update_text_format_controls(self.selected_text)
+            self._update_text_format_controls(self.selected_text)
         elif not (self.text_edit_popover and self.text_edit_popover.is_visible()):
-             self._update_text_format_controls(None)
+            self._update_text_format_controls(None)
 
         self.select_tool_button.get_style_context().remove_class('active')
         self.add_text_tool_button.get_style_context().remove_class('active')
         self.add_image_tool_button.get_style_context().remove_class('active')
         self.drag_tool_button.get_style_context().remove_class('active')
+        
         if self.tool_mode == "select":
             self.select_tool_button.get_style_context().add_class('active')
             self.pdf_view.set_cursor(None)
@@ -397,19 +412,21 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.drag_tool_button.get_style_context().add_class('active')
             self.pdf_view.set_cursor(Gdk.Cursor.new_from_name("move"))
 
-        self.empty_label.set_visible(not has_doc)
-        self.pdf_scroll.set_visible(has_doc)
+        if has_doc:
+            self.stack.set_visible_child_name("editor")
+        else:
+            self.stack.set_visible_child_name("welcome")
 
         if has_doc:
             self.update_page_label()
             if self.document_modified and not self.get_title().endswith("*"):
-                 self.set_title(self.get_title() + "*")
+                self.set_title(self.get_title() + "*")
             elif not self.document_modified and self.get_title().endswith("*"):
-                 self.set_title(self.get_title()[:-1])
+                self.set_title(self.get_title()[:-1])
         else:
             self.page_label.set_text("Sayfa 0 / 0")
             self.zoom_label.set_text("100%")
-            self.status_label.set_text("Hiçbir belge yüklenmedi.")
+            self.status_label.set_text("Bir dosya açın veya sürükleyip bırakın.")
             self.set_title("Pardus PDF Düzenleyicisi")
             self.document_modified = False
 
@@ -417,7 +434,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         about_dialog = Gtk.AboutDialog(transient_for=self, modal=True)
 
         about_dialog.set_program_name("ParDF - Pardus PDF Düzenleyicisi")
-        about_dialog.set_version("1.6")
+        about_dialog.set_version("1.6.1-1")
         about_dialog.set_authors(["Barın Güzeldemirci (word-sys)"])
 
         try:
@@ -455,11 +472,11 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         try:
             app_icon_path = Path(__file__).resolve().parent / "img" / "icon.png"
             if app_icon_path.exists():
-                 pixbuf = GdkPixbuf.Pixbuf.new_from_file(str(app_icon_path))
-                 about_dialog.set_logo(pixbuf)
+                texture = Gdk.Texture.new_from_filename(str(app_icon_path))
+                about_dialog.set_logo(texture)
             else:
-                 print(f"Warning: Local icon not found at {app_icon_path}, relying on system icon theme for 'pardus-pdf-editor'")
-                 about_dialog.set_logo_icon_name("pardus-pdf-editor")
+                print(f"Warning: Local icon not found at {app_icon_path}, relying on system icon theme for 'pardus-pdf-editor'")
+                about_dialog.set_logo_icon_name("pardus-pdf-editor")
         except GLib.Error as e:
             print(f"Warning: Could not load application icon for About dialog: {e}")
             about_dialog.set_logo_icon_name("pardus-pdf-editor")
@@ -500,8 +517,7 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         self.color_button.set_sensitive(False)
         self.select_tool_button.set_sensitive(False)
         self.add_text_tool_button.set_sensitive(False)
-        self.empty_label.set_visible(True)
-        self.pdf_scroll.set_visible(False)
+        self.stack.set_visible_child_name("welcome")
 
     def _finish_loading(self, doc, error_msg, filepath):
         if error_msg:
@@ -531,22 +547,24 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         self.thumb_load_iter = 0
         def _load_next_thumb():
             if self.thumb_load_iter < page_count:
-                 index = self.thumb_load_iter
-                 thumb = pdf_handler.generate_thumbnail(self.doc, index)
-                 if thumb:
-                     pdf_page_obj = PdfPage(index=index, thumbnail=thumb)
-                     self.pages_model.append(pdf_page_obj)
-                 self.thumb_load_iter += 1
-                 if index % 5 == 0 or index == page_count - 1:
-                     self.status_label.set_text(f"Küçük resim yüklendi {index + 1}/{page_count}")
-                 return GLib.SOURCE_CONTINUE 
+                index = self.thumb_load_iter
+                
+                thumb = pdf_handler.generate_thumbnail(self.doc, index, target_width=150)
+
+                if thumb:
+                    pdf_page_obj = PdfPage(index=index, thumbnail=thumb)
+                    self.pages_model.append(pdf_page_obj)
+                self.thumb_load_iter += 1
+                if index % 5 == 0 or index == page_count - 1:
+                    self.status_label.set_text(f"Küçük resim yüklendi {index + 1}/{page_count}")
+                return GLib.SOURCE_CONTINUE 
             else:
-                 self.status_label.set_text(f"Yüklendi: {os.path.basename(self.current_file_path)}")
-                 if page_count > 0:
-                      self._load_page(0)
-                 else:
-                     self._update_ui_state()
-                 return GLib.SOURCE_REMOVE
+                self.status_label.set_text(f"Yüklendi: {os.path.basename(self.current_file_path)}")
+                if page_count > 0:
+                    self._load_page(0)
+                else:
+                    self._update_ui_state()
+                return GLib.SOURCE_REMOVE
 
         GLib.idle_add(_load_next_thumb)
 
@@ -1530,6 +1548,67 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         self.selected_image = None
         self.selected_text = None
         self._update_ui_state()
+
+    def _on_quick_guide_activated(self, action, param):
+        dialog = Gtk.Dialog(transient_for=self, modal=True)
+        dialog.set_default_size(500, 420)
+        
+        header = Gtk.HeaderBar()
+        
+        dialog.set_titlebar(header)
+
+        title_label = Gtk.Label(label="Hızlı Başlangıç Kılavuzu")
+        title_label.add_css_class("title-4")
+        header.set_title_widget(title_label)
+        
+        content_area = dialog.get_content_area()
+        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window.set_vexpand(True) 
+        scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        content_area.append(scrolled_window)
+        
+        clamp = Adw.Clamp(maximum_size=450)
+        scrolled_window.set_child(clamp)
+        
+        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
+        content_box.set_margin_top(20)
+        content_box.set_margin_bottom(20)
+        clamp.set_child(content_box)
+        
+        guide_select_label = Gtk.Label(
+            use_markup=True,
+            label="<b>1. Seç ve Düzenle Aracı (V)</b>\n"
+                "Varsayılan araçtır. Sayfadaki metin veya resimlere tıklayarak seçin. "
+                "Seçili bir metne <i>çift tıklayarak</i> düzenleme penceresini açın.",
+            xalign=0, wrap=True
+        )
+        guide_add_text_label = Gtk.Label(
+            use_markup=True,
+            label="<b>2. Metin Ekle Aracı (T)</b>\n"
+                "Sayfada metin eklemek istediğiniz yere tıklayın. Açılan pencereye metninizi "
+                "yazın ve üst araç çubuğundan font, boyut ve renk ayarlarını yapın.",
+            xalign=0, wrap=True
+        )
+        guide_add_image_label = Gtk.Label(
+            use_markup=True,
+            label="<b>3. Resim Ekle Aracı (I)</b>\n"
+                "Sayfada resim eklemek istediğiniz yere tıklayın. Açılacak dosya seçme "
+                "ekranından resminizi seçin.",
+            xalign=0, wrap=True
+        )
+        guide_move_label = Gtk.Label(
+            use_markup=True,
+            label="<b>4. Taşıma Aracı (M)</b>\n"
+                "Bu aracı seçtikten sonra, sayfadaki herhangi bir metin veya resim "
+                "öğesini tıklayıp sürükleyerek yerini değiştirebilirsiniz.",
+            xalign=0, wrap=True
+        )
+        content_box.append(guide_select_label)
+        content_box.append(guide_add_text_label)
+        content_box.append(guide_add_image_label)
+        content_box.append(guide_move_label)
+        
+        dialog.present()
 
     def do_close_request(self):
         if self.check_unsaved_changes():
