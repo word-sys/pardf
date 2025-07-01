@@ -44,13 +44,13 @@ Bu yöntem, Linux dağıtımları için en kolay kurulum yoludur.
     ```
 5.  Kurulum tamamlandıktan sonra ParDF'i uygulama menünüzden başlatabilirsiniz.
 
-## !Pardus 23.4 ve Debian 12'de python3-fitz 1.21.1 sorunlu pakettir, paket güncellenene kadar ParDF DEB versiyonunda sorun yaşayabilirsiniz. Manuel kurulum tavsiye edilir!
+## ! Pardus 23.4 ve Debian 12'de python3-fitz 1.21.1 problemli bir pakettir, paket güncellenene kadar ParDF DEB versiyonunda sorun yaşayabilirsiniz. Manuel kurulum tavsiye edilir !
 
 ### 2. Manuel Kurulum (Geliştiriciler veya Kaynaktan Derlemek İsteyenler İçin)
 
 Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştirme yapmak isteyen kullanıcılar için uygundur.
 
-### Pardus 23.4 ve Debian 12 için Manuel Kurulum
+### Pardus 23.4 Debian 12 ve Ubuntu  XX.04 < Ubuntu 24.04 için Manuel Kurulum
 
 1.  **Gerekli Bağımlılıkları Kurun:**
     Öncelikle sisteminizde aşağıdaki paketlerin kurulu olduğundan emin olun. Terminale şu komutu yazarak kurabilirsiniz:
@@ -94,7 +94,7 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
     python3 run-editor.py
     ```
 
-### Diğer Dağıtımlar (Ubuntu, Fedora, Arch vb.) Manuel Kurulum
+### Diğer Dağıtımlar (Ubuntu 24.04+, Fedora, Arch vb.) Manuel Kurulum
 
 1.  **Gerekli Bağımlılıkları Kurun:**
     Öncelikle sisteminizde aşağıdaki paketlerin kurulu olduğundan emin olun. Terminale şu komutu yazarak kurabilirsiniz:
