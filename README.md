@@ -19,6 +19,8 @@ Lisans: **GPL-3.0-or-later**
 *   Düzenlenmiş PDF'leri kaydetme
 *   PDF'leri DOCX (LibreOffice gerektirir) ve TXT formatlarında dışa aktarma
 *   Kullanıcı dostu arayüz ve sayfa önizlemeleri
+*   Güvenli Kaydetme
+*   Değişiklikleri Geri Alma/İleri Alma
 
 ---
 
