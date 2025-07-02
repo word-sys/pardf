@@ -6,14 +6,15 @@ d41d8cd98f00b204e9800998ecf8427e  usr/lib/python3/dist-packages/pardus_pdf_edito
 4aa45e2cb60191fabec29537a1881a8c  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/main.cpython-313.pyc
 c9fa738f9bcc2de2c6cda88f8605cf0e  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/models.cpython-310.pyc
 44ff3ace568fdd61e978d7712321c38b  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/models.cpython-313.pyc
-6709d7329be1af8a63472069a184c6b9  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/pdf_handler.cpython-310.pyc
+4fbea2f68bb01a4daccf8fe90df4500a  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/pdf_handler.cpython-310.pyc
 645ca8c6e3948c3f48e3bc8e613c298f  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/pdf_handler.cpython-313.pyc
 77909abc1baee97efcd76a64de0ee878  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/ui_components.cpython-310.pyc
 7d572af5ff2edae21a463dac99904b39  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/ui_components.cpython-313.pyc
-1741031fd38804f7aedf01cce08a1951  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/utils.cpython-310.pyc
+7f8ea541e737d7103306d62eb1c39f21  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/undo_manager.cpython-310.pyc
+9e881fc4787aa6b1c456735dbe96f2a7  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/utils.cpython-310.pyc
 4b158e518323c60152b5a07da6554dbc  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/utils.cpython-313.pyc
 9a0611afbe117f0a283cffa11dbdd932  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/welcome_view.cpython-310.pyc
-b44aa070ca2824964a95dbad8a647caa  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/window.cpython-310.pyc
+b264651832975db4a51c2ee479e01896  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/window.cpython-310.pyc
 ffcd330e9a44165a8d7dbaed57733819  usr/lib/python3/dist-packages/pardus_pdf_editor/__pycache__/window.cpython-313.pyc
 fa3228aadde0db988e1822c2f736c131  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ARIAL.TTF
 858f5a50a4c3e5e6559a0c9b128eee60  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ARIALBD 1.TTF
@@ -25,7 +26,7 @@ b04eb00031bf4d82265b30855d7a314f  usr/lib/python3/dist-packages/pardus_pdf_edito
 97f1aa85e8ce271cd2a65759cb230397  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ARIALI.TTF
 f42d7a6765fb2bec8aaa344fe7340e59  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ARIALLGT.TTF
 6c2e930c5de7531e110067e694937c0d  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ARIALLGTITL.TTF
-d20ba4eaaf26b7033da05fd59ed020ab  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ARIALN.TTF
+0db23b28d4618edf1092b957595806aa  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ARIALN.TTF
 6debd7b47fbf196d9aea1dc4235439bb  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ARIALNB.TTF
 56e394b38fbf81afb437bc00884544f8  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ARIALNBI.TTF
 989670c4c82248bb6a8cec3558212374  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ARIALNI.TTF
@@ -36,7 +37,10 @@ de5c7ec4fe7259cc2a90ca7632686dfc  usr/lib/python3/dist-packages/pardus_pdf_edito
 82e8ef38995ad6214c4351cd564ebc8e  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ArialCEMTBlack.ttf
 b9d1bc34bb319033dfc004342c34b248  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ArialMdm.ttf
 0460ff02cf839e234842adc8a32da3fb  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ArialMdmItl.ttf
+57d6fd87e5f4d90a1ae0f5746a84dd44  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/Arialic Hollow.ttf
+fe6b41f2c2d2c7655ec1e44520667a13  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/arial.ttf
 7949819274736ad8087206759aa946b5  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/arialceb.ttf
+3e7043e8125f1c8998347310f2c315bc  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/arial/ariblk.ttf
 eaf15ead307ebe815fde815e5114f526  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/calibri/Calibri.otf
 a34160144567cbc0b7b87d132596ee89  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/calibri/Calibri_Bold.otf
 8d4812ce0703aa59d094178011b5271d  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/calibri/Calibri_Bold_Italic.otf
@@ -51,16 +55,17 @@ bec59aa5a94f833295a4bd1c137906ed  usr/lib/python3/dist-packages/pardus_pdf_edito
 9a8c18bd1dbe8508bc2525be7e07d0ff  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/helvetica/helvetica-light.ttf
 042c8121eea32106ffd2713a2e583c1b  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/helvetica/helvetica-rounded-bold.otf
 fcb8965acd0e90c50138958a2a7e0421  usr/lib/python3/dist-packages/pardus_pdf_editor/fonts/times-new-roman/times.ttf
-2ccfa574bd335f56ee7d7ee60ff2ad2b  usr/lib/python3/dist-packages/pardus_pdf_editor/img/icon.png
-d820b53cf74925aaa5a4353e80602dd5  usr/lib/python3/dist-packages/pardus_pdf_editor/img/icon256.png
+6ee1641e46dce7f7845c1dc1e60b45b9  usr/lib/python3/dist-packages/pardus_pdf_editor/img/icon.png
+fea940c2288edde75151e9ad47f8c3f4  usr/lib/python3/dist-packages/pardus_pdf_editor/img/icon256.png
 4eeadd4a4311a9774e28531d149db4bb  usr/lib/python3/dist-packages/pardus_pdf_editor/main.py
 ab32319b1f07e9f225f94f4178ebe4a9  usr/lib/python3/dist-packages/pardus_pdf_editor/models.py
-511029459553fa2764e06d00fb966889  usr/lib/python3/dist-packages/pardus_pdf_editor/pdf_handler.py
+c648841945e17a5f7eaa9173302d6b2f  usr/lib/python3/dist-packages/pardus_pdf_editor/pdf_handler.py
 cdd3ca7ce90da13b8ae85233823c5d28  usr/lib/python3/dist-packages/pardus_pdf_editor/ui_components.py
-5aa6f871cf5a8a0513d12edf2f8ba76f  usr/lib/python3/dist-packages/pardus_pdf_editor/utils.py
+dd18080824d58e6592eb6f871236b6a0  usr/lib/python3/dist-packages/pardus_pdf_editor/undo_manager.py
+380a63f61daae1d39158b78fd6067a8d  usr/lib/python3/dist-packages/pardus_pdf_editor/utils.py
 bb5f7dbba786b8ba11de39108e443df3  usr/lib/python3/dist-packages/pardus_pdf_editor/welcome_view.py
-60016323d6cb8321a25cb933a363973d  usr/lib/python3/dist-packages/pardus_pdf_editor/window.py
+fc75cf633069aa8eb84e31d5fbc4ca1b  usr/lib/python3/dist-packages/pardus_pdf_editor/window.py
 3b1cd5145d74f36bf1dd80fab9a940a5  usr/share/applications/pardus-pdf-editor.desktop
-0b2218a15017a4a19078d122ec915c54  usr/share/doc/pardus-pdf-editor/changelog.Debian.gz
+4ca658aa3954edfe263930b6ce2e0d9c  usr/share/doc/pardus-pdf-editor/changelog.Debian.gz
 044c80a52e16f743da4c2e75c07e25c7  usr/share/doc/pardus-pdf-editor/copyright
-2ccfa574bd335f56ee7d7ee60ff2ad2b  usr/share/icons/hicolor/512x512/apps/pardus-pdf-editor.png
+6ee1641e46dce7f7845c1dc1e60b45b9  usr/share/icons/hicolor/512x512/apps/pardus-pdf-editor.png

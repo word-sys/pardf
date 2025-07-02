@@ -1,3 +1,6 @@
+import copy
+from .undo_manager import UndoManager, EditObjectCommand, AddObjectCommand, DeleteObjectCommand
+
 import gi
 import os
 from pathlib import Path
@@ -47,6 +50,10 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.bold_button = None
         self.italic_button = None
         self.font_scan_in_progress = True
+        self.undo_manager = UndoManager(self)
+        self.pending_format_change_obj = None
+        self.before_format_change_state = None
+        self.is_repaired_file = False
 
         self._build_ui()
         self._setup_controllers()
@@ -143,6 +150,16 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.save_button.get_style_context().add_class("suggested-action")
         self.save_button.connect("clicked", self.on_save_clicked)
         header.pack_start(self.save_button)
+
+        self.undo_button = Gtk.Button.new_from_icon_name("edit-undo-symbolic")
+        self.undo_button.set_tooltip_text("Geri Al (Ctrl+Z)")
+        self.undo_button.connect("clicked", lambda w: self.undo_manager.undo())
+        header.pack_start(self.undo_button)
+
+        self.redo_button = Gtk.Button.new_from_icon_name("edit-redo-symbolic")
+        self.redo_button.set_tooltip_text("Yinele (Ctrl+Y)")
+        self.redo_button.connect("clicked", lambda w: self.undo_manager.redo())
+        header.pack_start(self.redo_button)
 
         menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic")
         header.pack_end(menu_button)
@@ -366,6 +383,19 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         action_quick_guide.connect('activate', self._on_quick_guide_activated)
         self.add_action(action_quick_guide)
 
+        action_undo = Gio.SimpleAction.new("undo", None)
+        action_undo.connect("activate", lambda a, p: self.undo_manager.undo())
+        self.add_action(action_undo)
+
+        action_redo = Gio.SimpleAction.new("redo", None)
+        action_redo.connect("activate", lambda a, p: self.undo_manager.redo())
+        self.add_action(action_redo)
+
+        app = self.get_application()
+        if app:
+            app.set_accels_for_action("win.undo", ["<Control>z"])
+            app.set_accels_for_action("win.redo", ["<Control>y", "<Control><Shift>z"])
+
     def _update_ui_state(self):
         has_doc = self.doc is not None
         page_count = pdf_handler.get_page_count(self.doc) if self.doc else 0
@@ -429,12 +459,14 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.status_label.set_text("Bir dosya açın veya sürükleyip bırakın.")
             self.set_title("Pardus PDF Düzenleyicisi")
             self.document_modified = False
+        
+        self._update_undo_redo_buttons()
 
     def on_about_activated(self, action, param):
         about_dialog = Gtk.AboutDialog(transient_for=self, modal=True)
 
         about_dialog.set_program_name("ParDF - Pardus PDF Düzenleyicisi")
-        about_dialog.set_version("1.6.1-1")
+        about_dialog.set_version("1.6.1-2")
         about_dialog.set_authors(["Barın Güzeldemirci (word-sys)"])
 
         try:
@@ -526,6 +558,9 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
             self.close_document()
         elif doc:
             self.doc = doc
+            self.is_repaired_file = doc.is_repaired
+            if self.is_repaired_file:
+                print("DEBUG: Bu PDF dosyası açılırken onarıldı. Artımlı kaydetme devre dışı.")
             self.current_file_path = filepath
             self.current_page_index = 0
             self.set_title(f"Pardus PDF Editor - {os.path.basename(filepath)}")
@@ -568,33 +603,37 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
 
         GLib.idle_add(_load_next_thumb)
 
-    def _load_page(self, page_index):
+
+    def _load_page(self, page_index, preserve_scroll=False):
+        current_v_scroll = 0
+        current_h_scroll = 0
+        if preserve_scroll:
+            v_adj = self.pdf_scroll.get_vadjustment()
+            h_adj = self.pdf_scroll.get_hadjustment()
+            if v_adj:
+                current_v_scroll = v_adj.get_value()
+            if h_adj:
+                current_h_scroll = h_adj.get_value()
+
         if not self.doc or not (0 <= page_index < pdf_handler.get_page_count(self.doc)):
             print(f"Warning: Invalid attempt to load page {page_index}.")
-            self.current_page_index = max(0, min(page_index, pdf_handler.get_page_count(self.doc) -1))
-            self.current_pdf_page_width = 0
-            self.current_pdf_page_height = 0
-            self.editable_texts = []
-            self.selected_text = None
-            self.selected_image = None
-            self.hide_text_editor()
-            if hasattr(self, 'pdf_view'):
-                 self.pdf_view.set_content_width(1)
-                 self.pdf_view.set_content_height(1)
-                 self.pdf_view.queue_draw()
-            self._update_ui_state()
             return
+
+        self.commit_pending_format_change()
+        self.undo_manager.clear()
 
         self.current_page_index = page_index
         self.selected_text = None
+        self.selected_image = None
         self.hide_text_editor()
 
         texts, error = pdf_handler.extract_editable_text(self.doc, page_index)
         if error:
-             show_error_dialog(self, f"Could not extract text structure from page {page_index + 1}.\n{error}")
-             self.editable_texts = []
+            show_error_dialog(self, f"Could not extract text structure from page {page_index + 1}.\n{error}")
+            self.editable_texts = []
         else:
-             self.editable_texts = texts
+            self.editable_texts = texts
+            
         images, error = pdf_handler.extract_editable_images(self.doc, page_index)
         if error:
             show_error_dialog(self, f"Sayfa {page_index + 1} içinden resimler çıkarılamadı.\n{error}")
@@ -611,11 +650,17 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         self.pdf_view.set_content_height(self.current_pdf_page_height)
 
         self.pdf_view.queue_draw()
+        
+        if preserve_scroll:
+            GLib.idle_add(self.pdf_scroll.get_vadjustment().set_value, current_v_scroll)
+            GLib.idle_add(self.pdf_scroll.get_hadjustment().set_value, current_h_scroll)
 
         self._sync_thumbnail_selection()
         self._update_ui_state()
 
     def close_document(self):
+        self.undo_manager.clear()
+        self.is_repaired_file = False
         pdf_handler.close_pdf_document(self.doc)
         self.doc = None
         self.current_file_path = None
@@ -738,6 +783,9 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
                 r, g, b = self.dragged_object.color
                 cr.set_source_rgba(r, g, b, 0.6)
 
+                draw_x = page_offset_x + (self.dragged_object.x * self.zoom_level)
+                draw_y_baseline = page_offset_y + (self.dragged_object.baseline * self.zoom_level)
+
                 cr.move_to(ghost_x, ghost_y)
                 PangoCairo.show_layout(cr, layout)
             cr.restore()
@@ -795,7 +843,6 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
                 return img_obj
         return None
 
-
     def _handle_add_image_action(self, page_x_unzoomed, page_y_unzoomed):
         dialog = Gtk.FileChooserDialog(
             title="Lütfen bir resim dosyası seçin",
@@ -814,25 +861,28 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
                 if file:
                     image_path = file.get_path()
                     try:
+                        with open(image_path, 'rb') as f:
+                            image_bytes = f.read()
+                        
                         pixbuf = GdkPixbuf.Pixbuf.new_from_file(image_path)
                         img_w, img_h = pixbuf.get_width(), pixbuf.get_height()
 
-                        target_w = 150.0
+                        target_w = 150.0 
                         target_h = (img_h / img_w) * target_w if img_w > 0 else 150.0
+                        rect = (page_x_unzoomed, page_y_unzoomed, 
+                                page_x_unzoomed + target_w, page_y_unzoomed + target_h)
 
-                        rect = fitz.Rect(page_x_unzoomed, page_y_unzoomed,
-                                        page_x_unzoomed + target_w, page_y_unzoomed + target_h)
-
-                        self.status_label.set_text("Resim ekleniyor...")
-                        success, msg = pdf_handler.add_image_to_page(
-                            self.doc, self.current_page_index, image_path, rect
+                        new_image_obj = EditableImage(
+                            bbox=rect,
+                            page_number=self.current_page_index,
+                            xref=None, 
+                            image_bytes=image_bytes
                         )
-                        if success:
-                            self.document_modified = True
-                            self._load_page(self.current_page_index)
-                            self.status_label.set_text("Resim eklendi.")
-                        else:
-                            show_error_dialog(self, f"Resim eklenemedi: {msg}", "Hata")
+
+                        command = AddObjectCommand(self, new_image_obj)
+                        command.execute()  
+                        self.undo_manager.add_command(command) 
+
                     except Exception as e:
                         show_error_dialog(self, f"Resim dosyası işlenirken bir hata oluştu:\n{e}", "Resim Hatası")
             d.destroy()
@@ -1027,40 +1077,28 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
             return
 
         text_obj_to_apply = self.editing_text_object
-        buffer = self.text_edit_view.get_buffer()
-        start = buffer.get_start_iter()
-        end = buffer.get_end_iter()
-        new_text = buffer.get_text(start, end, True)
+        old_properties = copy.deepcopy(text_obj_to_apply.__dict__)
 
-        original_text = text_obj_to_apply.original_text if not text_obj_to_apply.is_new else ""
-        text_actually_changed = (new_text != original_text) or text_obj_to_apply.is_new
+        buffer = self.text_edit_view.get_buffer()
+        new_text = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), True)
+        
+        text_obj_to_apply.text = new_text
 
         self.hide_text_editor()
 
-        if force_apply or text_actually_changed or text_obj_to_apply.modified:
-            self.status_label.set_text("Metin değişiklikleri uygulanıyor...")
-
-            text_obj_to_apply.text = new_text
-            success, error_msg = pdf_handler.apply_object_edit(self.doc, text_obj_to_apply)
-
-            if success:
-                self.document_modified = True
-                current_scroll_adj_v = self.pdf_scroll.get_vadjustment().get_value()
-                current_scroll_adj_h = self.pdf_scroll.get_hadjustment().get_value()
-                self._load_page(self.current_page_index)
-                GLib.idle_add(lambda: self.pdf_scroll.get_vadjustment().set_value(current_scroll_adj_v))
-                GLib.idle_add(lambda: self.pdf_scroll.get_hadjustment().set_value(current_scroll_adj_h))
-                self.status_label.set_text("Metin değişiklikleri uygulandı.")
-            else:
-                show_error_dialog(self, f"Metin değişiklikleri uygulanamadı: {error_msg}")
-                self._load_page(self.current_page_index)
-                self.status_label.set_text("Metin değişiklikleri uygulanamadı.")
+        if text_obj_to_apply.is_new:
+            command = AddObjectCommand(self, text_obj_to_apply)
+            command.execute()
+            self.undo_manager.add_command(command)
         else:
-            self.status_label.set_text("Uygulanacak değişiklik yok.")
-
+            new_properties = copy.deepcopy(text_obj_to_apply.__dict__)
+            if old_properties['text'] != new_properties['text']:
+                command = EditObjectCommand(self, text_obj_to_apply, old_properties, new_properties)
+                command.execute() 
+                self.undo_manager.add_command(command)
         self.selected_text = None
-        self.pdf_view.queue_draw()
         self._update_ui_state()
+        self.pdf_view.queue_draw()
 
     def check_unsaved_changes(self):
         if self.document_modified:
@@ -1114,12 +1152,24 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         dialog.present()
 
     def on_save_clicked(self, button):
-        if self.current_file_path:
+        self.commit_pending_format_change()
+
+        if self.is_repaired_file:
+            show_error_dialog(
+                self,
+                "Bu PDF dosyası açılırken hatalar içerdiği için onarıldı. Veri kaybını önlemek için, belgeyi 'Farklı Kaydet' seçeneği ile yeni bir dosya olarak kaydetmeniz gerekiyor.",
+                "Güvenli Kaydetme Uyarısı"
+            )
+            self.on_save_as(None, None)
+        
+        elif self.current_file_path:
             self.save_document(self.current_file_path, incremental=True)
+        
         else:
             self.on_save_as(None, None)
         
     def on_save_as(self, action, param):
+        self.commit_pending_format_change()
         if not self.doc: return
 
         dialog = Gtk.FileChooserDialog(title="PDF'yi Farklı Kaydet...", transient_for=self, modal=True,
@@ -1273,6 +1323,8 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
 
         is_on_page = (0 <= click_x_on_page_zoomed < page_w_zoomed and
                     0 <= click_y_on_page_zoomed < page_h_zoomed)
+        
+        self.commit_pending_format_change()
 
         if not is_on_page:
             if self.text_edit_popover and self.text_edit_popover.is_visible():
@@ -1303,6 +1355,8 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
                     self._setup_text_editor(clicked_text, drawing_area_click_x=x, drawing_area_click_y=y)
                 else:
                     self.selected_text = clicked_text
+                    self.pending_format_change_obj = self.selected_text
+                    self.before_format_change_state = copy.deepcopy(self.selected_text.__dict__)
             else:
                 self.selected_text = None
                 self.selected_image = None
@@ -1355,42 +1409,50 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
             self._handle_add_image_action(page_x_unzoomed, page_y_unzoomed)
 
     def on_text_format_changed(self, widget, *args):
-        if self.font_scan_in_progress: return
-        if self.selected_text and not (self.text_edit_popover and self.text_edit_popover.is_visible()):
+        if self.font_scan_in_progress:
+            return
+
+        if self.pending_format_change_obj:
+            
             font_family_key = None
             iter = self.font_combo.get_active_iter()
             if iter:
                 font_family_key = self.font_store[iter][1]
 
             font_size = self.font_size_spin.get_value()
+
             rgba = self.color_button.get_rgba()
             color = (rgba.red, rgba.green, rgba.blue)
+
             is_bold = self.bold_button.get_active()
             is_italic = self.italic_button.get_active()
 
             changed = False
-            if font_family_key and self.selected_text.font_family_base != font_family_key:
-                self.selected_text.font_family_base = font_family_key
-                changed = True
-                print(f"DEBUG: Font family base changed to: {font_family_key}")
 
-            if self.selected_text.font_size != font_size:
-                self.selected_text.font_size = font_size; changed = True
-            if self.selected_text.color != color:
-                 self.selected_text.color = color; changed = True
-            if self.selected_text.is_bold != is_bold:
-                 self.selected_text.is_bold = is_bold; changed = True
-            if self.selected_text.is_italic != is_italic:
-                 self.selected_text.is_italic = is_italic; changed = True
+            if font_family_key and self.pending_format_change_obj.font_family_base != font_family_key:
+                self.pending_format_change_obj.font_family_base = font_family_key
+                changed = True
+            
+            if self.pending_format_change_obj.font_size != font_size:
+                self.pending_format_change_obj.font_size = font_size
+                changed = True
+                
+            if self.pending_format_change_obj.color != color:
+                self.pending_format_change_obj.color = color
+                changed = True
+                
+            if self.pending_format_change_obj.is_bold != is_bold:
+                self.pending_format_change_obj.is_bold = is_bold
+                changed = True
+                
+            if self.pending_format_change_obj.is_italic != is_italic:
+                self.pending_format_change_obj.is_italic = is_italic
+                changed = True
 
             if changed:
-                self.selected_text.modified = True
                 self.document_modified = True
-                print(f"Stored format change for: {self.selected_text.text[:20]}...")
-                print(f"  New state: Family='{font_family_key}', Size={font_size}, Bold={is_bold}, Italic={is_italic}")
                 self._update_ui_state()
-        elif self.tool_mode == "add_text" and not self.selected_text:
-            print("DEBUG: Format changed while in 'add_text' mode (for next text box).")
+                print(f"DEBUG: Format anlık olarak güncellendi: Family='{font_family_key}', Size={font_size}")
 
     def on_text_edit_done(self, button):
         self._apply_and_hide_editor(force_apply=True)
@@ -1416,22 +1478,24 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
                  return True
 
         elif keyval == Gdk.KEY_Delete:
-             if self.selected_text and not (self.text_edit_popover and self.text_edit_popover.is_visible()):
-                  confirm = show_confirm_dialog(self, f"Seçilen metni sil?\n'{self.selected_text.text[:50]}...'")
-                  if confirm:
-                       self.status_label.set_text("Metin siliniyor...")
-                       success, error_msg = pdf_handler.apply_text_edit(self.doc, self.selected_text, "")
-                       if success:
-                            self.document_modified = True
-                            self._load_page(self.current_page_index)
-                            self.status_label.set_text("Metin silindi.")
-                       else:
-                            show_error_dialog(self, f"Metin silinemedi: {error_msg}")
-                            self.status_label.set_text("Metin silinemedi.")
-                       self.selected_text = None
-                       self._update_ui_state()
-                  return True
-             elif self.selected_image:
+            self.commit_pending_format_change()
+            obj_to_delete = self.selected_text or self.selected_image
+            if obj_to_delete and not (self.text_edit_popover and self.text_edit_popover.is_visible()):
+                if isinstance(obj_to_delete, EditableText):
+                    confirm_text = f"Seçilen metni sil?\n'{obj_to_delete.text[:50]}...'"
+                else:
+                    confirm_text = "Seçilen resmi silmek istediğinizden emin misiniz?"
+                
+                if show_confirm_dialog(self, confirm_text, "Silme Onayı", destructive=True):
+                    command = DeleteObjectCommand(self, obj_to_delete)
+                    command.execute()
+                    self.undo_manager.add_command(command)
+
+                    self.selected_text = None
+                    self.selected_image = None
+                    self._update_ui_state()
+                return True
+            elif self.selected_image:
                 confirm = show_confirm_dialog(self, "Seçilen resmi silmek istediğinizden emin misiniz?", "Resmi Sil")
                 if confirm:
                     self.status_label.set_text("Resim siliniyor...")
@@ -1480,6 +1544,7 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         if self.dragged_object:
             gesture.set_state(Gtk.EventSequenceState.CLAIMED)
             self.drag_start_pos = (start_x, start_y)
+            self.drag_begin_state = copy.deepcopy(self.dragged_object.__dict__)
 
             if not self.dragged_object.original_bbox:
                 self.dragged_object.original_bbox = self.dragged_object.bbox
@@ -1500,54 +1565,60 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         new_x = start_obj_x + delta_x
         new_y = start_obj_y + delta_y
 
+        w = self.dragged_object.original_bbox[2] - self.dragged_object.original_bbox[0]
+        h = self.dragged_object.original_bbox[3] - self.dragged_object.original_bbox[1]
+        
+        self.dragged_object.x = new_x
+        self.dragged_object.y = new_y
+        self.dragged_object.bbox = (new_x, new_y, new_x + w, new_y + h)
+        
         if isinstance(self.dragged_object, EditableText):
-            self.dragged_object.x = new_x
-            self.dragged_object.y = new_y
-
-            original_baseline_offset = self.dragged_object.baseline - self.drag_object_start_pos[1]
-            self.dragged_object.baseline = new_y + original_baseline_offset
-
-            w = self.dragged_object.bbox[2] - self.dragged_object.bbox[0]
-            h = self.dragged_object.bbox[3] - self.dragged_object.bbox[1]
-            self.dragged_object.bbox = (new_x, new_y, new_x + w, new_y + h)
+            original_top_y = self.dragged_object.original_bbox[1]
+            original_baseline = self.dragged_object.span_data.get("origin", (0, original_top_y + self.dragged_object.font_size))[1]
+            baseline_offset = original_baseline - original_top_y
+            
+            self.dragged_object.baseline = new_y + baseline_offset
 
             self.selected_text = self.dragged_object
             self.selected_image = None
-
+        
         elif isinstance(self.dragged_object, EditableImage):
-            w = self.dragged_object.bbox[2] - self.dragged_object.bbox[0]
-            h = self.dragged_object.bbox[3] - self.dragged_object.bbox[1]
-            self.dragged_object.bbox = (new_x, new_y, new_x + w, new_y + h)
-
             self.selected_image = self.dragged_object
             self.selected_text = None
 
         self.pdf_view.queue_draw()
 
-
     def on_drag_end(self, gesture, offset_x, offset_y):
-        if not self.dragged_object:
+        if not self.dragged_object or not hasattr(self, 'drag_begin_state'):
+            if self.dragged_object:
+                self.dragged_object = None
+                self.pdf_view.queue_draw()
             return
 
-        self.status_label.set_text("Nesne konumu güncelleniyor...")
+        self.commit_pending_format_change()
 
-        self.dragged_object.modified = True
+        old_properties = self.drag_begin_state
+        
+        new_properties = copy.deepcopy(self.dragged_object.__dict__)
 
-        success, msg = pdf_handler.apply_object_edit(self.doc, self.dragged_object)
-
-        if success:
-            self.document_modified = True
-
-            self._load_page(self.current_page_index)
-            self.status_label.set_text("Nesne taşındı. Kaydetmeyi unutmayın.")
-        else:
-            show_error_dialog(self, f"Nesne taşınamadı: {msg}")
-            self._load_page(self.current_page_index)
-
+        dragged_obj_ref = self.dragged_object
         self.dragged_object = None
+        del self.drag_begin_state
+        
+        if abs(offset_x) < 1 and abs(offset_y) < 1:
+            self.pdf_view.queue_draw()
+            return
+
+        print("DEBUG: Sürükleme işlemi için bir komut oluşturuluyor.")
+        command = EditObjectCommand(self, dragged_obj_ref, old_properties, new_properties)
+        
+        command.execute()
+        self.undo_manager.add_command(command)
+
         self.selected_image = None
         self.selected_text = None
         self._update_ui_state()
+        self.pdf_view.queue_draw()
 
     def _on_quick_guide_activated(self, action, param):
         dialog = Gtk.Dialog(transient_for=self, modal=True)
@@ -1609,6 +1680,23 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
         content_box.append(guide_move_label)
         
         dialog.present()
+
+    def _update_undo_redo_buttons(self, *args):
+        self.undo_button.set_sensitive(bool(self.undo_manager.undo_stack))
+        self.redo_button.set_sensitive(bool(self.undo_manager.redo_stack))
+    
+    def commit_pending_format_change(self):
+        if self.pending_format_change_obj and self.before_format_change_state:
+            current_state = copy.deepcopy(self.pending_format_change_obj.__dict__)
+            
+            if self.before_format_change_state != current_state:
+                print("DEBUG: Bekleyen format değişikliği bir komut olarak kaydediliyor.")
+                command = EditObjectCommand(self, self.pending_format_change_obj, self.before_format_change_state, current_state)
+                command.execute()
+                self.undo_manager.add_command(command)
+
+        self.pending_format_change_obj = None
+        self.before_format_change_state = None
 
     def do_close_request(self):
         if self.check_unsaved_changes():

@@ -17,6 +17,44 @@ from .utils import find_specific_font_variant, get_default_unicode_font_path
 
 _surface_cache = {"surface": None, "data_ref": None}
 
+def _get_font_args_for_pymupdf(text_obj):
+    font_arg = {}
+    font_to_embed_path = find_specific_font_variant(
+        text_obj.font_family_base,
+        text_obj.is_bold,
+        text_obj.is_italic
+    )
+
+    if font_to_embed_path:
+        style_suffix = ""
+        if text_obj.is_bold: style_suffix += "Bold"
+        if text_obj.is_italic: style_suffix += "Italic"
+        if not style_suffix: style_suffix = "Regular"
+
+        safe_family_name = re.sub(r'\W+', '', text_obj.font_family_base or "UnknownFont")
+        internal_font_name = f"Pardus_{safe_family_name}_{style_suffix}"
+        
+        font_arg = {"fontfile": font_to_embed_path, "fontname": internal_font_name}
+        print(f"DEBUG (FontHelper): Using TTF: {font_to_embed_path} as '{internal_font_name}'")
+        return font_arg, None
+    else:
+        generic_unicode_font = get_default_unicode_font_path()
+        if generic_unicode_font:
+            internal_font_name = "PardusEditFont_GenericUnicode"
+            font_arg = {"fontfile": generic_unicode_font, "fontname": internal_font_name}
+            print(f"DEBUG (FontHelper): WARNING: Could not find specific TTF. Using generic fallback: {generic_unicode_font}")
+            return font_arg, None
+        else:
+            base14_name = text_obj.pdf_fontname_base14
+            if text_obj.is_bold and text_obj.is_italic: base14_name += "bo"
+            elif text_obj.is_bold: base14_name += "b"
+            elif text_obj.is_italic: base14_name += "i"
+            font_arg = {"fontname": base14_name}
+            print(f"DEBUG (FontHelper): CRITICAL WARNING: No TTF found. Falling back to Base 14 font: '{base14_name}'.")
+            if any(ord(c) > 127 for c in text_obj.text):
+                 return None, "Cannot save non-ASCII text: No suitable Unicode font found."
+            return font_arg, None
+
 def load_pdf_document(filepath):
     try:
         doc = fitz.open(filepath)
@@ -216,86 +254,43 @@ def _get_base14_font_variant(base_name, is_bold, is_italic):
 
 def apply_text_edit(doc, text_obj: EditableText, new_text: str):
     if not doc or text_obj.page_number is None:
-        print("Error: Invalid document or page number for editing.")
-        return False, "Invalid document or page number for editing."
+        return False, "Invalid document or page number."
 
-    print(f"Apply edit for: '{text_obj.font_family_original}', Base: '{text_obj.font_family_base}', B:{text_obj.is_bold}, I:{text_obj.is_italic}")
+    text_obj.text = new_text
 
-    font_arg = {}
-    font_to_embed_path = find_specific_font_variant(
-        text_obj.font_family_base,
-        text_obj.is_bold,
-        text_obj.is_italic
-    )
-
-    if font_to_embed_path:
-        style_suffix = ""
-        if text_obj.is_bold: style_suffix += "Bold"
-        if text_obj.is_italic: style_suffix += "Italic"
-        if not style_suffix: style_suffix = "Regular"
-
-        safe_family_name = re.sub(r'\W+', '', text_obj.font_family_base or "UnknownFont")
-        internal_font_name = f"Pardus_{safe_family_name}_{style_suffix}"
-        font_arg = {"fontfile": font_to_embed_path, "fontname": internal_font_name}
-        print(f"Using specific TTF: {font_to_embed_path} as '{internal_font_name}' for B:{text_obj.is_bold}, I:{text_obj.is_italic}")
-    else:
-        generic_unicode_font = get_default_unicode_font_path()
-        if generic_unicode_font:
-            internal_font_name = "PardusEditFont_GenericUnicode"
-            font_arg = {"fontfile": generic_unicode_font, "fontname": internal_font_name}
-            print(f"Warning: Could not find specific TTF for '{text_obj.font_family_base}' (B:{text_obj.is_bold}, I:{text_obj.is_italic}). Using generic fallback: {generic_unicode_font}. Style might not match perfectly.")
-        else:
-            base14_name = text_obj.pdf_fontname_base14
-            if text_obj.is_bold and text_obj.is_italic: base14_name += "bo"
-            elif text_obj.is_bold: base14_name += "b"
-            elif text_obj.is_italic: base14_name += "i"
-            font_arg = {"fontname": base14_name }
-            print(f"CRITICAL WARNING: No TTF found. Falling back to Base 14 font: '{base14_name}'. Unicode may fail, style approximate.")
-            if any(ord(c) > 127 for c in new_text):
-                 return False, "Cannot save non-ASCII text: No suitable Unicode font found and Base14 fallback selected."
+    font_arg, error_msg = _get_font_args_for_pymupdf(text_obj)
+    if error_msg:
+        return False, error_msg
 
     try:
         page = doc.load_page(text_obj.page_number)
-        if not text_obj.is_new and text_obj.bbox:
-            redact_rect = fitz.Rect(text_obj.bbox)
-            redact_rect.normalize()
-            page_rect = page.rect
-            cover_rect = redact_rect.intersect(page_rect)
-            if not cover_rect.is_empty and cover_rect.is_valid:
-                annot = page.add_redact_annot(cover_rect)
-                if annot:
-                    page.apply_redactions()
-                    page = doc.load_page(text_obj.page_number)
-                else:
-                    print("Warning: Could not add redaction annotation.")
+        if not text_obj.is_new and text_obj.original_bbox:
+            redact_rect = fitz.Rect(text_obj.original_bbox)
+            if not redact_rect.is_empty and redact_rect.is_valid:
+                page.add_redact_annot(redact_rect)
+                page.apply_redactions()
+                page = doc.load_page(text_obj.page_number)
 
         if new_text:
-            insert_point = fitz.Point(text_obj.x, text_obj.baseline)
-            fontsize = text_obj.font_size
-            color = text_obj.color
             lines = new_text.split('\n')
-            line_height_factor = 1.2
-            line_height = fontsize * line_height_factor
-            current_y = text_obj.baseline
-
+            line_height = text_obj.font_size * 1.2
             for i, line_text in enumerate(lines):
-                line_point = fitz.Point(text_obj.x, current_y)
+                line_point = fitz.Point(text_obj.x, text_obj.baseline + (i * line_height))
                 rc = page.insert_text(
                     line_point,
                     line_text,
-                    fontsize=fontsize,
-                    color=color,
-                    rotate=0,
+                    fontsize=text_obj.font_size,
+                    color=text_obj.color,
                     overlay=True,
                     **font_arg
                 )
                 if rc < 0:
                     print(f"Warning: PyMuPDF insert_text returned error {rc} for line: {line_text}")
-                current_y += line_height
 
-        text_obj.text = new_text
-        text_obj.modified = True
+        text_obj.modified = False
         text_obj.is_new = False
+        text_obj.original_text = new_text 
+
         return True, None
     except Exception as e:
         print(f"ERROR applying text edit: {e}")
@@ -533,7 +528,7 @@ def delete_image_from_page(doc, image_obj: EditableImage):
         if not redact_rect.is_empty and redact_rect.is_valid:
             page.add_redact_annot(redact_rect)
             page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_REMOVE)
-            doc.load_page(image_obj.page_number) # Değişikliklerin yansıması için sayfayı yeniden yükle
+            doc.load_page(image_obj.page_number)
             return True, None
         else:
             return False, "Resim sınırlayıcı kutusu geçersiz."
@@ -544,13 +539,12 @@ def delete_image_from_page(doc, image_obj: EditableImage):
 
 def apply_object_edit(doc, obj):
     if not doc or not hasattr(obj, 'page_number') or obj.page_number is None:
-        return False, "Geçersiz nesne veya sayfa numarası."
+        return False, "Invalid object or page number."
 
     try:
         page = doc.load_page(obj.page_number)
 
         original_bbox_to_clear = obj.original_bbox
-
         if original_bbox_to_clear:
             redact_rect = fitz.Rect(original_bbox_to_clear)
             if not redact_rect.is_empty and redact_rect.is_valid:
@@ -561,37 +555,21 @@ def apply_object_edit(doc, obj):
 
         if isinstance(obj, EditableText):
             if obj.text:
-                font_path = find_specific_font_variant(obj.font_family_base, obj.is_bold, obj.is_italic)
-                if not font_path:
-                    font_path = get_default_unicode_font_path()
-                if not font_path:
-                    return False, "Yazmak için uygun font bulunamadı."
-
-                estimated_baseline = obj.y + (obj.font_size * 0.9)
-
+                font_arg, error_msg = _get_font_args_for_pymupdf(obj)
+                if error_msg: return False, error_msg
+                
                 lines = obj.text.split('\n')
                 line_height = obj.font_size * 1.2
-
                 for i, line in enumerate(lines):
-                    pos = fitz.Point(obj.x, estimated_baseline + (i * line_height))
-                    page.insert_text(pos,
-                                    line,
-                                    fontsize=obj.font_size,
-                                    color=obj.color,
-                                    fontfile=font_path,
-                                    overlay=True)
-
+                    pos = fitz.Point(obj.x, obj.baseline + (i * line_height))
+                    page.insert_text(pos, line, fontsize=obj.font_size, color=obj.color, overlay=True, **font_arg)
+        
         elif isinstance(obj, EditableImage):
             page.insert_image(obj.bbox, stream=obj.image_bytes)
-
-        obj.original_bbox = obj.bbox
-        obj.modified = False
-        if isinstance(obj, EditableText):
-            obj.is_new = False
-
+        
         return True, None
 
     except Exception as e:
-        print(f"HATA: Nesne düzenlemesi uygulanırken hata oluştu: {e}")
+        print(f"ERROR: An error occurred while applying object edit: {e}")
         traceback.print_exc()
-        return False, f"Nesne düzenlemesi uygulanırken hata: {e}"
+        return False, f"Error while applying object edit: {e}"
