@@ -127,8 +127,21 @@ def find_specific_font_variant(family_name, is_bold=False, is_italic=False):
             print("HATA: Font taraması zaman aşımına uğradı.")
             return None
 
+    normalized_family_name = family_name.replace(" ", "").lower() if family_name else ""
+    
+    found_family_key = None
     if family_name in SYSTEM_FONTS:
-        family_variants = SYSTEM_FONTS[family_name]
+        found_family_key = family_name
+    else:
+        for key in SYSTEM_FONTS:
+            normalized_key = key.replace(" ", "").lower()
+            if normalized_key == normalized_family_name:
+                found_family_key = key
+                print(f"DEBUG: Found normalized font match: '{family_name}' -> '{key}'")
+                break
+
+    if found_family_key:
+        family_variants = SYSTEM_FONTS[found_family_key]
         if is_bold and is_italic and "BoldItalic" in family_variants:
             return family_variants["BoldItalic"]
         if is_bold and "Bold" in family_variants:
@@ -139,7 +152,9 @@ def find_specific_font_variant(family_name, is_bold=False, is_italic=False):
             return family_variants["Regular"]
         if family_variants:
             return next(iter(family_variants.values()))
-
+    
+    print(f"WARNING: Could not find any font file for family '{family_name}' (normalized: '{normalized_family_name}')")
+    
     return None
 
 UNICODE_FONT_PATH = None
