@@ -25,7 +25,6 @@ class UndoManager:
         self._update_ui_callback()
 
     def undo(self):
-        """Son komutu geri alır."""
         if not self.undo_stack:
             return
         command = self.undo_stack.pop()
@@ -35,7 +34,6 @@ class UndoManager:
         self.window.pdf_view.queue_draw()
 
     def redo(self):
-        """Geri alınan son komutu yeniden yapar."""
         if not self.redo_stack:
             return
         command = self.redo_stack.pop()

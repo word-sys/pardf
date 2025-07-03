@@ -142,14 +142,31 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         header = Adw.HeaderBar()
         self.main_box.append(header)
 
+        self.new_button = Gtk.Button(label="Yeni")
+        self.new_button.connect("clicked", self.on_new_clicked)
+        header.pack_start(self.new_button)
+
         self.open_button = Gtk.Button(label="Aç")
         self.open_button.connect("clicked", self.on_open_clicked)
         header.pack_start(self.open_button)
 
+        save_button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        save_button_box.get_style_context().add_class("linked")
+
         self.save_button = Gtk.Button(label="Kaydet")
         self.save_button.get_style_context().add_class("suggested-action")
         self.save_button.connect("clicked", self.on_save_clicked)
-        header.pack_start(self.save_button)
+        save_button_box.append(self.save_button)
+
+        save_menu = Gio.Menu()
+        save_menu.append("Farklı Kaydet...", "win.save_as")
+        save_menu_button = Gtk.MenuButton(
+            icon_name="pan-down-symbolic",
+            menu_model=save_menu
+        )
+        save_button_box.append(save_menu_button)
+
+        header.pack_start(save_button_box)
 
         self.undo_button = Gtk.Button.new_from_icon_name("edit-undo-symbolic")
         self.undo_button.set_tooltip_text("Geri Al (Ctrl+Z)")
@@ -227,8 +244,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             column_homogeneous=True
         )
         
-        self.select_tool_button = Gtk.Button(icon_name="input-mouse-symbolic", label="Seç")
-        self.select_tool_button.set_tooltip_text("Nesneleri Seç ve Düzenle (V)")
+        self.select_tool_button = Gtk.Button(icon_name="input-mouse-symbolic", label="Değiştir")
+        self.select_tool_button.set_tooltip_text("Nesneleri Seç ve Değiştir (V)")
         self.select_tool_button.connect('clicked', self.on_tool_selected, "select")
         self.select_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.select_tool_button, 0, 0, 1, 1)
@@ -466,39 +483,38 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         about_dialog = Gtk.AboutDialog(transient_for=self, modal=True)
 
         about_dialog.set_program_name("ParDF - Pardus PDF Düzenleyicisi")
-        about_dialog.set_version("1.6.1-2")
+        about_dialog.set_version("1.6.1-3") 
         about_dialog.set_authors(["Barın Güzeldemirci (word-sys)"])
-
+        
         try:
-            about_dialog.set_license_type(Gtk.License.GPL_3_0)
+            about_dialog.set_license_type(Gtk.License.GPL_3_0_OR_LATER)
         except AttributeError:
             try:
-                about_dialog.set_license_type(Gtk.License.CUSTOM)
-                print("Warning: Gtk.License.GPL_3_0 not found, using CUSTOM.")
+                about_dialog.set_license_type(Gtk.License.GPL_3_0)
             except AttributeError:
-                print("Warning: Gtk.AboutDialog.set_license_type not available on this GTK version.")
-
+                print("Warning: Gtk.License.GPL_3_0 not found, setting custom license type.")
+                about_dialog.set_license_type(Gtk.License.CUSTOM)
         try:
-            license_file_path = Path(__file__).resolve().parent.parent / "LICENSE"
-            if license_file_path.exists():
-                with open(license_file_path, 'r', encoding='utf-8') as f:
+            license_path = Path(__file__).resolve().parent.parent / "LICENSE"
+            if not license_path.exists():
+                license_path = Path("/usr/share/common-licenses/GPL-3")
+
+            if license_path.exists():
+                with open(license_path, 'r', encoding='utf-8') as f:
                     license_text = f.read()
                 about_dialog.set_license(license_text)
                 about_dialog.set_wrap_license(True)
             else:
-                print(f"Warning: LICENSE file not found at {license_file_path}")
-                about_dialog.set_license("Lisans bilgileri için proje dosyalarına bakınız.")
+                about_dialog.set_license("GNU General Public License v3.0 or later.\nFull text could not be loaded.")
         except Exception as e:
             print(f"Error reading LICENSE file: {e}")
-            about_dialog.set_license("Lisans okunurken bir hata oluştu.")
+            about_dialog.set_license("Error reading license text.")
 
         about_dialog.set_website("https://github.com/word-sys/pardf")
         about_dialog.set_website_label("Proje GitHub Sayfası")
 
-        comments_text = "Linux için Basit PDF Metin Düzenleyici.\n\n" + \
-                        """ParDF, Milli Teknoloji Hamlesi ve TEKNOFEST ruhuyla, Pardus üzerinde PDF dosyalarındaki metin içeriğini düzenlemek üzere tasarlanmış açık kaynaklı bir araçtır.
-Kullanıcıların PDF sayfalarını görüntülemesine, mevcut metin bloklarını seçmesine, değiştirmesine, silmesine ve yeni metin blokları eklemesine olanak tanır.
-Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dostu bir PDF düzenleme deneyimi sunmayı hedefler."""
+        comments_text = "Linux için Basit PDF Metin ve Şekil Düzenleyici.\n\n" + \
+                        """ParDF, Milli Teknoloji Hamlesi ve TEKNOFEST ruhuyla, Pardus üzerinde PDF dosyalarındaki içeriği düzenlemek üzere tasarlanmış açık kaynaklı bir araçtır."""
         about_dialog.set_comments(comments_text)
 
         try:
@@ -507,17 +523,12 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
                 texture = Gdk.Texture.new_from_filename(str(app_icon_path))
                 about_dialog.set_logo(texture)
             else:
-                print(f"Warning: Local icon not found at {app_icon_path}, relying on system icon theme for 'pardus-pdf-editor'")
                 about_dialog.set_logo_icon_name("pardus-pdf-editor")
-        except GLib.Error as e:
+        except Exception as e:
             print(f"Warning: Could not load application icon for About dialog: {e}")
             about_dialog.set_logo_icon_name("pardus-pdf-editor")
-        except Exception as e_gen: 
-             print(f"General Warning: Could not load application icon for About dialog: {e_gen}")
-             about_dialog.set_logo_icon_name("pardus-pdf-editor")
 
         about_dialog.set_copyright("© 2024-2025 Barın Güzeldemirci")
-
         about_dialog.present()
 
     def load_document(self, filepath):
@@ -594,7 +605,10 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
                     self.status_label.set_text(f"Küçük resim yüklendi {index + 1}/{page_count}")
                 return GLib.SOURCE_CONTINUE 
             else:
-                self.status_label.set_text(f"Yüklendi: {os.path.basename(self.current_file_path)}")
+                if self.current_file_path:
+                    self.status_label.set_text(f"Yüklendi: {os.path.basename(self.current_file_path)}")
+                else:
+                    self.status_label.set_text("Yeni belge yüklendi.")                
                 if page_count > 0:
                     self._load_page(0)
                 else:
@@ -1697,6 +1711,27 @@ Temel metin işleme yeteneklerine odaklanarak, Linux ortamında kullanıcı dost
 
         self.pending_format_change_obj = None
         self.before_format_change_state = None
+
+    def on_new_clicked(self, widget=None):
+        if self.check_unsaved_changes():
+            return
+
+        self.close_document()
+
+        doc, error_msg = pdf_handler.create_new_pdf()
+
+        if error_msg:
+            show_error_dialog(self, error_msg)
+            self.close_document()
+        elif doc:
+            self.doc = doc
+            self.current_file_path = None
+            self.current_page_index = 0
+            self.set_title("Pardus PDF Editor - İsimsiz*")
+            self.document_modified = True
+            
+            self._load_thumbnails()
+            self.status_label.set_text("Yeni boş belge oluşturuldu. Değişiklikleri kaydetmeyi unutmayın.")
 
     def do_close_request(self):
         if self.check_unsaved_changes():
