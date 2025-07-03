@@ -40,9 +40,9 @@ class WelcomeView(Adw.Bin):
         main_box.set_margin_bottom(40)
 
         try:
-            icon_path = Path(__file__).resolve().parent / "img" / "icon256.png"
+            icon_path = Path(__file__).resolve().parent / "img" / "icon.png"
             app_icon = Gtk.Picture.new_for_filename(str(icon_path))
-            app_icon.set_size_request(256, 256)
+            app_icon.set_size_request(200, 200)
             app_icon.set_valign(Gtk.Align.END)
             app_icon.set_halign(Gtk.Align.CENTER)
             app_icon.set_margin_bottom(20)
@@ -66,6 +66,10 @@ class WelcomeView(Adw.Bin):
         open_button.get_style_context().add_class("suggested-action")
         open_button.connect("clicked", self.on_open_clicked)
         button_box.append(open_button)
+
+        new_button = Gtk.Button(label="Yeni PDF Oluştur")
+        new_button.connect("clicked", lambda w: self.parent_window.on_new_clicked())
+        button_box.prepend(new_button)
 
         guide_button = Gtk.Button(label="Hızlı Başlangıç Kılavuzu")
         guide_button.set_action_name("win.quick_guide")

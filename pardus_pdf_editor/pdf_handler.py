@@ -573,3 +573,11 @@ def apply_object_edit(doc, obj):
         print(f"ERROR: An error occurred while applying object edit: {e}")
         traceback.print_exc()
         return False, f"Error while applying object edit: {e}"
+    
+def create_new_pdf():
+    try:
+        doc = fitz.open()
+        doc.new_page(width=595, height=842)
+        return doc, None
+    except Exception as e:
+        return None, f"Yeni PDF oluşturulurken hata: {e}"
