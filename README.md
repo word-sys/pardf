@@ -96,7 +96,7 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
     python3 run-editor.py
     ```
 
-### Diğer Dağıtımlar (Ubuntu 24.04+, Fedora, Arch vb.) Manuel Kurulum
+### Diğer Dağıtımlar (Ubuntu 24.04+, Fedora, Debian 13 Trixie vb.) Manuel Kurulum
 
 1.  **Gerekli Bağımlılıkları Kurun:**
     Öncelikle sisteminizde aşağıdaki paketlerin kurulu olduğundan emin olun. Terminale şu komutu yazarak kurabilirsiniz:
