@@ -128,8 +128,13 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
     git clone https://github.com/word-sys/pardf.git
     cd pardf
     ```
+        ```
+    *İsteğe Bağlı (DOCX Dışa Aktarma İçin):*
+    ```bash
+    sudo pacman -S libreoffice-fresh
+    ```
 
-3.  **Sanal Ortam Oluşturun ve Aktifleştirin (Önerilir):**
+3.  **Sanal Ortam Oluşturun ve Aktifleştirin:**
     Proje dizininde bir sanal ortam oluşturmak, Python bağımlılıklarını sistem genelindeki kurulumlardan izole etmenize yardımcı olur.
     ```bash
     python3 -m venv venv
@@ -144,6 +149,35 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
     ```
 
 5.  **Uygulamayı Çalıştırın:**
+    Proje ana dizinindeyken (kaynak kodlarını çıkarttığınız veya klonladığınız yerde) aşağıdaki komutu çalıştırın:
+    ```bash
+    python3 run-editor.py
+    ```
+
+### Arch Linux ve Dağıtımları İçin
+
+1.  **Kaynak Kodunu İndirin:**
+    En son kaynak kodunu [**GitHub Releases**](https://github.com/word-sys/pardf/releases) sayfasından `.zip` veya `.tar.gz` (veya `.tar.xz`) formatında indirin ya da depoyu klonlayın:
+    ```bash
+    git clone https://github.com/word-sys/pardf.git
+    cd pardf
+    ```
+
+2.  **Sanal Ortam Oluşturun ve Aktifleştirin:**
+    Proje dizininde bir sanal ortam oluşturmak, Python bağımlılıklarını sistem genelindeki kurulumlardan izole etmenize yardımcı olur.
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+    *(Sanal ortamdan çıkmak için daha sonra `deactivate` komutunu kullanabilirsiniz.)*
+
+3.  **Python Bağımlılıklarını Kurun:**
+    Projenin temel Python kütüphanesi olan PyMuPDF'i (ve numpy'ı, eğer sistemden kurulmadıysa) kurun:
+    ```bash
+    pip install PyMuPDF numpy pygobject==3.50.0
+    ```
+
+4.  **Uygulamayı Çalıştırın:**
     Proje ana dizinindeyken (kaynak kodlarını çıkarttığınız veya klonladığınız yerde) aşağıdaki komutu çalıştırın:
     ```bash
     python3 run-editor.py
