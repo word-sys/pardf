@@ -174,7 +174,7 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
 3.  **Python Bağımlılıklarını Kurun:**
     Projenin temel Python kütüphanesi olan PyMuPDF'i (ve numpy'ı, eğer sistemden kurulmadıysa) kurun:
     ```bash
-    pip install PyMuPDF numpy pygobject==3.50.0
+    pip install PyMuPDF numpy pygobject
     ```
 
 4.  **Uygulamayı Çalıştırın:**
