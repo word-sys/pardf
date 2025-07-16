@@ -54,8 +54,8 @@ Bu yöntem, Linux dağıtımları için en kolay kurulum yoludur.
     sudo apt --fix-broken install
     ```
 5.  Kurulum tamamlandıktan sonra ParDF'i uygulama menünüzden başlatabilirsiniz.
-
-## ! Pardus 23.4 ve Debian 12'de python3-fitz 1.21.1 problemli bir pakettir, paket güncellenene kadar ParDF DEB versiyonunda sorun yaşayabilirsiniz. Manuel kurulum tavsiye edilir !
+> [!CAUTION]
+> ! Pardus 23.4 ve Debian 12'de python3-fitz 1.21.1 problemli bir pakettir, paket güncellenene kadar ParDF DEB versiyonunda sorun yaşayabilirsiniz. Manuel kurulum tavsiye edilir !
 
 ### 2. Manuel Kurulum (Geliştiriciler veya Kaynaktan Derlemek İsteyenler İçin)
 
