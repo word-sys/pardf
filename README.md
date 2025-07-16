@@ -10,6 +10,10 @@ Lisans: **GPL-3.0-or-later**
 
 > BUGS: Geri Alma/İleri Alma özellikleri tam çalışmamaktadır, çalışmadığı yerler: Yazı eklenmesi sonucu yazı geri alınamıyor, var olan veya eklenen yazının düzenlenip yazının hareket ettirilip geri alınması/ileri alınması sonucu eklenen veya silinen bölüm geri gelebilir ancak yanlış yere veya editlenemeyecek şekilde sabit olarak gelebilir. (Tespit ettiğimiz yan etkileri bunlardır)
 
+> Kısıtlı Mod: Kısıtlı Mod çoğunlukla bir özellikte hata veya bug tespit edildiğinde devreye girer ve bazı özellikler (Geri Alma/İleri Alma) çalışmaz hale gelir. Bu özellik program çökmeden dosyanızı kaydetmenize olanak sağlar.
+
+> Dosyanızın bır kopyasının /temp üzerinde editlendiğini hatırlatmak isteriz, bu sistem sizin ana dosyanızı korur ve değiştirilmesini bozulmasını engeller. Güvenli Kaydetme özelliği var olan dosyanızı korumak için her zaman devrede olduğunu hatırlatmak isteriz.
+
 ## ⭐ Temel Özellikler
 *   PDF dosyaları oluşturma
 *   PDF dosyalarını açma ve görüntüleme
