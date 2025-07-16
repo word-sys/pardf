@@ -10,9 +10,9 @@ Lisans: **GPL-3.0-or-later**
 
 > BUGS: Geri Alma/İleri Alma özellikleri tam çalışmamaktadır, çalışmadığı yerler: Yazı eklenmesi sonucu yazı geri alınamıyor, var olan veya eklenen yazının düzenlenip yazının hareket ettirilip geri alınması/ileri alınması sonucu eklenen veya silinen bölüm geri gelebilir ancak yanlış yere veya editlenemeyecek şekilde sabit olarak gelebilir. (Tespit ettiğimiz yan etkileri bunlardır)
 
-> Kısıtlı Mod: Kısıtlı Mod çoğunlukla bir özellikte hata veya bug tespit edildiğinde devreye girer ve bazı özellikler (Geri Alma/İleri Alma) çalışmaz hale gelir. Bu özellik program çökmeden dosyanızı kaydetmenize olanak sağlar.
+> Kısıtlı Mod: Kısıtlı Mod çoğunlukla bir özellikte hata veya bug tespit edildiğinde devreye girer ve bazı özellikler (Geri Alma/İleri Alma) çalışmaz hale gelir. Bu özellik program çökmeden dosyanızı kaydetmenize olanak sağlar. Dosyanıza bir zarar gelmemesi için Kısıtlı Mod'un tetik mekanizması olan DEBUG'ın açık olduğundan emin olunç (Release'lerde zaten açık konumdadır, geliştiriciler için DEBUG kısmının KAPATILMAMASI ÖNEM ARZ ETMEKTEDİR!
 
-> Dosyanızın bır kopyasının /temp üzerinde editlendiğini hatırlatmak isteriz, bu sistem sizin ana dosyanızı korur ve değiştirilmesini bozulmasını engeller. Güvenli Kaydetme özelliği var olan dosyanızı korumak için her zaman devrede olduğunu hatırlatmak isteriz.
+> Güvenli Kaydetme: Dosyanızın bır kopyasının /temp üzerinde editlendiğini hatırlatmak isteriz, bu sistem sizin ana dosyanızı korur ve değiştirilmesini bozulmasını engeller. Güvenli Kaydetme özelliği var olan dosyanızı korumak için her zaman devrede olduğunu hatırlatmak isteriz. Ayrıca Güvenli Kaydetme özelliği dosyanız bozuksa veya hasar görmüşse tamir eder ve dosyayı Farklı Bir Dosya olarak kaydetmeye zorlar, böylelikle ana dosya sabit kalır ve etkileşime geçilmez, kopyası olan /temp üzerinden Farklı Kaydet ile farklı bir PDF veya DOCX veya TXT olarak kaydedilir. (PDF-DOCX-TXT dosya formatını kullanıcısı kendisi belirler)
 
 ## ⭐ Temel Özellikler
 *   PDF dosyaları oluşturma
@@ -28,6 +28,7 @@ Lisans: **GPL-3.0-or-later**
 *   PDF'leri DOCX (LibreOffice gerektirir) ve TXT formatlarında dışa aktarma
 *   Kullanıcı dostu arayüz ve sayfa önizlemeleri
 *   Güvenli Kaydetme
+*   Kısıtlı Mod
 *   Değişiklikleri Geri Alma/İleri Alma
 
 ---
