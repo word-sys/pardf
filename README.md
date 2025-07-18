@@ -6,7 +6,7 @@ Geliştirici: **Barın Güzeldemirci (word-sys)**
 Lisans: **GPL-3.0-or-later**
 ---
 > [!CAUTION]
-> Proje hala geliştirme aşamasındadır. Tespit edilen 1 hata vardır lütfen 'BUGS' kısmını dikkate alarak programı kullanın, gelecek güncellemelerde hatayı gidermeyi amaçlıyoruz. Bu hata/hatalar çoğunlukla programın çalışmasına engel değildir ancak bazı özellikler 'Kısıtlı Mod' da çalışacaktır.
+> Proje hala geliştirme aşamasındadır. Tespit edilen 1 hata vardır lütfen 'BUGS' kısmını dikkate alarak programı kullanın, gelecek güncellemelerde hatayı gidermeyi amaçlıyoruz. Bu hata/hatalar çoğunlukla programın ve diğer fonksiyonların çalışmasına engel değildir.
 
 > BUGS: Geri Alma/İleri Alma özellikleri tam çalışmamaktadır, çalışmadığı yerler: Yazı eklenmesi sonucu yazı geri alınamıyor, var olan veya eklenen yazının düzenlenip yazının hareket ettirilip geri alınması/ileri alınması sonucu eklenen veya silinen bölüm geri gelebilir ancak yanlış yere veya editlenemeyecek şekilde sabit olarak gelebilir. (Tespit ettiğimiz yan etkileri bunlardır)
 
