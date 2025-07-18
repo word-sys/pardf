@@ -128,11 +128,6 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
     git clone https://github.com/word-sys/pardf.git
     cd pardf
     ```
-        ```
-    *İsteğe Bağlı (DOCX Dışa Aktarma İçin):*
-    ```bash
-    sudo pacman -S libreoffice-fresh
-    ```
 
 3.  **Sanal Ortam Oluşturun ve Aktifleştirin:**
     Proje dizininde bir sanal ortam oluşturmak, Python bağımlılıklarını sistem genelindeki kurulumlardan izole etmenize yardımcı olur.
@@ -161,6 +156,10 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
     ```bash
     git clone https://github.com/word-sys/pardf.git
     cd pardf
+    ```
+    *İsteğe Bağlı (DOCX Dışa Aktarma İçin):*
+    ```bash
+    sudo pacman -S libreoffice-fresh
     ```
 
 2.  **Sanal Ortam Oluşturun ve Aktifleştirin:**
