@@ -37,7 +37,7 @@ Lisans: **GPL-3.0-or-later**
 
 ParDF'i sisteminize kurmanın iki yolu vardır:
 
-### 1. Otomatik Kurulum (Önerilen Yöntem)
+### 1. Önerilen Yöntem
 
 Bu yöntem, Linux dağıtımları için en kolay kurulum yoludur.
 
@@ -57,13 +57,19 @@ Bu yöntem, Linux dağıtımları için en kolay kurulum yoludur.
 > [!CAUTION]
 > Pardus 23.4 ve Debian 12'de python3-fitz 1.21.1 problemli bir pakettir, paket güncellenene kadar ParDF DEB versiyonunda sorun yaşayabilirsiniz. Manuel kurulum tavsiye edilir !
 
-### 2. Manuel Kurulum (Geliştiriciler veya Kaynaktan Derlemek İsteyenler İçin)
+### 2. Geliştiriciler veya Kaynaktan Derlemek İsteyenler İçin
 
 Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştirme yapmak isteyen kullanıcılar için uygundur.
 
 ### Pardus 23.4 Debian 12 ve Ubuntu  XX.04 < Ubuntu 24.04 için Manuel Kurulum
 
 1.  **Gerekli Bağımlılıkları Kurun:**
+    #### Otomatik kurulum
+        ```bash
+        chmod +x install.sh
+        ./install.sh
+    
+    #### Manuel kurulum
     Öncelikle sisteminizde aşağıdaki paketlerin kurulu olduğundan emin olun. Terminale şu komutu yazarak kurabilirsiniz:
     ```bash
     sudo apt update
