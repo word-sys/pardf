@@ -10,7 +10,7 @@ Lisans: **GPL-3.0-or-later**
 
 > BUGS: Geri Alma/İleri Alma özellikleri tam çalışmamaktadır, çalışmadığı yerler: Yazı eklenmesi sonucu yazı geri alınamıyor, var olan veya eklenen yazının düzenlenip yazının hareket ettirilip geri alınması/ileri alınması sonucu eklenen veya silinen bölüm geri gelebilir ancak yanlış yere veya editlenemeyecek şekilde sabit olarak gelebilir. (Tespit ettiğimiz yan etkileri bunlardır)
 
-## ⭐ Temel Özellikler
+## Temel Özellikler
 *   PDF dosyaları oluşturma
 *   PDF dosyalarını açma ve görüntüleme
 *   Sayfa içinde var olan metin bloklarını seçme
@@ -27,13 +27,9 @@ Lisans: **GPL-3.0-or-later**
 *   Kısıtlı Mod (Güvenli Mod)
 *   Değişiklikleri Geri Alma/İleri Alma
 
-> Kısıtlı Mod: Kısıtlı Mod çoğunlukla bir özellikte hata veya bug tespit edildiğinde devreye girer ve bazı özellikler (Geri Alma/İleri Alma) çalışmaz hale gelir. Bu özellik program çökmeden dosyanızı kaydetmenize olanak sağlar. Dosyanıza bir zarar gelmemesi için Kısıtlı Mod'un tetik mekanizması olan DEBUG'ın açık olduğundan emin olunç (Release'lerde zaten açık konumdadır, geliştiriciler için DEBUG kısmının KAPATILMAMASI ÖNEM ARZ ETMEKTEDİR!
-
-> Güvenli Kaydetme: Dosyanızın bır kopyasının /temp üzerinde editlendiğini hatırlatmak isteriz, bu sistem sizin ana dosyanızı korur ve değiştirilmesini bozulmasını engeller. Güvenli Kaydetme özelliği var olan dosyanızı korumak için her zaman devrede olduğunu hatırlatmak isteriz. Ayrıca Güvenli Kaydetme özelliği dosyanız bozuksa veya hasar görmüşse tamir eder ve dosyayı Farklı Bir Dosya olarak kaydetmeye zorlar, böylelikle ana dosya sabit kalır ve etkileşime geçilmez, kopyası olan /temp üzerinden Farklı Kaydet ile farklı bir PDF veya DOCX veya TXT olarak kaydedilir. (PDF-DOCX-TXT dosya formatını kullanıcısı kendisi belirler)
-
 ---
 
-## 🚀 Kurulum
+## Kurulum
 
 ParDF'i sisteminize kurmanın iki yolu vardır:
 
@@ -181,18 +177,18 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
     ```bash
     python3 run-editor.py
     ```
-
-🎉 **TEBRİKLER! ParDF'i başarıyla çalıştırdınız!** 🎉
+    
+**TEBRİKLER! ParDF'i başarıyla çalıştırdınız!** 
 
 ---
 
-## 🐛 Hata Bildirimi ve Geri Bildirim
+## Hata Bildirimi ve Geri Bildirim
 
 Herhangi bir hata ile karşılaşırsanız, bir özellik talebiniz varsa veya genel bir geri bildirimde bulunmak isterseniz, lütfen [**GitHub Issues**](https://github.com/word-sys/pardf/issues) bölümünü kullanın.
 
 ---
 
-## 🤝 Katkıda Bulunma
+## Katkıda Bulunma
 
 ParDF açık kaynaklı bir projedir ve katkılarınıza açıktır! Katkıda bulunmak isterseniz, lütfen aşağıdaki adımları izleyin:
 
@@ -204,7 +200,7 @@ ParDF açık kaynaklı bir projedir ve katkılarınıza açıktır! Katkıda bul
 
 ---
 
-## 📜 Lisans
+## Lisans
 
 Bu proje [**GNU General Public License v3.0 or later**](LICENSE) altında lisanslanmıştır.
 
