@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Barın Güzeldemirci <baringuzeldemir@gmail.com>
 Build-Depends: debhelper-compat (= 13), dh-python, python3-all
 Standards-Version: 4.6.2
-Homepage: <https://github.com/word-sys/pardf>
+Homepage: https://github.com/word-sys/pardf
 Rules-Requires-Root: no
 
 Package: word-sys-pdf-editor
