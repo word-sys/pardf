@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Word-Sys PDF Editor
+Comment=Edit text content in PDF files
+Exec=word-sys-pdf-editor %F
+Icon=word-sys-pdf-editor
+Terminal=false
+Categories=Office;Graphics;GTK;
+Keywords=PDF;Editor;Text;
+MimeType=application/pdf;
+StartupNotify=true

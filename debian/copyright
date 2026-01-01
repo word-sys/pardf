@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Pardus PDF Editor
-Source: <URL of your source code repository, if any>
+Upstream-Name: Word-Sys's PDF Editor
+Source: https://github.com/word-sys/pardf
 
 Files: *
 Copyright: 2025 Barın Güzeldemirci <baringuzeldemir@gmail.com.com>

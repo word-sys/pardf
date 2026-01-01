@@ -1,6 +1,6 @@
-# ParDF - Pardus PDF Düzenleyicisi
+# ParDF - Word-Sys's PDF Düzenleyicisi
 
-**ParDF**, Pardus ve diğer Linux dağıtımları için geliştirilmiş, PDF dosyalarındaki metin içeriğini düzenlemeye odaklanan basit ve kullanıcı dostu bir araçtır. #MilliTeknolojiHamlesi ve TEKNOFEST ruhuyla, Pardus ekosistemindeki bir ihtiyacı karşılamak üzere sıfırdan geliştirilmiştir. Kurumsal ve Bireysel'e hizmet eden Pardus PDF Düzenleyicisi özgür ve milli bir PDF Düzenleyicisi olmak, bir ilk olmak hedefinde geliştirilen TEKNOFEST Pardus Geliştirme Yarışması - Yerelleştirme kategorisinde yarışan uygulamadır.
+**ParDF**, Pardus ve diğer Linux dağıtımları için geliştirilmiş, PDF dosyalarındaki metin içeriğini düzenlemeye odaklanan basit ve kullanıcı dostu bir araçtır. #MilliTeknolojiHamlesi ve TEKNOFEST ruhuyla, Pardus ekosistemindeki bir ihtiyacı karşılamak üzere sıfırdan geliştirilmiştir. Kurumsal ve Bireysel'e hizmet eden Word-Sys's PDF Düzenleyicisi özgür ve milli bir PDF Düzenleyicisi olmak, bir ilk olmak hedefinde geliştirilen TEKNOFEST Pardus Geliştirme Yarışması - Yerelleştirme kategorisinde yarışan uygulamadır.
 
 Geliştirici: **Barın Güzeldemirci (word-sys)**
 Lisans: **GPL-3.0-or-later**
@@ -37,14 +37,14 @@ ParDF'i sisteminize kurmanın iki yolu vardır:
 
 Bu yöntem, Linux dağıtımları için en kolay kurulum yoludur.
 
-1.  En son `.deb` paketini [**GitHub Releases**](https://github.com/word-sys/pardf/releases) sayfasından indirin. Genellikle `pardus-pdf-editor_X.Y.Z_all.deb` şeklinde bir dosya adı olacaktır (X.Y.Z sürüm numarasını temsil eder).
+1.  En son `.deb` paketini [**GitHub Releases**](https://github.com/word-sys/pardf/releases) sayfasından indirin. Genellikle `word-sys-pdf-editor_X.Y.Z_all.deb` şeklinde bir dosya adı olacaktır (X.Y.Z sürüm numarasını temsil eder).
 2.  Terminali, `.deb` dosyasını indirdiğiniz dizinde açın.
 3.  Aşağıdaki komutu çalıştırarak paketi kurun:
     ```bash
     sudo apt update
-    sudo apt install ./pardus-pdf-editor_X.Y.Z_all.deb
+    sudo apt install ./word-sys-pdf-editor_X.Y.Z_all.deb
     ```
-    *(Not: `pardus-pdf-editor_X.Y.Z_all.deb` yerine indirdiğiniz dosyanın tam adını yazın.)*
+    *(Not: `word-sys-pdf-editor_X.Y.Z_all.deb` yerine indirdiğiniz dosyanın tam adını yazın.)*
 4.  Eğer kurulum sırasında bağımlılıklarla ilgili bir hata alırsanız, aşağıdaki komutu çalıştırarak eksik bağımlılıkları gidermeyi deneyin:
     ```bash
     sudo apt --fix-broken install
@@ -79,7 +79,7 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
     ```bash
     git clone https://github.com/word-sys/pardf.git
     cd pardf
-    ```
+3    ```
 
 3.  **Sanal Ortam Oluşturun ve Aktifleştirin (Önerilir):**
     Proje dizininde bir sanal ortam oluşturmak, Python bağımlılıklarını sistem genelindeki kurulumlardan izole etmenize yardımcı olur.

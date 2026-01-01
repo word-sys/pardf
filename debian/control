@@ -1,13 +1,13 @@
-Source: pardus-pdf-editor
+Source: word-sys-pdf-editor
 Section: graphics
 Priority: optional
 Maintainer: Barın Güzeldemirci <baringuzeldemir@gmail.com>
 Build-Depends: debhelper-compat (= 13), dh-python, python3-all
 Standards-Version: 4.6.2
-Homepage: <https://itumtal.pythonanywhere.com>
+Homepage: <https://github.com/word-sys/pardf>
 Rules-Requires-Root: no
 
-Package: pardus-pdf-editor
+Package: word-sys-pdf-editor
 Architecture: all
 Depends: ${python3:Depends},
          ${misc:Depends},
@@ -19,8 +19,8 @@ Depends: ${python3:Depends},
          python3-fitz
 Recommends: ttf-dejavu-core | fonts-noto-core | fonts-liberation2,
             libreoffice-common
-Description: Simple PDF Text Editor for Pardus
- Pardus PDF Editor allows users to open PDF files, view pages, select
+Description: Simple PDF Text Editor
+ Word-sys PDF Editor allows users to open PDF files, view pages, select
  existing text blocks, modify or delete them, and add new text blocks.
  It focuses on simple text content manipulation rather than full PDF
  annotation or structural changes. It can also export to DOCX (requires
