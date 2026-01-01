@@ -182,7 +182,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic")
         header.pack_end(menu_button)
         menu = Gio.Menu()
-        menu.append("Baskı Önizlemesi...", "win.print")
+        #menu.append("Baskı Önizlemesi...", "win.print")
         menu.append("Farklı Kaydet...", "win.save_as")
         menu.append("Farklı Dışarı Çıkart...", "win.export_as")
         menu.append_section(None, Gio.Menu())
@@ -198,7 +198,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         welcome_view = WelcomeView(parent_window=self)
         self.stack.add_named(welcome_view, "welcome")
 
-        self.paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, wide_handle=True, vexpand=True)
+        self.paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, wide_handle=True, vexpand=True, shrink_start_child=False)
         
         self._create_sidebar()
 
