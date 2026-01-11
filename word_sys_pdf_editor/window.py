@@ -999,7 +999,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                         if target_family_base and combo_family_key and target_family_base.lower() in combo_family_key.lower():
                             active_font_index = i
                             break
-                        elif target_family_base and combo_family_key and combo_family_key.lower() in target_family_base.lower(): # And vice versa
+                        elif target_family_base and combo_family_key and combo_family_key.lower() in target_family_base.lower():
                             active_font_index = i
                             break
                     if active_font_index == -1 and len(model) > 0:
