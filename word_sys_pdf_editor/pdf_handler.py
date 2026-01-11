@@ -205,30 +205,71 @@ def extract_editable_text(doc, page_index):
         return [], "Invalid document or page index for text extraction."
     try:
         page = doc.load_page(page_index)
-        text_dict = page.get_text("dict", flags=11)
+        text_dict = page.get_text("dict", flags=0)
 
         for block in text_dict.get("blocks", []):
             if block.get("type") == 0:
                 for line in block.get("lines", []):
-                    for span in line.get("spans", []):
-                        text = span.get("text", "").strip()
+                    spans = line.get("spans", [])
+                    if not spans:
+                        continue
+                    
+                    combined_text = ""
+                    min_x = float('inf')
+                    max_x = float('-inf')
+                    min_y = float('inf')
+                    max_y = float('-inf')
+                    first_span = None
+                    
+                    for span in spans:
+                        text = span.get("text", "")
                         bbox = span.get("bbox")
-                        if not text or not bbox: continue
-
                         
-                        editable = EditableText(
-                            x=bbox[0], y=bbox[1], text=text,
-                            font_size=span.get("size", 11),
-                            color=span.get("color", 0),
-                            span_data=span,
-                            baseline=span.get("origin", (0, bbox[3]))[1]
-                        )
-                        editable.page_number = page_index
-                        editable_texts.append(editable)
+                        if not text:
+                            continue
+                        
+                        if first_span is None:
+                            first_span = span
+                        
+                        combined_text += text
+                        
+                        if bbox:
+                            min_x = min(min_x, bbox[0])
+                            min_y = min(min_y, bbox[1])
+                            max_x = max(max_x, bbox[2])
+                            max_y = max(max_y, bbox[3])
+                    
+                    if not combined_text or first_span is None:
+                        continue
+                    
+                    combined_text = combined_text.strip()
+                    if not combined_text:
+                        continue
+                    
+                    bbox = [min_x, min_y, max_x, max_y] if min_x != float('inf') else first_span.get("bbox", [0, 0, 100, 100])
+                    
+                    span_data = first_span.copy() if first_span else {}
+                    span_data["bbox"] = tuple(bbox)
+                    span_data["text"] = combined_text
+                    
+                    editable = EditableText(
+                        x=bbox[0], y=bbox[1], text=combined_text,
+                        font_size=first_span.get("size", 11) if first_span else 11,
+                        font_family="Helvetica",
+                        color=first_span.get("color", 0) if first_span else 0,
+                        span_data=span_data,
+                        baseline=first_span.get("origin", (0, bbox[3]))[1] if first_span else bbox[3]
+                    )
+                    editable.page_number = page_index
+                    editable_texts.append(editable)
+                    print(f"DEBUG: Extracted text: '{combined_text}' bbox={bbox}")
+        
+        print(f"DEBUG: Total text objects extracted from page {page_index}: {len(editable_texts)}")
         return editable_texts, None
     except Exception as e:
         error_msg = f"Error extracting text from page {page_index}: {e}"
         print(error_msg)
+        traceback.print_exc()
         return [], error_msg
 
 def _get_base14_font_variant(base_name, is_bold, is_italic):
@@ -256,47 +297,98 @@ def apply_text_edit(doc, text_obj: EditableText, new_text: str):
     if not doc or text_obj.page_number is None:
         return False, "Invalid document or page number."
 
-    text_obj.text = new_text
-
     font_arg, error_msg = _get_font_args_for_pymupdf(text_obj)
     if error_msg:
         return False, error_msg
 
     try:
         page = doc.load_page(text_obj.page_number)
-        if not text_obj.is_new and text_obj.original_bbox:
-            redact_rect = fitz.Rect(text_obj.original_bbox)
-            if not redact_rect.is_empty and redact_rect.is_valid:
-                page.add_redact_annot(redact_rect)
-                page.apply_redactions()
-                page = doc.load_page(text_obj.page_number)
-
-        if new_text:
-            lines = new_text.split('\n')
-            line_height = text_obj.font_size * 1.2
-            for i, line_text in enumerate(lines):
-                line_point = fitz.Point(text_obj.x, text_obj.baseline + (i * line_height))
-                rc = page.insert_text(
-                    line_point,
-                    line_text,
+        
+        print(f"DEBUG apply_text_edit: is_new={text_obj.is_new}, new_text='{new_text}'")
+        print(f"DEBUG: text_obj bbox: {text_obj.bbox}")
+        
+        # For existing text, we need to properly replace it by removing old text first
+        if not text_obj.is_new and text_obj.bbox:
+            # Create a rectangle from bbox with padding
+            x0, y0, x1, y1 = text_obj.bbox
+            rect = fitz.Rect(
+                x0 - 2,
+                y0 - 2,
+                x1 + 2,
+                y1 + 2
+            )
+            
+            print(f"DEBUG: Redacting old text in rect={rect}")
+            
+            # Step 1: Add redaction annotation to mark area for removal
+            page.add_redact_annot(rect)
+            
+            # Step 2: Apply redactions - this actually removes content from the text stream
+            page.apply_redactions()
+            
+            print(f"DEBUG: Redaction applied, now inserting new text")
+            
+            # Step 3: Now insert new text in the cleared area
+            if new_text.strip():
+                text_color = (0, 0, 0)
+                if text_obj.color:
+                    if isinstance(text_obj.color, (tuple, list)) and len(text_obj.color) >= 3:
+                        text_color = tuple(float(c) for c in text_obj.color[:3])
+                    elif isinstance(text_obj.color, int):
+                        blue = (text_obj.color & 255) / 255.0
+                        green = ((text_obj.color >> 8) & 255) / 255.0
+                        red = ((text_obj.color >> 16) & 255) / 255.0
+                        text_color = (red, green, blue)
+                
+                # Use insert_textbox to place text in the rectangle
+                rc = page.insert_textbox(
+                    rect,
+                    new_text,
                     fontsize=text_obj.font_size,
-                    color=text_obj.color,
-                    overlay=True,
+                    color=text_color,
+                    text_align=fitz.TEXT_ALIGN_LEFT,
                     **font_arg
                 )
+                print(f"DEBUG: insert_textbox returned: {rc}")
                 if rc < 0:
-                    print(f"Warning: PyMuPDF insert_text returned error {rc} for line: {line_text}")
-
-        text_obj.modified = False
-        text_obj.is_new = False
-        text_obj.original_text = new_text 
+                    print(f"ERROR: insert_textbox failed with rc={rc}")
+                    return False, f"PyMuPDF insert_textbox error: {rc}"
+        else:
+            # For new text, just insert at the baseline
+            if new_text.strip():
+                text_color = (0, 0, 0)
+                if text_obj.color:
+                    if isinstance(text_obj.color, (tuple, list)) and len(text_obj.color) >= 3:
+                        text_color = tuple(float(c) for c in text_obj.color[:3])
+                    elif isinstance(text_obj.color, int):
+                        blue = (text_obj.color & 255) / 255.0
+                        green = ((text_obj.color >> 8) & 255) / 255.0
+                        red = ((text_obj.color >> 16) & 255) / 255.0
+                        text_color = (red, green, blue)
+                
+                print(f"DEBUG: Inserting new text '{new_text}' at point ({text_obj.x}, {text_obj.baseline})")
+                
+                line_point = fitz.Point(text_obj.x, text_obj.baseline)
+                rc = page.insert_text(
+                    line_point,
+                    new_text,
+                    fontsize=text_obj.font_size,
+                    color=text_color,
+                    overlay=False,
+                    **font_arg
+                )
+                print(f"DEBUG: insert_text returned: {rc}")
+                if rc < 0:
+                    print(f"ERROR: insert_text failed with rc={rc}")
+                    return False, f"PyMuPDF insert_text error: {rc}"
 
         return True, None
     except Exception as e:
         print(f"ERROR applying text edit: {e}")
         traceback.print_exc()
         return False, f"Error during text application: {e}"
-    
+#original
+'''  
 def save_document(doc, save_path, incremental=False):
     if not doc:
         return False, "No document to save."
@@ -324,7 +416,35 @@ def save_document(doc, save_path, incremental=False):
         if "incremental writes when changing encryption" in str(e):
              return False, f"Error saving PDF: Cannot change encryption during incremental save. Check original file encryption."
         return False, f"Error saving PDF: {e}"
+'''
+#patched
+def save_document(doc, save_path, incremental=False):
+    if not doc:
+        return False, "Kaydedilecek belge yok."
 
+    temp_path = f"{save_path}.tmp_save"
+
+    try:
+        doc.save(
+            temp_path,
+            garbage=4,
+            deflate=True,
+            incremental=False,  
+            encryption=fitz.PDF_ENCRYPT_NONE
+        )
+
+        os.replace(temp_path, save_path)
+        return True, None
+
+    except Exception as e:
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
+        
+        return False, f"PDF kaydedilirken hata oluştu: {e}"
+    
 def export_pdf_as_docx(doc, source_pdf_path, output_docx_path):
     libreoffice_executable = shutil.which('libreoffice')
     if not libreoffice_executable:
@@ -476,27 +596,46 @@ def extract_editable_images(doc, page_index):
         page = doc.load_page(page_index)
         image_info_list = page.get_image_info(xrefs=True)
         
+        if not image_info_list:
+            print(f"DEBUG: No images found via get_image_info on page {page_index}. Trying alternative method...")
+            image_info_list = []
+        
         for img_info in image_info_list:
             try:
-                bbox = img_info['bbox']
-                xref = img_info['xref']
+                bbox = img_info.get('bbox')
+                xref = img_info.get('xref')
+                
+                if not bbox or not xref:
+                    continue
 
                 rect = fitz.Rect(bbox)
                 if rect.is_empty or not rect.is_valid:
                     continue
 
-                image_bytes = doc.extract_image(xref)["image"]
-                
-                image_obj = EditableImage(
-                    bbox=bbox,
-                    page_number=page_index,
-                    xref=xref,
-                    image_bytes=image_bytes
-                )
-                editable_images.append(image_obj)
+                try:
+                    image_data = doc.extract_image(xref)
+                    if not image_data or 'image' not in image_data:
+                        print(f"DEBUG: Could not extract image data for xref {xref}")
+                        continue
+                    
+                    image_bytes = image_data["image"]
+                    
+                    image_obj = EditableImage(
+                        bbox=bbox,
+                        page_number=page_index,
+                        xref=xref,
+                        image_bytes=image_bytes
+                    )
+                    editable_images.append(image_obj)
+                except Exception as extract_error:
+                    print(f"DEBUG: Error extracting image bytes for xref {xref}: {extract_error}")
+                    continue
+                    
             except (ValueError, TypeError) as e:
                 print(f"Uyarı: Sayfa {page_index+1} içindeki bir resim (xref={img_info.get('xref')}) atlandı: {e}")
                 continue
+        
+        print(f"DEBUG: Extracted {len(editable_images)} images from page {page_index}")
         return editable_images, None
     except Exception as e:
         error_msg = f"Sayfa {page_index+1} içinden resimler çıkarılırken hata oluştu: {e}"

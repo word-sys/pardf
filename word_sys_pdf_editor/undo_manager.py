@@ -77,11 +77,13 @@ class EditObjectCommand(Command):
         if self._apply_properties_to_pdf(self.new_properties, self.old_properties):
             self._update_live_object(self.new_properties)
             self.window.status_label.set_text("Değişiklik uygulandı.")
+            self.window.pdf_view.queue_draw()
 
     def undo(self):
         if self._apply_properties_to_pdf(self.old_properties, self.new_properties):
             self._update_live_object(self.old_properties)
             self.window.status_label.set_text("Geri alındı.")
+            self.window.pdf_view.queue_draw()
 
 class AddObjectCommand(Command):
     def __init__(self, window, new_object):
@@ -96,7 +98,23 @@ class AddObjectCommand(Command):
             self.window.editable_images.append(self.new_object)
         
         pdf_handler.apply_object_edit(self.window.doc, self.new_object)
-        self.window._load_page(self.window.current_page_index, preserve_scroll=True)
+        self.window.document_modified = True
+        self.window.status_label.set_text("Nesne eklendi.")
+        self.window._update_ui_state()
+        self.window.pdf_view.queue_draw()
+
+    def undo(self):
+        if self.is_text:
+            if self.new_object in self.window.editable_texts:
+                self.window.editable_texts.remove(self.new_object)
+        else:
+            if self.new_object in self.window.editable_images:
+                self.window.editable_images.remove(self.new_object)
+        
+        self.window.document_modified = True
+        self.window.status_label.set_text("Geri alındı.")
+        self.window._update_ui_state()
+        self.window.pdf_view.queue_draw()
 
     def undo(self):
         if self.is_text:

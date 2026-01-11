@@ -30,6 +30,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.set_icon_name("word-sys-pdf-editor")
 
         self.current_file_path = None
+        self.original_file_path = None
+        self.allow_incremental_save = True
         self.doc = None 
         self.current_page_index = 0
         self.zoom_level = 1.0
@@ -581,6 +583,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             if self.is_repaired_file:
                 print("DEBUG: Bu PDF dosyası açılırken onarıldı. Artımlı kaydetme devre dışı.")
             self.current_file_path = filepath
+            self.original_file_path = filepath
+            self.allow_incremental_save = True
             self.current_page_index = 0
             self.set_title(f"Word-Sys's PDF Editor - {os.path.basename(filepath)}")
             self.status_label.set_text(f"Küçük resimler yükleniyor...")
@@ -699,7 +703,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.pdf_view.queue_draw()
         self._update_ui_state()
 
-
+    #original
+    '''
     def save_document(self, save_path, incremental=False):
         if not self.doc or self.is_saving:
             return
@@ -713,11 +718,40 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         self.is_saving = False
         if success:
-            if save_path == self.current_file_path or self.current_file_path is None:
-                self.current_file_path = save_path
+            self.current_file_path = save_path
             self.document_modified = False
             self.set_title(f"Word-Sys's PDF Editor - {os.path.basename(save_path)}")
             self.status_label.set_text(f"Belge kaydedildi: {os.path.basename(save_path)}")
+            
+            self._load_page(self.current_page_index, preserve_scroll=True)
+        else:
+            show_error_dialog(self, f"PDF kaydedilirken hata oluştu: {error_msg}")
+            self.status_label.set_text("Kaydetme başarısız oldu.")
+
+        self._update_ui_state()
+    '''
+
+    #patched
+    def save_document(self, save_path, incremental=False):
+        if not self.doc or self.is_saving:
+            return
+
+        self.is_saving = True
+        self.status_label.set_text(f"Kaydediliyor {os.path.basename(save_path)}...")
+
+        if self.text_edit_popover and self.text_edit_popover.is_visible():
+            self._apply_and_hide_editor(force_apply=True)
+
+        success, error_msg = pdf_handler.save_document(self.doc, save_path, incremental=incremental)
+
+        self.is_saving = False
+        
+        if success:
+            self.current_file_path = save_path
+            self.document_modified = False
+            self.set_title(f"Word-Sys's PDF Editor - {os.path.basename(save_path)}")
+            self.status_label.set_text(f"Belge kaydedildi: {os.path.basename(save_path)}")
+            self._load_page(self.current_page_index, preserve_scroll=True)
         else:
             show_error_dialog(self, f"PDF kaydedilirken hata oluştu: {error_msg}")
             self.status_label.set_text("Kaydetme başarısız oldu.")
@@ -1104,24 +1138,28 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         buffer = self.text_edit_view.get_buffer()
         new_text = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), True)
         
-        text_obj_to_apply.text = new_text
-
         self.hide_text_editor()
 
         if text_obj_to_apply.is_new:
+            text_obj_to_apply.text = new_text
             command = AddObjectCommand(self, text_obj_to_apply)
             command.execute()
             self.undo_manager.add_command(command)
+            self._load_page(self.current_page_index, preserve_scroll=True)
         else:
             new_properties = copy.deepcopy(text_obj_to_apply.__dict__)
+            new_properties['text'] = new_text
             if old_properties['text'] != new_properties['text']:
                 command = EditObjectCommand(self, text_obj_to_apply, old_properties, new_properties)
                 command.execute() 
                 self.undo_manager.add_command(command)
+                self._load_page(self.current_page_index, preserve_scroll=True)
+        
         self.selected_text = None
         self._update_ui_state()
         self.pdf_view.queue_draw()
-
+    #original
+    '''
     def check_unsaved_changes(self):
         if self.document_modified:
             confirm = show_confirm_dialog(self,
@@ -1134,6 +1172,26 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                      return False
                  else:
                      show_error_dialog(self, "Değişiklikleri kaydetmek için lütfen önce 'Farklı Kaydet...' seçeneğini kullanın.")
+                     return True
+
+            print("Kaydedilmemiş değişiklikler siliniyor.")
+            return False
+        return False
+    '''
+
+    #patched
+    def check_unsaved_changes(self):
+        if self.document_modified:
+            confirm = show_confirm_dialog(self,
+                                          "Kaydedilmemiş değişiklikler var. Kapatmadan önce kaydetmek ister misiniz?",
+                                          title="Kaydedilmemiş Değişiklikler",
+                                          destructive=False)
+            if confirm:
+                 if self.current_file_path:
+                     self.save_document(self.current_file_path, incremental=False)
+                     return False
+                 else:
+                     self.on_save_as(None, None)
                      return True
 
             print("Kaydedilmemiş değişiklikler siliniyor.")
@@ -1173,6 +1231,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         dialog.connect("response", on_response)
         dialog.present()
 
+    #original
+    '''
     def on_save_clicked(self, button):
         self.commit_pending_format_change()
 
@@ -1185,11 +1245,17 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.on_save_as(None, None)
         
         elif self.current_file_path:
-            self.save_document(self.current_file_path, incremental=True)
+            self.save_document(self.current_file_path, incremental=False)
         
         else:
             self.on_save_as(None, None)
-        
+    '''
+
+    #patched
+    def on_save_clicked(self, button):
+        self.commit_pending_format_change()
+        self.on_save_as(None, None)
+
     def on_save_as(self, action, param):
         self.commit_pending_format_change()
         if not self.doc: return
