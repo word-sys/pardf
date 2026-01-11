@@ -1,0 +1,56 @@
+2490512a2ba920b63c68efe0b92d1208  usr/bin/word-sys-pdf-editor
+d41d8cd98f00b204e9800998ecf8427e  usr/lib/python3/dist-packages/word_sys_pdf_editor/__init__.py
+fa3228aadde0db988e1822c2f736c131  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIAL.TTF
+858f5a50a4c3e5e6559a0c9b128eee60  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALBD 1.TTF
+858f5a50a4c3e5e6559a0c9b128eee60  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALBD.TTF
+b04eb00031bf4d82265b30855d7a314f  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALBI 1.TTF
+b04eb00031bf4d82265b30855d7a314f  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALBI.TTF
+70b30b8ac824c81363f1d468712da263  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALBLACKITALIC.TTF
+97f1aa85e8ce271cd2a65759cb230397  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALI 1.TTF
+97f1aa85e8ce271cd2a65759cb230397  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALI.TTF
+f42d7a6765fb2bec8aaa344fe7340e59  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALLGT.TTF
+6c2e930c5de7531e110067e694937c0d  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALLGTITL.TTF
+0db23b28d4618edf1092b957595806aa  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALN.TTF
+6debd7b47fbf196d9aea1dc4235439bb  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALNB.TTF
+56e394b38fbf81afb437bc00884544f8  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALNBI.TTF
+989670c4c82248bb6a8cec3558212374  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIALNI.TTF
+ec8b4d9c0e68604dfbeda73d0213c82e  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ARIBLK.TTF
+de5c7ec4fe7259cc2a90ca7632686dfc  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ArialCE.ttf
+1face2f2fd4330d64f283de04da596f7  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ArialCEBoldItalic.ttf
+2137c23218da07ab8a45d52851fea784  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ArialCEItalic.ttf
+82e8ef38995ad6214c4351cd564ebc8e  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ArialCEMTBlack.ttf
+b9d1bc34bb319033dfc004342c34b248  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ArialMdm.ttf
+0460ff02cf839e234842adc8a32da3fb  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ArialMdmItl.ttf
+57d6fd87e5f4d90a1ae0f5746a84dd44  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/Arialic Hollow.ttf
+fe6b41f2c2d2c7655ec1e44520667a13  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/arial.ttf
+7949819274736ad8087206759aa946b5  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/arialceb.ttf
+3e7043e8125f1c8998347310f2c315bc  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/arial/ariblk.ttf
+eaf15ead307ebe815fde815e5114f526  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/calibri/Calibri.otf
+a34160144567cbc0b7b87d132596ee89  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/calibri/Calibri_Bold.otf
+8d4812ce0703aa59d094178011b5271d  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/calibri/Calibri_Bold_Italic.otf
+5024aaedba9f7af3ff8b56d7987f24ba  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/calibri/Calibri_Italic.otf
+3328a1bbd2663820a89b656c9fd4d5e1  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/calibri/Calibri_Light.otf
+ebf8c98c232a3918a060f0d68b7e9b76  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/calibri/Calibri_Light_Italic.otf
+d13db1fed3945c3b8c3293bfcfadb32f  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/helvetica/Helvetica-Bold.ttf
+1243b706dbf774edb405221533014853  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/helvetica/Helvetica-BoldOblique.ttf
+5e9d01a525a6945bd22c9a6c4406f75b  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/helvetica/Helvetica-Oblique.ttf
+1b580d980532792578c54897ca387e2c  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/helvetica/Helvetica.ttf
+bec59aa5a94f833295a4bd1c137906ed  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/helvetica/helvetica-compressed.otf
+9a8c18bd1dbe8508bc2525be7e07d0ff  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/helvetica/helvetica-light.ttf
+042c8121eea32106ffd2713a2e583c1b  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/helvetica/helvetica-rounded-bold.otf
+fcb8965acd0e90c50138958a2a7e0421  usr/lib/python3/dist-packages/word_sys_pdf_editor/fonts/times-new-roman/times.ttf
+c553726432165ba9dd751a8a1ca0c99b  usr/lib/python3/dist-packages/word_sys_pdf_editor/img/icon.png
+71658ddfa0c44921abbd6a42224dcaeb  usr/lib/python3/dist-packages/word_sys_pdf_editor/img/icon256.png
+c7db50f16d13c942e19363703e9f10b6  usr/lib/python3/dist-packages/word_sys_pdf_editor/main.py
+ab32319b1f07e9f225f94f4178ebe4a9  usr/lib/python3/dist-packages/word_sys_pdf_editor/models.py
+7e0b7b47d46d3214113ded7cee2fc89c  usr/lib/python3/dist-packages/word_sys_pdf_editor/pdf_handler.py
+615af841754c9ba7aaf2f959ce8c38f7  usr/lib/python3/dist-packages/word_sys_pdf_editor/print_handler.py
+cdd3ca7ce90da13b8ae85233823c5d28  usr/lib/python3/dist-packages/word_sys_pdf_editor/ui_components.py
+81bba123771930570de3f30ec50a04ea  usr/lib/python3/dist-packages/word_sys_pdf_editor/undo_manager.py
+380a63f61daae1d39158b78fd6067a8d  usr/lib/python3/dist-packages/word_sys_pdf_editor/utils.py
+850f90a86de6d2554cd887f8d8b81754  usr/lib/python3/dist-packages/word_sys_pdf_editor/welcome_view.py
+e447a8281ec153d0c29ad82c901ebf43  usr/lib/python3/dist-packages/word_sys_pdf_editor/window.py
+f988384bff4449216046ccd07433e2d9  usr/share/applications/word-sys-pdf-editor.desktop
+767b0c07d8db8f281b17df1a8e01d437  usr/share/doc/word-sys-pdf-editor/changelog.Debian.gz
+b04bca30c71dd059beb1d7859971d6ba  usr/share/doc/word-sys-pdf-editor/copyright
+c553726432165ba9dd751a8a1ca0c99b  usr/share/icons/hicolor/512x512/apps/word-sys-pdf-editor.png
