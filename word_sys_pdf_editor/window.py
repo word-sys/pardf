@@ -541,6 +541,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         about_dialog.set_copyright("© 2024-2025 Barın Güzeldemirci")
         about_dialog.present()
 
+    #original
+    '''
     def load_document(self, filepath):
         if self.check_unsaved_changes():
             return
@@ -553,6 +555,25 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         def _load_async():
             doc, error_msg = pdf_handler.load_pdf_document(filepath)
             GLib.idle_add(self._finish_loading, doc, error_msg, filepath)
+
+        thread = threading.Thread(target=_load_async)
+        thread.daemon = True
+        thread.start()
+    '''
+
+    #patched
+    def load_document(self, filepath, target_page=0):
+        if self.check_unsaved_changes():
+            return
+
+        self.close_document()
+
+        self.status_label.set_text(f"Yükleniyor {os.path.basename(filepath)}...")
+        GLib.idle_add(self._show_loading_state)
+
+        def _load_async():
+            doc, error_msg = pdf_handler.load_pdf_document(filepath)
+            GLib.idle_add(self._finish_loading, doc, error_msg, filepath, target_page)
 
         thread = threading.Thread(target=_load_async)
         thread.daemon = True
@@ -572,6 +593,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.add_text_tool_button.set_sensitive(False)
         self.stack.set_visible_child_name("welcome")
 
+    #original
+    '''
     def _finish_loading(self, doc, error_msg, filepath):
         if error_msg:
             show_error_dialog(self, error_msg)
@@ -588,6 +611,35 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.current_page_index = 0
             self.set_title(f"Word-Sys's PDF Editor - {os.path.basename(filepath)}")
             self.status_label.set_text(f"Küçük resimler yükleniyor...")
+            GLib.idle_add(self._load_thumbnails)
+
+        self.open_button.set_sensitive(True)
+        self.select_tool_button.set_sensitive(True)
+        self.add_text_tool_button.set_sensitive(True)
+        self._update_ui_state()
+    '''
+
+    #patched
+    def _finish_loading(self, doc, error_msg, filepath, target_page=0):
+        if error_msg:
+            show_error_dialog(self, error_msg)
+            self.status_label.set_text("Doküman yüklenemedi.")
+            self.close_document()
+        elif doc:
+            self.doc = doc
+            self.is_repaired_file = doc.is_repaired
+            if self.is_repaired_file:
+                print("DEBUG: Bu PDF dosyası açılırken onarıldı.")
+            self.current_file_path = filepath
+            self.original_file_path = filepath
+            self.allow_incremental_save = True
+            
+            self.current_page_index = target_page 
+            
+            self.set_title(f"Word-Sys's PDF Editor - {os.path.basename(filepath)}")
+            self.status_label.set_text(f"Küçük resimler yükleniyor...")
+            
+            self.target_page_after_load = target_page
             GLib.idle_add(self._load_thumbnails)
 
         self.open_button.set_sensitive(True)
@@ -622,7 +674,9 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 else:
                     self.status_label.set_text("Yeni belge yüklendi.")                
                 if page_count > 0:
-                    self._load_page(0)
+                    target = getattr(self, 'target_page_after_load', 0)
+                    if target >= page_count: target = 0
+                    self._load_page(target)
                 else:
                     self._update_ui_state()
                 return GLib.SOURCE_REMOVE
@@ -731,7 +785,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self._update_ui_state()
     '''
 
-    #patched
+    #patchedv1
+    '''
     def save_document(self, save_path, incremental=False):
         if not self.doc or self.is_saving:
             return
@@ -752,6 +807,31 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.set_title(f"Word-Sys's PDF Editor - {os.path.basename(save_path)}")
             self.status_label.set_text(f"Belge kaydedildi: {os.path.basename(save_path)}")
             self._load_page(self.current_page_index, preserve_scroll=True)
+        else:
+            show_error_dialog(self, f"PDF kaydedilirken hata oluştu: {error_msg}")
+            self.status_label.set_text("Kaydetme başarısız oldu.")
+
+        self._update_ui_state()
+    '''
+
+    #patchedv2
+    def save_document(self, save_path, incremental=False):
+        if not self.doc or self.is_saving:
+            return
+        page_to_restore = self.current_page_index
+        self.is_saving = True
+        self.status_label.set_text(f"Kaydediliyor {os.path.basename(save_path)}...")
+        if self.text_edit_popover and self.text_edit_popover.is_visible():
+            self._apply_and_hide_editor(force_apply=True)
+
+        success, error_msg = pdf_handler.save_document(self.doc, save_path, incremental=False)
+        self.is_saving = False
+        
+        if success:
+            print(f"DEBUG: Kayıt başarılı. Dosya yeniden yükleniyor: {save_path}")
+            self.document_modified = False 
+            self.load_document(save_path, target_page=page_to_restore)
+            self.status_label.set_text(f"Kaydedildi ve yeniden yüklendi: {os.path.basename(save_path)}")
         else:
             show_error_dialog(self, f"PDF kaydedilirken hata oluştu: {error_msg}")
             self.status_label.set_text("Kaydetme başarısız oldu.")
@@ -1253,7 +1333,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
     #patched
     def on_save_clicked(self, button):
-        self.commit_pending_format_change()
         self.on_save_as(None, None)
 
     def on_save_as(self, action, param):
