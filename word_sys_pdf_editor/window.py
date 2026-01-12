@@ -161,6 +161,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.save_button.connect("clicked", self.on_save_clicked)
         save_button_box.append(self.save_button)
 
+        #patched original
+        '''
         save_menu = Gio.Menu()
         save_menu.append("Farklı Kaydet...", "win.save_as")
         save_menu_button = Gtk.MenuButton(
@@ -168,7 +170,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             menu_model=save_menu
         )
         save_button_box.append(save_menu_button)
-
+        '''
+        
         header.pack_start(save_button_box)
 
         self.undo_button = Gtk.Button.new_from_icon_name("edit-undo-symbolic")
