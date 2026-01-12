@@ -1,4 +1,4 @@
-word-sys-pdf-editor (1.7.1-1) stable; urgency=medium
+word-sys-pdf-editor (1.7.2) bookworm; urgency=medium
 
   * Improved text recognition
   * Fixed save bug, now users will save the file directly to clean one or will replace with existing original file
@@ -6,6 +6,7 @@ word-sys-pdf-editor (1.7.1-1) stable; urgency=medium
   * The `shrink-start-child` parameter in `gtkPaned` was changed to `false`, resolving the left panel compression issue
   * The package URL has been fixed
   * Removed Pardus-specific icon, replaced with hand-made word-sys's Icon
-  
- -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 11 Jan 2026 00:00:00 +0000
+  * Fixed building bug
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 12 Jan 2026 00:00:00 +0000
  
