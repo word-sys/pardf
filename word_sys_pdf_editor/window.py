@@ -171,7 +171,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         )
         save_button_box.append(save_menu_button)
         '''
-        
+
         header.pack_start(save_button_box)
 
         self.undo_button = Gtk.Button.new_from_icon_name("edit-undo-symbolic")
@@ -496,7 +496,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         about_dialog = Gtk.AboutDialog(transient_for=self, modal=True)
 
         about_dialog.set_program_name("Word-Sys's PDF Editor")
-        about_dialog.set_version("1.7.1-1") 
+        about_dialog.set_version("1.7.2") 
         about_dialog.set_authors(["Barın Güzeldemirci (word-sys)"])
         
         try:

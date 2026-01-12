@@ -8,5 +8,127 @@ word-sys-pdf-editor (1.7.2) bookworm; urgency=medium
   * Removed Pardus-specific icon, replaced with hand-made word-sys's Icon
   * Fixed building bug
 
- -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 12 Jan 2026 00:00:00 +0000
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Mon, 12 Jan 2026 00:00:00 +0000
+ 
+word-sys-pdf-editor (1.7.1) bookworm; urgency=medium
+
+  * Proje ismi ve logosu degistirildi
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 11 Jan 2026 12:00:00 +0300
+
+word-sys-pdf-editor (1.7.0) bookworm; urgency=medium
+
+  * Geri Alma / Yineleme (Undo/Redo) özelliği eklendi.
+  * Sayfaya resim ekleme ve silme özelliği eklendi.
+  * Metin düzenleme motoru iyileştirildi.
+  * UI ikonları güncellendi, Pardus ikonu yerine word-sys ikonu eklendi.
+  * Metin kutusu seçimi ve taşıma hassasiyeti artırıldı.
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 01 Jan 2026 12:00:00 +0300
+
+word-sys-pdf-editor (1.6.1) yirmiuc; urgency=medium
+
+  * PDF metinlerini seçme ve düzenleme temel özellikleri eklendi.
+  * DOCX ve TXT formatında dışa aktarma (Export) özelliği eklendi.
+  * Font ailesi ve boyutu değiştirme özellikleri eklendi.
+  * Arayüz GTK4 ve LibAdwaita ile modernize edildi.
+  * Yeni PDF Dosyası Oluşturma Eklendi!
+  * Lisans Bilgileri Düzeltildi!
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Tue, 01 Jul 2025 12:00:00 +0300
+ 
+word-sys-pdf-editor (1.6.0) yirmiuc; urgency=medium
+
+  * Resim Ekleme Özelliği getirildi!
+  * Bugcheck yapıldı ve hatalar giderildi!
+  * Obje taşıma eklendi!
+  * Sık kullanılan fontlar eklendi!
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 08 Jun 2025 12:00:00 +0300
+ 
+word-sys-pdf-editor (1.5.1) yirmiuc; urgency=medium
+
+  * Hakkında sayfası eklendi!
+  * Yeni metin ekleme kısmındaki sayfa indexi eksikliği giderildi
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sat, 10 May 2025 12:00:00 +0300
+ 
+word-sys-pdf-editor (1.5.0) yirmiuc; urgency=medium
+
+  [ Hata Düzeltmeleri ve Kararlılık ]
+  * Yeni GNOME sistemlerinde (GNOME 46+) oluşan Segmentation Fault hatası, elle Cairo yüzeyi oluşturma yerine GdkPixbuf ve Gdk.Cairo kullanımına geçilerek çözüldü (#B2E2SEC1).
+  * PyMuPDF `doc.save()` hataları giderildi:
+  * Eski GTK4 (GNOME 42) uyumluluğu için MessageDialog API çağrıları ve ana döngü (main iteration) fonksiyonları güncellendi.
+  * Düzenleme sonrası ekranda kalan seçim vurgusu (artifact) sorunu çözüldü.
+  * Yeni metin ekleme sırasındaki `NameError` ve değişken hataları giderildi.
+
+  [ Yazı Tipi Yönetimi ve Arayüz ]
+  * Başlangıçta eşzamansız (async) sistem geneli font taraması eklendi.
+  * Font ComboBox'ı artık sistem fontları ile dinamik olarak doluyor.
+  * Font eşleştirme ve gömme stratejisi (Sistem Fontu -> Unicode -> Base14) iyileştirildi.
+  * Seçili metnin kalın/italik ve font ailesi bilgileri araç çubuğuna doğru şekilde yansıtılıyor.
+  * "Metin Ekle" aracı artık seçili font ayarlarını (renk, boyut, stil) dikkate alıyor.
+  * Font adı eşleştirmesindeki boşluk duyarlılığı ve erken uyarı diyalogları düzeltildi.
+
+  [ Debian Paketlemesi ]
+  * Uygulama ikonu eklendi ve kurulum yolları düzeltildi.
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Fri, 09 May 2025 12:00:00 +0300
+ 
+word-sys-pdf-editor (1.4.1) yirmiuc; urgency=medium
+
+  [ Metin Düzenleme İyileştirmeleri ]
+  * Eski metnin üzerine yazılma/üst üste binme sorunu Redaksiyon yöntemi ile çözüldü.
+  * Düzenleme sonrası stil (Kalın/İtalik) kaybolma sorunu giderildi.
+
+  [ Font ve Stil Yönetimi ]
+  * Kalın (Bold) ve İtalik (Italic) yazı tipi desteği eklendi.
+  * Sistemde TTF/OTF font dosyalarını bulmak için gelişmiş tarama eklendi.
+  * Font bulunamadığında kullanılan Base14 varyant seçimi iyileştirildi.
+  * Seçili metnin font bilgilerinin araç çubuğuna yansıması düzeltildi.
+
+  [ Uyumluluk ve Hata Düzeltmeleri ]
+  * Yeni GTK4 sürümlerinde çizim sırasında oluşan çökme (Segfault) giderildi.
+  * Kritik kaydetme hataları (artımlı kayıt, garbage collection) düzeltildi.
+  * LibreOffice ile DOCX dışa aktarma filtresi ve komut yapısı düzeltildi.
+  * Eski GTK4 sürümleriyle (GNOME 42.9+) uyumluluk sağlandı.
+  * Metin formatı ve yeni metin ekleme sırasındaki Python hataları giderildi.
+
+  [ Kullanıcı Arayüzü ]
+  * Sayfa kaydırma (scroll) sorunu düzeltildi.
+  * PDF sayfası ortalandı ve gölge efekti eklendi.
+  * Seçim vurgusu, tema rengiyle uyumlu ve yuvarlak kenarlı yapıldı.
+  * Metin düzenleme kutusunun (Popover) konumu ve tasarımı iyileştirildi.
+  
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 07 May 2025 12:00:00 +0300
+ 
+word-sys-pdf-editor (1.4.0) yirmiuc; urgency=medium
+
+  * PDF metinlerini seçme ve düzenleme temel özellikleri eklendi.
+  * DOCX ve TXT formatında dışa aktarma (Export) özelliği eklendi.
+  * Font ailesi ve boyutu değiştirme özellikleri eklendi.
+  * Arayüz GTK4 ve LibAdwaita ile modernize edildi.
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Mon, 05 May 2025 12:00:00 +0300
+ 
+word-sys-pdf-editor (1.3.3) yirmiuc; urgency=medium
+
+  * Turkce dil destegi eklendi
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 03 May 2025 12:00:00 +0300
+ 
+word-sys-pdf-editor (1.1.0) yirmiuc; urgency=medium
+
+  * Bugfix
+  
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Fri, 18 Apr 2025 12:00:00 +0300
+ 
+
+word-sys-pdf-editor (1.0.0) yirmiuc; urgency=medium
+
+  * İlk sürüm (Initial Release).
+  * PDF görüntüleme ve basit gezinme özellikleri.
+  * Temel dosya açma ve kapama işlevleri.
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 02 Apr 2025 12:00:00 +0300
  
