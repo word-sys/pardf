@@ -11,8 +11,7 @@ import traceback
 import re
 
 from gi.repository import GdkPixbuf, Gdk, Pango, PangoCairo
-
-from .models import EditableText, FLAG_BOLD, FLAG_ITALIC, EditableImage
+from .models import EditableText, FLAG_BOLD, FLAG_ITALIC, EditableImage, EditableShape
 from .utils import find_specific_font_variant, get_default_unicode_font_path
 
 _surface_cache = {"surface": None, "data_ref": None}
@@ -309,13 +308,13 @@ def apply_text_edit(doc, text_obj: EditableText, new_text: str):
         
         # For existing text, we need to properly replace it by removing old text first
         if not text_obj.is_new and text_obj.bbox:
-            # Create a rectangle from bbox with padding
+            # Create a rectangle from bbox with padding (increased to 10pt for complete artifact removal)
             x0, y0, x1, y1 = text_obj.bbox
             rect = fitz.Rect(
-                x0 - 2,
-                y0 - 2,
-                x1 + 2,
-                y1 + 2
+                x0 - 10,
+                y0 - 10,
+                x1 + 10,
+                y1 + 10
             )
             
             print(f"DEBUG: Redacting old text in rect={rect}")
@@ -340,19 +339,21 @@ def apply_text_edit(doc, text_obj: EditableText, new_text: str):
                         red = ((text_obj.color >> 16) & 255) / 255.0
                         text_color = (red, green, blue)
                 
-                # Use insert_textbox to place text in the rectangle
-                rc = page.insert_textbox(
-                    rect,
+                print(f"DEBUG: Inserting updated text '{new_text}' at point ({text_obj.x}, {text_obj.baseline})")
+                
+                line_point = fitz.Point(text_obj.x, text_obj.baseline)
+                rc = page.insert_text(
+                    line_point,
                     new_text,
                     fontsize=text_obj.font_size,
                     color=text_color,
-                    text_align=fitz.TEXT_ALIGN_LEFT,
+                    overlay=True,
                     **font_arg
                 )
-                print(f"DEBUG: insert_textbox returned: {rc}")
+                print(f"DEBUG: insert_text returned: {rc}")
                 if rc < 0:
-                    print(f"ERROR: insert_textbox failed with rc={rc}")
-                    return False, f"PyMuPDF insert_textbox error: {rc}"
+                    print(f"ERROR: insert_text failed with rc={rc}")
+                    return False, f"PyMuPDF insert_text error: {rc}"
         else:
             # For new text, just insert at the baseline
             if new_text.strip():
@@ -676,6 +677,27 @@ def delete_image_from_page(doc, image_obj: EditableImage):
         traceback.print_exc()
         return False, f"Resim silme sırasında hata: {e}"
 
+def delete_shape_from_page(doc, shape_obj: EditableShape):
+    if not doc or shape_obj.page_number is None:
+        return False, "Şekil silmek için geçersiz belge veya sayfa numarası."
+    try:
+        page = doc.load_page(shape_obj.page_number)
+
+        # Expand the bbox to ensure PyMuPDF catches vector strokes
+        x0, y0, x1, y1 = shape_obj.bbox
+        redact_rect = fitz.Rect(x0 - 20, y0 - 20, x1 + 20, y1 + 20)
+        if not redact_rect.is_empty and redact_rect.is_valid:
+            page.add_redact_annot(redact_rect)
+            page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=True)
+            doc.load_page(shape_obj.page_number)
+            return True, None
+        else:
+            return False, "Şekil sınırlayıcı kutusu geçersiz."
+    except Exception as e:
+        print(f"HATA şekil siliniyor: {e}")
+        traceback.print_exc()
+        return False, f"Şekil silme sırasında hata: {e}"
+
 def apply_object_edit(doc, obj):
     if not doc or not hasattr(obj, 'page_number') or obj.page_number is None:
         return False, "Invalid object or page number."
@@ -683,13 +705,21 @@ def apply_object_edit(doc, obj):
     try:
         page = doc.load_page(obj.page_number)
 
-        original_bbox_to_clear = obj.original_bbox
+        original_bbox_to_clear = getattr(obj, 'original_bbox', None)
         if original_bbox_to_clear:
-            redact_rect = fitz.Rect(original_bbox_to_clear)
+            img_flag = fitz.PDF_REDACT_IMAGE_REMOVE if isinstance(obj, EditableImage) else fitz.PDF_REDACT_IMAGE_NONE
+            graphics_val = True if isinstance(obj, EditableShape) else False
+            
+            x0, y0, x1, y1 = original_bbox_to_clear
+            if graphics_val:
+                # Expand the bbox to ensure PyMuPDF catches thick vector strokes
+                redact_rect = fitz.Rect(x0 - 20, y0 - 20, x1 + 20, y1 + 20)
+            else:
+                redact_rect = fitz.Rect(original_bbox_to_clear)
+                
             if not redact_rect.is_empty and redact_rect.is_valid:
-                img_flag = fitz.PDF_REDACT_IMAGE_REMOVE if isinstance(obj, EditableImage) else fitz.PDF_REDACT_IMAGE_NONE
                 page.add_redact_annot(redact_rect)
-                page.apply_redactions(images=img_flag)
+                page.apply_redactions(images=img_flag, graphics=graphics_val)
                 page = doc.load_page(obj.page_number)
 
         if isinstance(obj, EditableText):
@@ -705,6 +735,25 @@ def apply_object_edit(doc, obj):
         
         elif isinstance(obj, EditableImage):
             page.insert_image(obj.bbox, stream=obj.image_bytes)
+            
+        elif isinstance(obj, EditableShape):
+            rect = fitz.Rect(obj.bbox)
+            shape = page.new_shape()
+            
+            if obj.shape_type == EditableShape.SHAPE_RECTANGLE:
+                shape.draw_rect(rect)
+            elif obj.shape_type == EditableShape.SHAPE_ELLIPSE:
+                shape.draw_oval(rect)
+                
+            fill = tuple(float(c) for c in obj.fill_color) if not obj.is_transparent else None
+            stroke = tuple(float(c) for c in obj.stroke_color)
+            
+            shape.finish(
+                color=stroke,
+                fill=fill,
+                width=obj.stroke_width
+            )
+            shape.commit()
         
         return True, None
 
@@ -720,3 +769,110 @@ def create_new_pdf():
         return doc, None
     except Exception as e:
         return None, f"Yeni PDF oluşturulurken hata: {e}"
+
+def insert_blank_page(doc, page_index=None, width=None, height=None):
+    """
+    Insert a blank page at the specified position.
+    
+    Args:
+        doc: PyMuPDF document
+        page_index: Position where to insert the page (currently appends to end due to PyMuPDF API).
+        width: Page width in points. If None, uses size of current/first page.
+        height: Page height in points. If None, uses size of current/first page.
+    
+    Returns:
+        Tuple of (success, message)
+    """
+    try:
+        # Get page dimensions from current page if not specified
+        if width is None or height is None:
+            if doc.page_count > 0:
+                first_page = doc[0]
+                default_width = first_page.rect.width
+                default_height = first_page.rect.height
+            else:
+                # Default A4 size
+                default_width = 595
+                default_height = 842
+            
+            if width is None:
+                width = default_width
+            if height is None:
+                height = default_height
+        
+        # Append new page to the end (PyMuPDF doesn't support insert position)
+        doc.new_page(width=width, height=height)
+        return True, f"Sayfa sonuna eklendi (Sayfa {doc.page_count})"
+    
+    except Exception as e:
+        return False, f"Sayfa eklenirken hata: {e}"
+
+def merge_pdf_pages(target_doc, source_pdf_path, insert_position=None):
+    """
+    Merge pages from a source PDF into the target PDF at the end.
+    
+    Args:
+        target_doc: PyMuPDF document (target)
+        source_pdf_path: Path to source PDF file
+        insert_position: Ignored (pages always appended to end due to PyMuPDF API).
+    
+    Returns:
+        Tuple of (success, message, pages_inserted)
+    """
+    try:
+        source_doc = fitz.open(source_pdf_path)
+        source_page_count = source_doc.page_count
+        
+        if source_page_count == 0:
+            return False, "Kaynak PDF boş.", 0
+        
+        # Insert all pages from source to target (appends to end)
+        target_doc.insert_pdf(source_doc, from_page=0, to_page=source_page_count - 1)
+        
+        source_doc.close()
+        
+        return True, f"{source_page_count} sayfa başarıyla birleştirildi.", source_page_count
+    
+    except Exception as e:
+        return False, f"PDF birleştirme sırasında hata: {e}", 0
+
+def move_page(doc, from_index, to_index):
+    """
+    Move a page from one position to another.
+    
+    Args:
+        doc: PyMuPDF document
+        from_index: Current page index
+        to_index: Target page index
+    
+    Returns:
+        Tuple of (success, message)
+    """
+    try:
+        if from_index < 0 or from_index >= doc.page_count:
+            return False, "Geçersiz sayfa indeksi."
+        
+        if to_index < 0 or to_index >= doc.page_count:
+            return False, "Geçersiz hedef indeksi."
+        
+        if from_index == to_index:
+            return True, "Sayfa zaten bu konumda."
+        
+        # PyMuPDF doesn't have direct page move, so we use insert/delete
+        # Get the page
+        page = doc[from_index]
+        
+        # Delete from original position
+        if from_index < to_index:
+            # If moving forward, insert first then delete
+            doc.insert_pdf(doc, from_page=from_index, to_page=from_index, index=to_index + 1)
+            doc.delete_page(from_index)
+        else:
+            # If moving backward, delete first then insert
+            doc.insert_pdf(doc, from_page=from_index, to_page=from_index, index=to_index)
+            doc.delete_page(from_index + 1)
+        
+        return True, f"Sayfa {from_index + 1} → {to_index + 1} konumuna taşındı."
+    
+    except Exception as e:
+        return False, f"Sayfa taşıma sırasında hata: {e}"

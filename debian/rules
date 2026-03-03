@@ -3,9 +3,9 @@
 PKGDDIR=debian/word-sys-pdf-editor
 PY_INSTALL_DIR=usr/lib/python3/dist-packages
 
-ICON_NAME=word-sys-pdf-editor
-ICON_SOURCE_PATH=word_sys_pdf_editor/img/icon.png
-ICON_SIZE_DIR=512x512
+ICON_NAME=f-pv1
+ICON_SOURCE_PATH=word_sys_pdf_editor/img/f-pv1.svg
+ICON_SIZE_DIR=scalable
 ICON_INSTALL_DIR=$(PKGDDIR)/usr/share/icons/hicolor/$(ICON_SIZE_DIR)/apps
 
 %:
@@ -21,7 +21,7 @@ override_dh_install:
 	install -m 755 run-editor.py $(PKGDDIR)/usr/bin/word-sys-pdf-editor
 
 	install -d $(ICON_INSTALL_DIR)
-	install -m 644 $(ICON_SOURCE_PATH) $(ICON_INSTALL_DIR)/$(ICON_NAME).png
+	install -m 644 $(ICON_SOURCE_PATH) $(ICON_INSTALL_DIR)/$(ICON_NAME).svg
 
 	install -d $(PKGDDIR)/$(PY_INSTALL_DIR)/word_sys_pdf_editor
 	cp -pr word_sys_pdf_editor/* $(PKGDDIR)/$(PY_INSTALL_DIR)/word_sys_pdf_editor/

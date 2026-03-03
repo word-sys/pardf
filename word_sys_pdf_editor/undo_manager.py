@@ -1,6 +1,6 @@
 import copy
 from . import pdf_handler
-from .models import EditableText
+from .models import EditableText, EditableShape
 
 class Command:
     def __init__(self, window):
@@ -55,7 +55,9 @@ class EditObjectCommand(Command):
         self.new_properties = new_properties
 
     def _apply_properties_to_pdf(self, properties_to_apply, properties_to_clear):
-
+        if isinstance(self.target_object, EditableShape):
+            return True
+            
         temp_obj_for_pdf = copy.deepcopy(self.target_object)
         temp_obj_for_pdf.__dict__.update(copy.deepcopy(properties_to_apply))
         temp_obj_for_pdf.original_bbox = properties_to_clear['bbox']
@@ -90,38 +92,42 @@ class AddObjectCommand(Command):
         super().__init__(window)
         self.new_object = new_object
         self.is_text = isinstance(new_object, EditableText)
+        self.is_shape = isinstance(new_object, EditableShape)
+        self.is_image = not (self.is_text or self.is_shape)
 
     def execute(self):
         if self.is_text:
             self.window.editable_texts.append(self.new_object)
+            pdf_handler.apply_object_edit(self.window.doc, self.new_object)
+        elif self.is_shape:
+            self.window.editable_shapes.append(self.new_object)
         else:
             self.window.editable_images.append(self.new_object)
+            pdf_handler.apply_object_edit(self.window.doc, self.new_object)
         
-        pdf_handler.apply_object_edit(self.window.doc, self.new_object)
         self.window.document_modified = True
         self.window.status_label.set_text("Nesne eklendi.")
         self.window._update_ui_state()
         self.window.pdf_view.queue_draw()
 
     def undo(self):
+        # Must actually remove the object from the PDF since it was baked on execute()
         if self.is_text:
-            if self.new_object in self.window.editable_texts:
-                self.window.editable_texts.remove(self.new_object)
+            pdf_handler.apply_text_edit(self.window.doc, self.new_object, "")
+            self.window.editable_texts.remove(self.new_object)
+        elif self.is_shape:
+            if self.new_object in self.window.editable_shapes:
+                self.window.editable_shapes.remove(self.new_object)
         else:
-            if self.new_object in self.window.editable_images:
-                self.window.editable_images.remove(self.new_object)
+            pdf_handler.delete_image_from_page(self.window.doc, self.new_object)
+            self.window.editable_images.remove(self.new_object)
         
         self.window.document_modified = True
         self.window.status_label.set_text("Geri alındı.")
-        self.window._update_ui_state()
-        self.window.pdf_view.queue_draw()
-
-    def undo(self):
-        if self.is_text:
-            pdf_handler.apply_text_edit(self.window.doc, self.new_object, "")
+        if not self.is_shape:
+            self.window._load_page(self.window.current_page_index, preserve_scroll=True)
         else:
-            pdf_handler.delete_image_from_page(self.window.doc, self.new_object)
-        self.window._load_page(self.window.current_page_index, preserve_scroll=True)
+            self.window.pdf_view.queue_draw()
 
 
 class DeleteObjectCommand(Command):
@@ -129,14 +135,37 @@ class DeleteObjectCommand(Command):
         super().__init__(window)
         self.deleted_object = deleted_object
         self.is_text = isinstance(deleted_object, EditableText)
+        self.is_shape = isinstance(deleted_object, EditableShape)
 
     def execute(self):
         if self.is_text:
             pdf_handler.apply_text_edit(self.window.doc, self.deleted_object, "")
+            if self.deleted_object in self.window.editable_texts:
+                self.window.editable_texts.remove(self.deleted_object)
+        elif self.is_shape:
+            if self.deleted_object in self.window.editable_shapes:
+                self.window.editable_shapes.remove(self.deleted_object)
         else:
             pdf_handler.delete_image_from_page(self.window.doc, self.deleted_object)
-        self.window._load_page(self.window.current_page_index, preserve_scroll=True)
+            if self.deleted_object in self.window.editable_images:
+                self.window.editable_images.remove(self.deleted_object)
+        
+        if not self.is_shape:
+            self.window._load_page(self.window.current_page_index, preserve_scroll=True)
+        else:
+            self.window.pdf_view.queue_draw()
 
     def undo(self):
-        pdf_handler.apply_object_edit(self.window.doc, self.deleted_object)
-        self.window._load_page(self.window.current_page_index, preserve_scroll=True)
+        if self.is_text:
+            pdf_handler.apply_object_edit(self.window.doc, self.deleted_object)
+            self.window.editable_texts.append(self.deleted_object)
+        elif self.is_shape:
+            self.window.editable_shapes.append(self.deleted_object)
+        else:
+            pdf_handler.apply_object_edit(self.window.doc, self.deleted_object)
+            self.window.editable_images.append(self.deleted_object)
+            
+        if not self.is_shape:
+            self.window._load_page(self.window.current_page_index, preserve_scroll=True)
+        else:
+            self.window.pdf_view.queue_draw()

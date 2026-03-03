@@ -136,6 +136,77 @@ class EditableImage:
         self.selected = False
         self.modified = False
 
+class EditableShape:
+    """Represents an editable shape (circle, rectangle, polygon) on a PDF page"""
+    SHAPE_ELLIPSE = "circle"
+    SHAPE_RECTANGLE = "rectangle"
+    SHAPE_ELLIPSE = "ellipse"
+    SHAPE_POLYGON = "polygon"
+    
+    def __init__(self, shape_type, bbox, fill_color=(255, 255, 255), 
+                 stroke_color=(0, 0, 0), stroke_width=1.0, page_number=None, is_new=False, is_transparent=True):
+        """
+        Initialize an editable shape.
+        
+        Args:
+            shape_type: Type of shape (SHAPE_ELLIPSE, SHAPE_RECTANGLE, etc.)
+            bbox: Tuple (x1, y1, x2, y2) representing bounding box
+            fill_color: Tuple (r, g, b) for fill color, 0-255 range
+            stroke_color: Tuple (r, g, b) for stroke/border color
+            stroke_width: Width of the border/stroke in points
+            page_number: Page index this shape belongs to
+            is_new: True if this is a newly created shape
+            is_transparent: True if shape fill should be transparent (outline only)
+        """
+        self.shape_type = shape_type
+        self.bbox = bbox
+        self.original_bbox = bbox
+        
+        # Normalize colors to 0-1 range for Cairo
+        self.fill_color = normalize_color(fill_color)
+        self.stroke_color = normalize_color(stroke_color)
+        self.original_fill_color = self.fill_color
+        self.original_stroke_color = self.stroke_color
+        
+        self.stroke_width = float(stroke_width)
+        self.original_stroke_width = self.stroke_width
+        self.is_transparent = is_transparent
+        
+        self.page_number = page_number
+        self.is_new = is_new
+        self.selected = False
+        self.modified = is_new
+        
+        # For dragging
+        self.dragging = False
+        self.drag_start_x = 0
+        self.drag_start_y = 0
+        
+        # Position shortcuts
+        self.x = bbox[0]
+        self.y = bbox[1]
+    
+    def get_width(self):
+        """Get shape width"""
+        return self.bbox[2] - self.bbox[0]
+    
+    def get_height(self):
+        """Get shape height"""
+        return self.bbox[3] - self.bbox[1]
+    
+    def set_size(self, width, height):
+        """Update shape size while keeping top-left position"""
+        x1, y1, _, _ = self.bbox
+        self.bbox = (x1, y1, x1 + width, y1 + height)
+    
+    def set_position(self, x, y):
+        """Move shape to new position"""
+        width = self.get_width()
+        height = self.get_height()
+        self.bbox = (x, y, x + width, y + height)
+        self.x = x
+        self.y = y
+
 class PdfPage(GObject.GObject):
     __gtype_name__ = 'PdfPage'
     index = GObject.Property(type=int)
