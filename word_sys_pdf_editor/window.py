@@ -2526,11 +2526,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.dragged_object.bbox = (new_x, new_y, new_x + w, new_y + h)
         
         if isinstance(self.dragged_object, EditableText):
-            original_top_y = self.dragged_object.original_bbox[1]
-            original_baseline = self.dragged_object.span_data.get("origin", (0, original_top_y + self.dragged_object.font_size))[1]
-            baseline_offset = original_baseline - original_top_y
-            
-            self.dragged_object.baseline = new_y + baseline_offset
+            self.dragged_object.baseline = new_y + getattr(self.dragged_object, 'baseline_offset', self.dragged_object.font_size * 0.9)
 
             self.selected_text = self.dragged_object
             self.selected_image = None
@@ -2606,6 +2602,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                     return
                 
                 # Add shape to document
+                self.temp_shape.original_bbox = self.temp_shape.bbox
                 self.selected_shape = self.temp_shape
                 self.selected_text = None
                 self.selected_image = None

@@ -306,82 +306,34 @@ def apply_text_edit(doc, text_obj: EditableText, new_text: str):
         print(f"DEBUG apply_text_edit: is_new={text_obj.is_new}, new_text='{new_text}'")
         print(f"DEBUG: text_obj bbox: {text_obj.bbox}")
         
-        # For existing text, we need to properly replace it by removing old text first
-        if not text_obj.is_new and text_obj.bbox:
-            # Create a rectangle from bbox with padding (increased to 10pt for complete artifact removal)
-            x0, y0, x1, y1 = text_obj.bbox
-            rect = fitz.Rect(
-                x0 - 10,
-                y0 - 10,
-                x1 + 10,
-                y1 + 10
+        # Old text redaction is handled centrally by apply_object_edit using original_bbox_to_clear.
+        # We just need to insert the new text.
+        if new_text.strip():
+            text_color = (0, 0, 0)
+            if text_obj.color:
+                if isinstance(text_obj.color, (tuple, list)) and len(text_obj.color) >= 3:
+                    text_color = tuple(float(c) for c in text_obj.color[:3])
+                elif isinstance(text_obj.color, int):
+                    blue = (text_obj.color & 255) / 255.0
+                    green = ((text_obj.color >> 8) & 255) / 255.0
+                    red = ((text_obj.color >> 16) & 255) / 255.0
+                    text_color = (red, green, blue)
+            
+            print(f"DEBUG: Inserting updated text '{new_text}' at point ({text_obj.x}, {text_obj.baseline})")
+            
+            line_point = fitz.Point(text_obj.x, text_obj.baseline)
+            rc = page.insert_text(
+                line_point,
+                new_text,
+                fontsize=text_obj.font_size,
+                color=text_color,
+                overlay=True,
+                **font_arg
             )
-            
-            print(f"DEBUG: Redacting old text in rect={rect}")
-            
-            # Step 1: Add redaction annotation to mark area for removal
-            page.add_redact_annot(rect)
-            
-            # Step 2: Apply redactions - this actually removes content from the text stream
-            page.apply_redactions()
-            
-            print(f"DEBUG: Redaction applied, now inserting new text")
-            
-            # Step 3: Now insert new text in the cleared area
-            if new_text.strip():
-                text_color = (0, 0, 0)
-                if text_obj.color:
-                    if isinstance(text_obj.color, (tuple, list)) and len(text_obj.color) >= 3:
-                        text_color = tuple(float(c) for c in text_obj.color[:3])
-                    elif isinstance(text_obj.color, int):
-                        blue = (text_obj.color & 255) / 255.0
-                        green = ((text_obj.color >> 8) & 255) / 255.0
-                        red = ((text_obj.color >> 16) & 255) / 255.0
-                        text_color = (red, green, blue)
-                
-                print(f"DEBUG: Inserting updated text '{new_text}' at point ({text_obj.x}, {text_obj.baseline})")
-                
-                line_point = fitz.Point(text_obj.x, text_obj.baseline)
-                rc = page.insert_text(
-                    line_point,
-                    new_text,
-                    fontsize=text_obj.font_size,
-                    color=text_color,
-                    overlay=True,
-                    **font_arg
-                )
-                print(f"DEBUG: insert_text returned: {rc}")
-                if rc < 0:
-                    print(f"ERROR: insert_text failed with rc={rc}")
-                    return False, f"PyMuPDF insert_text error: {rc}"
-        else:
-            # For new text, just insert at the baseline
-            if new_text.strip():
-                text_color = (0, 0, 0)
-                if text_obj.color:
-                    if isinstance(text_obj.color, (tuple, list)) and len(text_obj.color) >= 3:
-                        text_color = tuple(float(c) for c in text_obj.color[:3])
-                    elif isinstance(text_obj.color, int):
-                        blue = (text_obj.color & 255) / 255.0
-                        green = ((text_obj.color >> 8) & 255) / 255.0
-                        red = ((text_obj.color >> 16) & 255) / 255.0
-                        text_color = (red, green, blue)
-                
-                print(f"DEBUG: Inserting new text '{new_text}' at point ({text_obj.x}, {text_obj.baseline})")
-                
-                line_point = fitz.Point(text_obj.x, text_obj.baseline)
-                rc = page.insert_text(
-                    line_point,
-                    new_text,
-                    fontsize=text_obj.font_size,
-                    color=text_color,
-                    overlay=False,
-                    **font_arg
-                )
-                print(f"DEBUG: insert_text returned: {rc}")
-                if rc < 0:
-                    print(f"ERROR: insert_text failed with rc={rc}")
-                    return False, f"PyMuPDF insert_text error: {rc}"
+            print(f"DEBUG: insert_text returned: {rc}")
+            if rc < 0:
+                print(f"ERROR: insert_text failed with rc={rc}")
+                return False, f"PyMuPDF insert_text error: {rc}"
 
         return True, None
     except Exception as e:
