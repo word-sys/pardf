@@ -1,4 +1,5 @@
 __pycache__/
+.debhelper/
 *.py[cod]
 *$py.class
 venv/

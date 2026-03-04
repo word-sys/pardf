@@ -637,7 +637,10 @@ def delete_shape_from_page(doc, shape_obj: EditableShape):
         redact_rect = fitz.Rect(x0 - 20, y0 - 20, x1 + 20, y1 + 20)
         if not redact_rect.is_empty and redact_rect.is_valid:
             page.add_redact_annot(redact_rect)
-            page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=True)
+            try:
+                page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=True)
+            except TypeError:
+                page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE)
             doc.load_page(shape_obj.page_number)
             return True, None
         else:
@@ -667,7 +670,10 @@ def apply_object_edit(doc, obj):
                 
             if not redact_rect.is_empty and redact_rect.is_valid:
                 page.add_redact_annot(redact_rect)
-                page.apply_redactions(images=img_flag, graphics=graphics_val)
+                try:
+                    page.apply_redactions(images=img_flag, graphics=graphics_val)
+                except TypeError:
+                    page.apply_redactions(images=img_flag)
                 page = doc.load_page(obj.page_number)
 
         if isinstance(obj, EditableText):

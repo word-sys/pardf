@@ -65,7 +65,8 @@ class EditObjectCommand(Command):
         success, msg = pdf_handler.apply_object_edit(self.window.doc, temp_obj_for_pdf)
         
         if not success:
-            self.window.show_error_dialog(self.window, f"İşlem sırasında hata: {msg}")
+            from .ui_components import show_error_dialog
+            show_error_dialog(self.window, f"İşlem sırasında hata: {msg}")
         
         return success
 
