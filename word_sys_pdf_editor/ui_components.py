@@ -129,3 +129,35 @@ def show_confirm_dialog(parent_window, message, title="Confirm", destructive=Tru
 
     dialog.destroy()
     return response == Gtk.ResponseType.ACCEPT
+
+def show_save_changes_dialog(parent_window):
+    dialog = Gtk.MessageDialog(
+        transient_for=parent_window,
+        modal=True,
+        message_type=Gtk.MessageType.QUESTION,
+        buttons=Gtk.ButtonsType.NONE,
+        text="Kaydedilmemiş Değişiklikler",
+        secondary_text="Kaydedilmemiş değişiklikler var. Ne yapmak istersiniz?"
+    )
+
+    dialog.add_buttons(
+        "İptal", Gtk.ResponseType.CANCEL,
+        "Kaydetme", Gtk.ResponseType.REJECT,
+        "Kaydet", Gtk.ResponseType.ACCEPT
+    )
+    dialog.set_default_response(Gtk.ResponseType.ACCEPT)
+
+    response = None
+    def on_response(d, resp_id):
+        nonlocal response
+        response = resp_id
+        d.destroy()
+
+    dialog.connect("response", on_response)
+    dialog.present()
+
+    while response is None:
+         context = GLib.MainContext.default()
+         context.iteration(True)
+
+    return response

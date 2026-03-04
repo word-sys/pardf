@@ -19,7 +19,7 @@ from . import pdf_handler
 from . import print_handler
 from .welcome_view import WelcomeView 
 from .models import PdfPage, EditableText, BASE14_FALLBACK_MAP, EditableImage, EditableShape
-from .ui_components import PageThumbnailFactory, show_error_dialog, show_confirm_dialog
+from .ui_components import PageThumbnailFactory, show_error_dialog, show_confirm_dialog, show_save_changes_dialog
 from . import utils
 
 class PdfEditorWindow(Adw.ApplicationWindow):
@@ -1702,20 +1702,24 @@ class PdfEditorWindow(Adw.ApplicationWindow):
     #patched
     def check_unsaved_changes(self):
         if self.document_modified:
-            confirm = show_confirm_dialog(self,
-                                          "Kaydedilmemiş değişiklikler var. Kapatmadan önce kaydetmek ister misiniz?",
-                                          title="Kaydedilmemiş Değişiklikler",
-                                          destructive=False)
-            if confirm:
+            response = show_save_changes_dialog(self)
+            
+            if response == Gtk.ResponseType.ACCEPT:
+                 # Kaydet
                  if self.current_file_path:
                      self.save_document(self.current_file_path, incremental=False)
                      return False
                  else:
                      self.on_save_as(None, None)
                      return True
+            elif response == Gtk.ResponseType.REJECT:
+                 # Kaydetme
+                 print("Kaydedilmemiş değişiklikler siliniyor.")
+                 return False
+            else:
+                 # İptal (Gtk.ResponseType.CANCEL, Gtk.ResponseType.DELETE_EVENT, vb.)
+                 return True
 
-            print("Kaydedilmemiş değişiklikler siliniyor.")
-            return False
         return False
 
     def on_drop(self, drop_target, value, x, y):
