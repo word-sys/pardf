@@ -78,7 +78,7 @@ def parse_font_name(filename):
     if not family_name_candidate:
         family_name_candidate = name_part
 
-    family_name_candidate = re.sub(r'(MT|PS)$', '', family_name_candidate, flags=re.IGNORECASE).strip()
+    family_name_candidate = re.sub(r'(PSMT|PS|MT)$', '', family_name_candidate, flags=re.IGNORECASE).strip()
 
     family_name_candidate = re.sub(r"([a-z])([A-Z])", r"\1 \2", family_name_candidate)
     display_family_name = ' '.join(word.capitalize() for word in family_name_candidate.replace('-', ' ').replace('_', ' ').split())
@@ -129,6 +129,22 @@ def find_specific_font_variant(family_name, is_bold=False, is_italic=False):
 
     normalized_family_name = family_name.replace(" ", "").lower() if family_name else ""
     
+    sans_prefixes = ("arial", "helvetica", "calibri")
+    serif_prefixes = ("times", "timesnewroman")
+    matched_alias = None
+    for prefix in sans_prefixes:
+        if normalized_family_name.startswith(prefix):
+            matched_alias = "liberationsans"
+            break
+    if not matched_alias:
+        for prefix in serif_prefixes:
+            if normalized_family_name.startswith(prefix):
+                matched_alias = "liberationserif"
+                break
+    if matched_alias:
+        print(f"DEBUG: Mapping proprietary font '{family_name}' to '{matched_alias}'")
+        normalized_family_name = matched_alias
+
     found_family_key = None
     if family_name in SYSTEM_FONTS:
         found_family_key = family_name
@@ -168,7 +184,7 @@ def get_default_unicode_font_path():
         print("Varsayılan unicode font için taramanın bitmesi bekleniyor...")
         FONT_SCAN_COMPLETED.wait(timeout=10)
 
-    preferred_defaults = ["DejaVu Sans", "Noto Sans", "Liberation Sans", "Arial"]
+    preferred_defaults = ["Liberation Sans", "DejaVu Sans", "Noto Sans"]
     for family in preferred_defaults:
         path = find_specific_font_variant(family, False, False)
         if path:

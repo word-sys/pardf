@@ -111,7 +111,6 @@ class AddObjectCommand(Command):
         self.window.pdf_view.queue_draw()
 
     def undo(self):
-        # Must actually remove the object from the PDF since it was baked on execute()
         if self.is_text:
             pdf_handler.apply_text_edit(self.window.doc, self.new_object, "")
             self.window.editable_texts.remove(self.new_object)

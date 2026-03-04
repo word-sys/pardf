@@ -27,7 +27,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         super().__init__(*args, **kwargs)
         self.set_title("Word-Sys's PDF Editor")
         self.set_default_size(1200, 800)
-        # Set window icon from icon theme
         self.set_icon_name("f-pv1")
 
         self.current_file_path = None
@@ -49,14 +48,13 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.dragged_object = None
         self.drag_start_pos = (0, 0)
         self.drag_object_start_pos = (0, 0)
-        self.resize_handle = None  # Track which handle is being dragged
-        self.resize_start_bbox = None  # Store original bbox during resize
-        self.dragging_to_create = False  # Track if we're creating a shape/image by dragging
-        self.temp_shape = None  # Temporary shape being created
-        self.temp_image_bbox = None  # Temporary image bbox being placed
-        self.temp_image_path = None  # Temporary image path being placed
-        self.drag_start_page_pos = None  # Starting position in page coordinates
-        # Shape properties for next creation
+        self.resize_handle = None  
+        self.resize_start_bbox = None  
+        self.dragging_to_create = False  
+        self.temp_shape = None  
+        self.temp_image_bbox = None  
+        self.temp_image_path = None  
+        self.drag_start_page_pos = None  
         self.next_shape_fill = (255, 255, 255)
         self.next_shape_stroke = (0, 0, 0)
         self.next_shape_stroke_width = 2.0
@@ -207,7 +205,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.print_button.connect("clicked", lambda w: self.on_print_activated(None, None))
         header.pack_end(self.print_button)
         menu = Gio.Menu()
-        #menu.append("Baskı Önizlemesi...", "win.print")
         menu.append("Farklı Kaydet...", "win.save_as")
         menu.append("Farklı Dışarı Çıkart...", "win.export_as")
         menu.append_section(None, Gio.Menu())
@@ -413,7 +410,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.color_button.connect("color-set", self.on_text_format_changed)
         self.main_toolbar.append(self.color_button)
 
-        # Shape styling controls
         self.main_toolbar.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL, margin_start=6, margin_end=6))
 
         self.shape_fill_button = Gtk.ColorButton()
@@ -426,7 +422,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.main_toolbar.append(self.shape_fill_button)
 
         self.shape_transparent_toggle = Gtk.ToggleButton(label="Saydam")
-        self.shape_transparent_toggle.set_active(True)  # Default transparent
+        self.shape_transparent_toggle.set_active(True)  
         self.shape_transparent_toggle.set_tooltip_text("Şekli Saydam Yap (Dolgu Yok) / Renk Dolu")
         self.shape_transparent_toggle.connect("toggled", self.on_shape_format_changed)
         self.main_toolbar.append(self.shape_transparent_toggle)
@@ -447,7 +443,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.main_toolbar.append(self.shape_stroke_width_spin)
 
     def _setup_controllers(self):
-        # Main window drag/drop for opening/merging PDFs
         drop_target = Gtk.DropTarget.new(Gio.File, Gdk.DragAction.COPY)
         drop_target.connect('drop', self.on_drop)
         self.add_controller(drop_target)
@@ -471,7 +466,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         drag_controller.connect("drag-end", self.on_drag_end)
         self.pdf_view.add_controller(drag_controller)
 
-        # Drop target for thumbnails (for PDF merge)
         thumbnail_drop = Gtk.DropTarget.new(Gio.File, Gdk.DragAction.COPY)
         thumbnail_drop.connect('drop', self.on_thumbnail_drop)
         self.thumbnails_list.add_controller(thumbnail_drop)
@@ -537,7 +531,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if self.bold_button: self.bold_button.set_sensitive(format_enabled_base)
         if self.italic_button: self.italic_button.set_sensitive(format_enabled_base)
 
-        # Shape format controls - enabled when shape is selected OR shape tool is active
         shape_controls_enabled = shape_selected or self.tool_mode in ("add_ellipse", "add_rectangle")
         self.shape_fill_button.set_sensitive(shape_controls_enabled)
         self.shape_stroke_button.set_sensitive(shape_controls_enabled)
@@ -609,7 +602,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         about_dialog = Gtk.AboutDialog(transient_for=self, modal=True)
 
         about_dialog.set_program_name("Word-Sys's PDF Editor")
-        about_dialog.set_version("1.7.2") 
+        about_dialog.set_version("1.8.0") 
         about_dialog.set_authors(["Barın Güzeldemirci (word-sys)"])
         
         try:
@@ -639,7 +632,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         about_dialog.set_website("https://github.com/word-sys/pardf")
         about_dialog.set_website_label("Proje GitHub Sayfası")
 
-        comments_text = "Linux için Basit PDF Metin ve Şekil Düzenleyici.\n\n" + \
+        comments_text = "Linux için Açık Kaynak Basit PDF Metin ve Şekil Düzenleyici.\n\n" + \
                         """Word-Sys's PDF Editor is an open-source tool for editing content in PDF files on Linux."""
         about_dialog.set_comments(comments_text)
 
@@ -654,7 +647,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             print(f"Warning: Could not load application icon for About dialog: {e}")
             about_dialog.set_logo_icon_name("application-x-executable")
 
-        about_dialog.set_copyright("© 2024-2025 Barın Güzeldemirci")
+        about_dialog.set_copyright("© 2024-2026 Barın Güzeldemirci")
         about_dialog.present()
 
     #original
@@ -943,7 +936,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if self.text_edit_popover and self.text_edit_popover.is_visible():
             self._apply_and_hide_editor(force_apply=True)
             
-        # Bake unbaked shapes permanently before saving (PyMuPDF Redaction isn't reliable for live vector editing)
         for shape in self.editable_shapes:
             if not getattr(shape, 'is_baked', False):
                 pdf_handler.apply_object_edit(self.doc, shape)
@@ -998,18 +990,15 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         cr.restore()
 
         if self.dragged_object:
-            # Draw semi-transparent shadow at the original position
             if self.dragged_object.original_bbox:
                 orig_x1, orig_y1, orig_x2, orig_y2 = self.dragged_object.original_bbox
                 cr.save()
-                # Semi-transparent gray overlay (not solid white) so user sees where object was
                 cr.set_source_rgba(0.85, 0.85, 0.85, 0.55)
                 cr.rectangle(page_offset_x + (orig_x1 * self.zoom_level),
                             page_offset_y + (orig_y1 * self.zoom_level),
                             (orig_x2 - orig_x1) * self.zoom_level,
                             (orig_y2 - orig_y1) * self.zoom_level)
                 cr.fill()
-                # Dashed border around original position
                 cr.set_source_rgba(0.5, 0.5, 0.5, 0.7)
                 cr.set_line_width(1.5)
                 cr.set_dash([4.0, 3.0])
@@ -1040,7 +1029,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                             Gdk.cairo_set_source_pixbuf(cr, scaled_pixbuf, ghost_x, ghost_y)
                             cr.paint_with_alpha(0.6)
                 except Exception as e:
-                    # Fallback: draw a semi-transparent colored rectangle
                     cr.set_source_rgba(0.2, 0.5, 0.8, 0.5)
                     cr.rectangle(ghost_x, ghost_y, ghost_w, ghost_h)
                     cr.fill()
@@ -1057,13 +1045,9 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 r, g, b = self.dragged_object.color
                 cr.set_source_rgba(r, g, b, 0.6)
                 
-                # Pango layout draws from top-left, we must align the layout top to the ghost_y bounding box
-                # However, original code used move_to(ghost_x, ghost_y) which drew it offset if the bbox included ascenders
-                # The bbox already handles the bounding box correctly, so drawing at ghost_x, ghost_y is fine for top-left
                 cr.move_to(ghost_x, ghost_y)
                 PangoCairo.show_layout(cr, layout)
             elif isinstance(self.dragged_object, EditableShape):
-                # Draw ghost for shapes too
                 if not self.dragged_object.is_transparent:
                     fill_r, fill_g, fill_b = self.dragged_object.fill_color
                     cr.set_source_rgba(fill_r, fill_g, fill_b, 0.4)
@@ -1094,7 +1078,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                         cr.stroke()
             cr.restore()
             
-        # Draw all shapes on current page (100% overlay, no PyMuPDF baking until save)
         for shape in self.editable_shapes:
             if shape.page_number != self.current_page_index:
                 continue
@@ -1140,7 +1123,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             cr.restore()
 
         
-        # Draw temporary shape if being created
         if self.temp_shape:
             x1, y1, x2, y2 = self.temp_shape.bbox
             draw_x = page_offset_x + (x1 * self.zoom_level)
@@ -1149,7 +1131,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             draw_h = (y2 - y1) * self.zoom_level
             
             stroke_r, stroke_g, stroke_b = self.temp_shape.stroke_color
-            cr.set_source_rgba(stroke_r, stroke_g, stroke_b, 0.7)  # Slightly transparent while creating
+            cr.set_source_rgba(stroke_r, stroke_g, stroke_b, 0.7)  
             cr.set_line_width(self.temp_shape.stroke_width)
             
             if self.temp_shape.shape_type == EditableShape.SHAPE_RECTANGLE:
@@ -1163,7 +1145,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 cr.restore()
                 cr.stroke()
 
-        # Draw temporary image zone if being created - use GTK4 accent color
         if self.temp_image_bbox:
             x1, y1, x2, y2 = self.temp_image_bbox
             draw_x = page_offset_x + (x1 * self.zoom_level)
@@ -1171,7 +1152,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             draw_w = (x2 - x1) * self.zoom_level
             draw_h = (y2 - y1) * self.zoom_level
 
-            # Use GTK4 accent color (same lookup as selection rect)
             style_context = area.get_style_context()
             found_img, img_rgba = style_context.lookup_color("accent_color")
             if not found_img:
@@ -1200,11 +1180,10 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
             found, rgba = style_context.lookup_color("accent_color")
             if not found:
-                # Try fallback colors
                 found, rgba = style_context.lookup_color("theme_selected_bg_color")
             if not found:
                 rgba = Gdk.RGBA()
-                rgba.parse("#3584e4")  # Final fallback
+                rgba.parse("#3584e4")
 
             x1, y1, x2, y2 = selected_obj.bbox
             padding = 3.0
@@ -1229,15 +1208,13 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             cr.stroke()
             cr.restore()
 
-            # Draw resize handles for selected objects (not for text - use font size to resize text)
             is_text = isinstance(selected_obj, EditableText)
             if not is_text:
                 handle_size = 8.0
                 handle_color_rgba = rgba
                 
-                # Define the 8 resize handle positions (corners and edges)
                 handles = [
-                    ("nw", rect_x, rect_y),                                    # top-left
+                    ("nw", rect_x, rect_y),                                   # top-left
                     ("ne", rect_x + rect_w, rect_y),                          # top-right
                     ("sw", rect_x, rect_y + rect_h),                          # bottom-left
                     ("se", rect_x + rect_w, rect_y + rect_h),                 # bottom-right
@@ -1250,15 +1227,12 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 cr.save()
                 cr.set_source_rgba(handle_color_rgba.red, handle_color_rgba.green, handle_color_rgba.blue, 1.0)
                 for handle_name, handle_x, handle_y in handles:
-                    # Draw small square handle
                     cr.rectangle(handle_x - handle_size / 2.0, handle_y - handle_size / 2.0, handle_size, handle_size)
                     cr.fill()
-                    # Draw white border
                     cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
                     cr.rectangle(handle_x - handle_size / 2.0, handle_y - handle_size / 2.0, handle_size, handle_size)
                     cr.set_line_width(1.0)
                     cr.stroke()
-                    # Reset source for next handle
                     cr.set_source_rgba(handle_color_rgba.red, handle_color_rgba.green, handle_color_rgba.blue, 1.0)
                 cr.restore()
 
@@ -1281,7 +1255,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         return None
 
     def _find_shape_at_pos(self, page_x, page_y):
-        """Find a shape at the given position on current page"""
         for shape_obj in reversed(self.editable_shapes):
             if shape_obj.page_number != self.current_page_index:
                 continue
@@ -1295,11 +1268,9 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         return None
 
     def _find_resize_handle_at_pos(self, drawn_x, drawn_y, selected_obj):
-        """Find which resize handle is being clicked (if any). Text objects cannot be resized with handles."""
         if not selected_obj or not selected_obj.bbox:
             return None
         
-        # Text objects cannot be resized with handles (use font size instead)
         if isinstance(selected_obj, EditableText):
             return None
         
@@ -1314,9 +1285,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         rect_h = (y2 - y1) * self.zoom_level + (2 * padding)
         
         handle_size = 8.0
-        handle_tolerance = 12.0  # Larger click area for easier selection
+        handle_tolerance = 12.0  
         
-        # Check all 8 resize handles
         handles = [
             ("nw", rect_x, rect_y),
             ("ne", rect_x + rect_w, rect_y),
@@ -1479,15 +1449,12 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         return font_family_display, font_pdf_name, font_size, color, is_bold, is_italic
 
     def _update_shape_format_controls(self, shape_obj):
-        """Update shape format controls based on selected shape"""
         try:
-            # Block signals to prevent triggering on_shape_format_changed
             self.shape_fill_button.handler_block_by_func(self.on_shape_format_changed)
             self.shape_stroke_button.handler_block_by_func(self.on_shape_format_changed)
             self.shape_stroke_width_spin.handler_block_by_func(self.on_shape_format_changed)
 
             if not shape_obj:
-                # Reset to defaults
                 fill_rgba = Gdk.RGBA()
                 fill_rgba.parse("white")
                 self.shape_fill_button.set_rgba(fill_rgba)
@@ -1498,7 +1465,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
                 self.shape_stroke_width_spin.set_value(2.0)
             else:
-                # Update controls from shape properties
                 fill_r, fill_g, fill_b = shape_obj.fill_color
                 fill_rgba = Gdk.RGBA()
                 fill_rgba.red, fill_rgba.green, fill_rgba.blue = fill_r, fill_g, fill_b
@@ -1514,7 +1480,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 self.shape_stroke_width_spin.set_value(shape_obj.stroke_width)
 
         finally:
-            # Unblock signals
             self.shape_fill_button.handler_unblock_by_func(self.on_shape_format_changed)
             self.shape_stroke_button.handler_unblock_by_func(self.on_shape_format_changed)
             self.shape_stroke_width_spin.handler_unblock_by_func(self.on_shape_format_changed)
@@ -1553,9 +1518,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if text_obj.is_new:
             self.text_edit_view.add_css_class("new-text-entry")
         
-        # Add focus controller to handle focus-out events
         focus_controller = Gtk.EventControllerFocus()
-        focus_controller.connect("leave", lambda w: False)  # Return False to propagate event (GDK_EVENT_PROPAGATE)
+        focus_controller.connect("leave", lambda w: False)
         self.text_edit_view.add_controller(focus_controller)
         
         scroll.set_child(self.text_edit_view)
@@ -1625,7 +1589,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if text_obj_to_apply.is_new:
             text_obj_to_apply.text = new_text
             
-            # Recalculate bbox based on new text
             x1, y1, _, _ = text_obj_to_apply.bbox
             import cairo
             import gi
@@ -1705,7 +1668,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             response = show_save_changes_dialog(self)
             
             if response == Gtk.ResponseType.ACCEPT:
-                 # Kaydet
                  if self.current_file_path:
                      self.save_document(self.current_file_path, incremental=False)
                      return False
@@ -1713,11 +1675,9 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                      self.on_save_as(None, None)
                      return True
             elif response == Gtk.ResponseType.REJECT:
-                 # Kaydetme
                  print("Kaydedilmemiş değişiklikler siliniyor.")
                  return False
             else:
-                 # İptal (Gtk.ResponseType.CANCEL, Gtk.ResponseType.DELETE_EVENT, vb.)
                  return True
 
         return False
@@ -1726,7 +1686,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if isinstance(value, Gio.File):
             filepath = value.get_path()
             if filepath and filepath.lower().endswith('.pdf'):
-                # Check if we have an open document - if yes, offer merge option
                 if self.doc:
                     self._offer_merge_or_open(filepath)
                 else:
@@ -1735,7 +1694,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         return False
 
     def _offer_merge_or_open(self, filepath):
-        """Offer user choice to merge or replace PDF"""
         dialog = Gtk.MessageDialog(
             transient_for=self,
             modal=True,
@@ -1755,10 +1713,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         def on_response(d, resp_id):
             d.destroy()
             if resp_id == Gtk.ResponseType.YES:
-                # Merge at current page position
                 self._merge_pdf_at_position(filepath, self.current_page_index + 1)
             elif resp_id == Gtk.ResponseType.NO:
-                # Replace document
                 if self.check_unsaved_changes():
                     return
                 GLib.idle_add(self.load_document, filepath)
@@ -1767,7 +1723,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         dialog.present()
 
     def _merge_pdf_at_position(self, source_pdf_path, insert_position):
-        """Merge a PDF at the specified position"""
         success, message, pages_inserted = pdf_handler.merge_pdf_pages(
             self.doc, source_pdf_path, insert_position
         )
@@ -1782,12 +1737,9 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             show_error_dialog(self, message, "PDF Birleştirme Hatası")
 
     def on_thumbnail_drop(self, drop_target, value, x, y):
-        """Handle dropping PDF files on thumbnails list for merge"""
-        # Check if it's a PDF file drop
         if isinstance(value, Gio.File):
             filepath = value.get_path()
             if filepath and filepath.lower().endswith('.pdf'):
-                # Merge at end by default (GridView doesn't support precise positioning)
                 insert_position = pdf_handler.get_page_count(self.doc)
                 self._merge_pdf_at_position(filepath, insert_position)
                 return True
@@ -1933,7 +1885,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
              self.status_label.set_text("Dışa aktarma başarısız oldu.")
 
     def on_print_activated(self, action, param):
-        """Handle print action using native GTK4 PrintOperation"""
         if not self.doc:
             show_error_dialog(self, "Yazdırmak için lütfen bir PDF dosyası açın.", "Dosya Açılmadı")
             return
@@ -1944,7 +1895,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             if message:
                 self.status_label.set_text(message)
         else:
-            if message:  # None means user cancelled
+            if message:
                 show_error_dialog(self, message, "Yazdırma Hatası")
                 self.status_label.set_text("Yazdırma başarısız oldu.")
             else:
@@ -1978,17 +1929,13 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self._load_page(self.current_page_index + 1)
 
     def on_add_page(self, button):
-        """Add a new blank page after the current page"""
         if not self.doc:
             show_error_dialog(self, "Lütfen önce bir belge açın veya oluşturun.", "Belge Yok")
             return
 
-        # Get current page dimensions
         current_page = self.doc.load_page(self.current_page_index)
         page_width = current_page.rect.width
         page_height = current_page.rect.height
-
-        # Insert page after current page
         insert_position = self.current_page_index + 1
         success, message = pdf_handler.insert_blank_page(self.doc, insert_position, page_width, page_height)
 
@@ -2002,7 +1949,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             show_error_dialog(self, message, "Sayfa Ekleme Hatası")
 
     def on_delete_page(self, button):
-        """Delete the currently selected page"""
         if not self.doc:
             show_error_dialog(self, "Lütfen önce bir belge açın.", "Belge Yok")
             return
@@ -2029,7 +1975,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if success:
             self.document_modified = True
             self.status_label.set_text(message)
-            # Navigate to a valid page
             new_page_count = pdf_handler.get_page_count(self.doc)
             new_page_index = min(page_to_delete, new_page_count - 1)
             self._load_thumbnails()
@@ -2055,7 +2000,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
          self._syncing_thumb = False
 
     def on_page_reorder(self, from_index, to_index):
-        """Reorder pages in the document (infrastructure ready for future drag-drop)"""
         if from_index == to_index or from_index < 0 or to_index < 0:
             return
         
@@ -2184,15 +2128,15 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self._update_ui_state()
 
         elif self.tool_mode == "add_image":
-            # Image creation is now drag-based
+            # patched
             pass
 
         elif self.tool_mode == "add_ellipse":
-            # Ellipse creation is now drag-based
+            # patched
             pass
 
         elif self.tool_mode == "add_rectangle":
-            # Rectangle creation is now drag-based
+            # patched
             pass
 
     def on_text_format_changed(self, widget, *args):
@@ -2223,13 +2167,11 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             if self.pending_format_change_obj.font_size != font_size:
                 self.pending_format_change_obj.font_size = font_size
                 changed = True
-                # Recalculate the text bbox so the selection border matches the new font size
                 obj = self.pending_format_change_obj
                 if obj.bbox:
                     x1, y1, x2, y2 = obj.bbox
                     old_h = y2 - y1
                     old_w = x2 - x1
-                    # Estimate new height/width from Pango layout measurement
                     try:
                         import cairo
                         import gi
@@ -2246,7 +2188,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                         _layout.set_text(obj.text if obj.text else "Ay", -1)
                         _p_w, _p_h = _layout.get_size()
                         
-                        # Pango device units are 96 DPI, PDF points are 72 DPI
                         _w = (_p_w / Pango.SCALE) * 0.75
                         _h = (_p_h / Pango.SCALE) * 0.75
                         
@@ -2255,7 +2196,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                         obj.bbox = (x1, y1, x1 + new_w, y1 + new_h)
                     except Exception as e:
                         print(f"DEBUG: Error recalculating text bbox: {e}")
-                        pass  # Bbox will be updated on next page redraw
+                        pass
                 
             if self.pending_format_change_obj.color != color:
                 self.pending_format_change_obj.color = color
@@ -2276,30 +2217,18 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 print(f"DEBUG: Format anlık olarak güncellendi: Family='{font_family_key}', Size={font_size}")
 
     def on_shape_format_changed(self, widget, *args):
-        """Handle shape fill, stroke, and width changes"""
-        # Get fill color
         fill_rgba = self.shape_fill_button.get_rgba()
         fill_color = (fill_rgba.red, fill_rgba.green, fill_rgba.blue)
-
-        # Get stroke color
         stroke_rgba = self.shape_stroke_button.get_rgba()
         stroke_color = (stroke_rgba.red, stroke_rgba.green, stroke_rgba.blue)
-
-        # Get stroke width
         stroke_width = self.shape_stroke_width_spin.get_value()
-        
-        # Get transparency setting
         is_transparent = self.shape_transparent_toggle.get_active()
-
-        # Always update next_shape properties for future shapes
         self.next_shape_fill = fill_color
         self.next_shape_stroke = stroke_color
         self.next_shape_stroke_width = stroke_width
         self.next_shape_transparent = is_transparent
 
-        # Also update selected shape if one exists
         if self.selected_shape:
-            # Update shape properties
             changed = False
             if self.selected_shape.fill_color != fill_color:
                 self.selected_shape.fill_color = fill_color
@@ -2385,9 +2314,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
              print("Araç değiştirilmeden önce değişiklikler uygulanıyor...")
              self._apply_and_hide_editor(force_apply=True)
 
-        # Shape controls sensitivity is now handled fully by _update_ui_state
-        # (enabled whenever add_ellipse/add_rectangle tool is active or a shape is selected)
-
         if self.selected_text:
             self.selected_text = None
 
@@ -2414,7 +2340,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         page_x = (start_x - page_offset_x) / self.zoom_level
         page_y = (start_y - page_offset_y) / self.zoom_level
 
-        # Handle shape/image creation by dragging
         if self.tool_mode == "add_ellipse":
             gesture.set_state(Gtk.EventSequenceState.CLAIMED)
             self.dragging_to_create = True
@@ -2447,13 +2372,11 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             return
         elif self.tool_mode == "add_image":
             gesture.set_state(Gtk.EventSequenceState.CLAIMED)
-            # Create empty placeholder - will show file picker on drag_end
             self.dragging_to_create = True
             self.drag_start_page_pos = (page_x, page_y)
-            self.temp_image_bbox = (page_x, page_y, page_x, page_y)  # Will be updated in on_drag_update
+            self.temp_image_bbox = (page_x, page_y, page_x, page_y)
             return
 
-        # Check for resize handles on selected object first
         selected_obj = self.selected_text or self.selected_image or self.selected_shape
         if selected_obj and self.tool_mode == "select":
             resize_handle = self._find_resize_handle_at_pos(start_x, start_y, selected_obj)
@@ -2466,16 +2389,12 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 self.drag_begin_state = copy.deepcopy(selected_obj.__dict__)
                 return
 
-        # Normal drag mode - move objects (only in 'drag' tool mode)
         if self.tool_mode == "drag":
-            # In drag mode, find any object (text, image, or shape) and allow moving
             self.dragged_object = self._find_image_at_pos(page_x, page_y) or self._find_text_at_pos(page_x, page_y) or self._find_shape_at_pos(page_x, page_y)
             if not self.dragged_object:
                 gesture.set_state(Gtk.EventSequenceState.DENIED)
                 return
         elif self.tool_mode == "select":
-            # In select mode: selection only, never movement - deny all drags
-            # (click-based selection is already handled in on_pdf_view_pressed)
             gesture.set_state(Gtk.EventSequenceState.DENIED)
             return
         else:
@@ -2497,15 +2416,12 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             gesture.set_state(Gtk.EventSequenceState.DENIED)
 
     def on_drag_update(self, gesture, offset_x, offset_y):
-        # Prevent any dragging if text editor is active
         if self.text_edit_popover and self.text_edit_popover.is_visible():
             gesture.set_state(Gtk.EventSequenceState.DENIED)
             return
             
-        # Handle shape/image creation
         if self.dragging_to_create:
             if self.temp_image_bbox is not None:
-                # Update image zone bbox based on drag
                 start_x, start_y = self.drag_start_page_pos
                 delta_x = offset_x / self.zoom_level
                 delta_y = offset_y / self.zoom_level
@@ -2518,7 +2434,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 x2 = max(start_x, current_x)
                 y2 = max(start_y, current_y)
                 
-                # Ensure minimum size
                 if x2 - x1 < 20:
                     x2 = x1 + 20
                 if y2 - y1 < 20:
@@ -2528,7 +2443,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 self.pdf_view.queue_draw()
                 return
             if self.temp_shape:
-                # Update shape bbox based on drag - use offset from start position
                 start_x, start_y = self.drag_start_page_pos
                 delta_x = offset_x / self.zoom_level
                 delta_y = offset_y / self.zoom_level
@@ -2541,7 +2455,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 x2 = max(start_x, current_x)
                 y2 = max(start_y, current_y)
                 
-                # Ensure minimum size
                 if x2 - x1 < 10:
                     x2 = x1 + 10
                 if y2 - y1 < 10:
@@ -2554,13 +2467,9 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if not self.dragged_object:
             return
 
-        # Handle resizing if a resize handle is being dragged
         if self.resize_handle:
             self._handle_resize_update(offset_x, offset_y)
             return
-
-        # Normal drag - move object
-        # Only allow movement in 'drag' tool mode
         if self.tool_mode != "drag":
             gesture.set_state(Gtk.EventSequenceState.DENIED)
             return
@@ -2599,19 +2508,15 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.pdf_view.queue_draw()
 
     def _handle_resize_update(self, offset_x, offset_y):
-        """Handle resizing an object based on resize handle"""
         if not self.resize_handle or not self.resize_start_bbox or not self.dragged_object:
             return
 
         x1, y1, x2, y2 = self.resize_start_bbox
-
-        # Convert pixel offset to page coordinates
         delta_x = offset_x / self.zoom_level
         delta_y = offset_y / self.zoom_level
 
         new_x1, new_y1, new_x2, new_y2 = x1, y1, x2, y2
 
-        # Adjust bbox based on which handle is being dragged
         if "w" in self.resize_handle:  # Left handles
             new_x1 = x1 + delta_x
         if "e" in self.resize_handle:  # Right handles
@@ -2621,7 +2526,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if "s" in self.resize_handle:  # Bottom handles
             new_y2 = y2 + delta_y
 
-        # Ensure minimum size (10 units minimum)
         min_size = 10
         if new_x2 - new_x1 < min_size:
             if "e" in self.resize_handle:
@@ -2636,26 +2540,21 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         self.dragged_object.bbox = (new_x1, new_y1, new_x2, new_y2)
         
-        # Update position
         self.dragged_object.x = new_x1
         self.dragged_object.y = new_y1
 
         self.pdf_view.queue_draw()
 
     def on_drag_end(self, gesture, offset_x, offset_y):
-        # Finalize shape/image creation
         if self.dragging_to_create:
             self.dragging_to_create = False
             if self.temp_shape:
-                # Check minimum size
                 x1, y1, x2, y2 = self.temp_shape.bbox
                 if (x2 - x1) < 10 or (y2 - y1) < 10:
-                    # Too small, cancel
                     self.temp_shape = None
                     self.pdf_view.queue_draw()
                     return
                 
-                # Add shape to document
                 self.temp_shape.original_bbox = self.temp_shape.bbox
                 self.selected_shape = self.temp_shape
                 self.selected_text = None
@@ -2668,15 +2567,12 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 self.pdf_view.queue_draw()
                 self._update_ui_state()
             elif self.temp_image_bbox:
-                # Show file picker for image to fill the zone
                 x1, y1, x2, y2 = self.temp_image_bbox
                 if (x2 - x1) < 20 or (y2 - y1) < 20:
-                    # Too small, cancel
                     self.temp_image_bbox = None
                     self.pdf_view.queue_draw()
                     return
                 
-                # Show file chooser
                 dialog = Gtk.FileChooserDialog(
                     title="Lütfen bir resim dosyası seçin",
                     transient_for=self, modal=True, action=Gtk.FileChooserAction.OPEN
@@ -2751,7 +2647,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         command.execute()
         self.undo_manager.add_command(command)
 
-        # Restore selection to the object doing the dragging
         if isinstance(dragged_obj_ref, EditableText):
             self.selected_text = dragged_obj_ref
             self.selected_image = None
@@ -2874,11 +2769,9 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.close_document()
             return False
     def on_stroke_width_scroll(self, controller, dx, dy):
-        """Handle mouse wheel scroll to adjust shape stroke width"""
         if not self.selected_shape:
             return False
         
-        # Increase/decrease stroke width based on scroll direction
         dy_abs = abs(dy)
         increment = 0.5 if dy > 0 else -0.5
         

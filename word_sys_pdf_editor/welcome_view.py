@@ -18,7 +18,10 @@ class WelcomeView(Adw.Bin):
             "İpucu: 'Taşı' aracı ile metin ve resimlerin yerini değiştirebilirsiniz.",
             "İpucu: Dosyaları doğrudan pencereye sürükleyip bırakarak açabilirsiniz.",
             "İpucu: 'Renk' aracı ile metinlerin rengini değiştirebilirsiniz.",
-            "İpucu: 'Font' aracı ile metinlerin fontunu değiştirebilirsiniz.",
+            "İpucu: 'Font' aracı ile metinlerin fontunu değiştirebilirsiniz."
+            "İpucu: 'Yazdır' aracı ile PDF dosyasını yazdırabilirsiniz.",
+            "İpucu: 'Kaydet' aracı ile PDF dosyasını kaydedebilirsiniz.",
+            "İpucu: 'Farklı Kaydet' aracı ile PDF dosyasını farklı kaydedebilirsiniz.",
         ]
 
         self.recent_manager = Gtk.RecentManager.get_default()
@@ -52,7 +55,7 @@ class WelcomeView(Adw.Bin):
         title.add_css_class("title-1")
         main_box.append(title)
 
-        subtitle = Gtk.Label(label="Basit, hızlı ve kullanıcı dostu PDF düzenleyici")
+        subtitle = Gtk.Label(label="Basit, hızlı ve kullanıcı dostu Açık Kaynak PDF düzenleyici")
         subtitle.add_css_class("dim-label")
         main_box.append(subtitle)
 

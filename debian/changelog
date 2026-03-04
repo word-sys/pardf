@@ -1,3 +1,16 @@
+word-sys-pdf-editor (1.8.0) bookworm; urgency=medium
+
+  * Added shape tools (Rectangle and Ellipse) with fill, stroke, and transparency properties
+  * Added drag-to-resize handles for interactive scaling of images and shapes
+  * Added drag-and-drop page reordering in the sidebar
+  * Added page deletion feature
+  * Added drag-and-drop PDF merging feature
+  * Added ability to insert new blank pages
+  * Implemented an advanced native Print dialog
+  * Improved exit dialog with 3-option confirmation (Save/Discard/Cancel)
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Tue, 04 Mar 2026 19:00:00 +0300
+
 word-sys-pdf-editor (1.7.2) bookworm; urgency=medium
 
   * Improved text recognition

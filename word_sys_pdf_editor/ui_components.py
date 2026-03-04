@@ -42,8 +42,6 @@ class PageThumbnailFactory(Gtk.SignalListItemFactory):
         page_index = pdf_page.index
         label.set_text(f"Sayfa {page_index + 1}")
 
-        # ── Drag source: lets you drag a thumbnail ──
-        # Remove any existing drag source to avoid duplicates on rebind
         for ctrl in list(box.observe_controllers()):
             if isinstance(ctrl, Gtk.DragSource) or isinstance(ctrl, Gtk.DropTarget):
                 box.remove_controller(ctrl)
@@ -56,7 +54,6 @@ class PageThumbnailFactory(Gtk.SignalListItemFactory):
             return Gdk.ContentProvider.new_for_value(val)
 
         def on_drag_begin(source, drag, idx=page_index, pic=picture):
-            # Use the thumbnail pixbuf as drag icon
             pdf_pg = list_item.get_item()
             if pdf_pg and pdf_pg.thumbnail:
                 tex = Gdk.Texture.new_for_pixbuf(pdf_pg.thumbnail)
@@ -66,7 +63,6 @@ class PageThumbnailFactory(Gtk.SignalListItemFactory):
         drag_source.connect("drag-begin", on_drag_begin)
         box.add_controller(drag_source)
 
-        # ── Drop target: lets you drop a thumbnail onto another ──
         drop_target = Gtk.DropTarget.new(GObject.TYPE_INT, Gdk.DragAction.MOVE)
 
         def on_drop(target, value, x, y, to_idx=page_index):

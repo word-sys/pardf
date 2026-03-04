@@ -11,23 +11,11 @@ import fitz
 
 
 def print_document(parent_window, doc):
-    """
-    Print a PDF document using GTK4's native Gtk.PrintOperation.
-    This gives the user the full OS print dialog with:
-    - Printer selection
-    - Page ranges (all / current / custom range)
-    - Number of copies + collation
-    - Paper size and orientation
-    - Margins
-    - Duplex / double-sided
-    - Scale / fit-to-page
-    """
     if not doc or doc.page_count == 0:
         return False, "Yazdırılacak belge yok."
 
     print_op = Gtk.PrintOperation.new()
 
-    # Persist settings across print calls within the session
     if hasattr(parent_window, '_print_settings') and parent_window._print_settings:
         print_op.set_print_settings(parent_window._print_settings)
     if hasattr(parent_window, '_page_setup') and parent_window._page_setup:
@@ -38,20 +26,16 @@ def print_document(parent_window, doc):
     print_op.set_embed_page_setup(True)
     print_op.set_job_name("Word-Sys PDF Yazdırma")
 
-    # Set the current page so the dialog can default to "Current Page"
     if hasattr(parent_window, 'current_page_index'):
         print_op.set_current_page(parent_window.current_page_index)
 
-    # ── draw-page callback ──
     def on_draw_page(operation, print_context, page_nr):
         try:
             cr = print_context.get_cairo_context()
 
-            # Get the printable area dimensions (in points, 1pt = 1/72 inch)
             print_width = print_context.get_width()
             print_height = print_context.get_height()
 
-            # Render the PDF page via PyMuPDF at high DPI
             page = doc.load_page(page_nr)
             page_rect = page.rect
             pdf_w = page_rect.width
@@ -60,24 +44,16 @@ def print_document(parent_window, doc):
             if pdf_w <= 0 or pdf_h <= 0:
                 return
 
-            # Calculate the scale so the PDF page fits the printable area
             scale_x = print_width / pdf_w
             scale_y = print_height / pdf_h
             scale = min(scale_x, scale_y)
-
-            # Render at the target resolution
-            # We render at 2x the scale for higher quality, then scale down in cairo
             render_scale = scale * 2.0
             mat = fitz.Matrix(render_scale, render_scale)
             pix = page.get_pixmap(matrix=mat, alpha=False)
-
-            # Convert PyMuPDF pixmap to cairo ImageSurface
             img_w = pix.width
             img_h = pix.height
             samples = pix.samples
 
-            # PyMuPDF gives RGB, cairo wants BGRA (ARGB32) or BGR (RGB24)
-            # Convert RGB → BGRA for cairo FORMAT_ARGB32
             import array
             stride = cairo.ImageSurface.format_stride_for_width(cairo.FORMAT_ARGB32, img_w)
             buf = bytearray(stride * img_h)
@@ -92,7 +68,6 @@ def print_document(parent_window, doc):
                     r = samples[si]
                     g = samples[si + 1]
                     b = samples[si + 2]
-                    # BGRA order (little-endian ARGB32)
                     buf[di] = b
                     buf[di + 1] = g
                     buf[di + 2] = r
@@ -102,7 +77,6 @@ def print_document(parent_window, doc):
                 buf, cairo.FORMAT_ARGB32, img_w, img_h, stride
             )
 
-            # Center the page on the printable area
             final_w = pdf_w * scale
             final_h = pdf_h * scale
             offset_x = (print_width - final_w) / 2
@@ -110,7 +84,6 @@ def print_document(parent_window, doc):
 
             cr.save()
             cr.translate(offset_x, offset_y)
-            # Scale from rendered size to final print size
             cr.scale(final_w / img_w, final_h / img_h)
             cr.set_source_surface(surface, 0, 0)
             cr.get_source().set_filter(cairo.FILTER_BILINEAR)
@@ -121,12 +94,10 @@ def print_document(parent_window, doc):
             print(f"ERROR in print draw-page for page {page_nr}: {e}")
             traceback.print_exc()
 
-    # ── done callback ──
     def on_done(operation, result):
         if result == Gtk.PrintOperationResult.ERROR:
             print("PRINT ERROR")
         elif result == Gtk.PrintOperationResult.APPLY:
-            # Save settings for next print
             parent_window._print_settings = operation.get_print_settings()
             parent_window._page_setup = operation.get_default_page_setup()
             print("[PRINT] Yazdırma işlemi gönderildi.")
@@ -143,7 +114,7 @@ def print_document(parent_window, doc):
         if result == Gtk.PrintOperationResult.ERROR:
             return False, "Yazdırma işlemi sırasında hata oluştu."
         elif result == Gtk.PrintOperationResult.CANCEL:
-            return False, None  # User cancelled, not an error
+            return False, None  
         elif result == Gtk.PrintOperationResult.APPLY:
             return True, "Yazdırma işlemi başarıyla gönderildi."
         elif result == Gtk.PrintOperationResult.IN_PROGRESS:

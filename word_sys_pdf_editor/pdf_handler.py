@@ -131,7 +131,7 @@ def pixmap_to_cairo_surface(pix):
             bgra_data[:, :, 1] = rgb_view[:, :, 1]  # Green
             bgra_data[:, :, 2] = rgb_view[:, :, 0]  # Red
             bgra_data[:, :, 3] = 255                # Alpha
-            data = bgra_data.data # Buffer protocol
+            data = bgra_data.data 
             fmt = cairo.FORMAT_ARGB32
             stride = pix.width * 4 
             data_ref = bgra_data 
@@ -254,7 +254,7 @@ def extract_editable_text(doc, page_index):
                     editable = EditableText(
                         x=bbox[0], y=bbox[1], text=combined_text,
                         font_size=first_span.get("size", 11) if first_span else 11,
-                        font_family="Helvetica",
+                        font_family="Liberation Sans",
                         color=first_span.get("color", 0) if first_span else 0,
                         span_data=span_data,
                         baseline=first_span.get("origin", (0, bbox[3]))[1] if first_span else bbox[3]
@@ -306,8 +306,6 @@ def apply_text_edit(doc, text_obj: EditableText, new_text: str):
         print(f"DEBUG apply_text_edit: is_new={text_obj.is_new}, new_text='{new_text}'")
         print(f"DEBUG: text_obj bbox: {text_obj.bbox}")
         
-        # Old text redaction is handled centrally by apply_object_edit using original_bbox_to_clear.
-        # We just need to insert the new text.
         if new_text.strip():
             text_color = (0, 0, 0)
             if text_obj.color:
@@ -635,7 +633,6 @@ def delete_shape_from_page(doc, shape_obj: EditableShape):
     try:
         page = doc.load_page(shape_obj.page_number)
 
-        # Expand the bbox to ensure PyMuPDF catches vector strokes
         x0, y0, x1, y1 = shape_obj.bbox
         redact_rect = fitz.Rect(x0 - 20, y0 - 20, x1 + 20, y1 + 20)
         if not redact_rect.is_empty and redact_rect.is_valid:
@@ -664,7 +661,6 @@ def apply_object_edit(doc, obj):
             
             x0, y0, x1, y1 = original_bbox_to_clear
             if graphics_val:
-                # Expand the bbox to ensure PyMuPDF catches thick vector strokes
                 redact_rect = fitz.Rect(x0 - 20, y0 - 20, x1 + 20, y1 + 20)
             else:
                 redact_rect = fitz.Rect(original_bbox_to_clear)
@@ -723,27 +719,13 @@ def create_new_pdf():
         return None, f"Yeni PDF oluşturulurken hata: {e}"
 
 def insert_blank_page(doc, page_index=None, width=None, height=None):
-    """
-    Insert a blank page at the specified position.
-    
-    Args:
-        doc: PyMuPDF document
-        page_index: Position where to insert the page (currently appends to end due to PyMuPDF API).
-        width: Page width in points. If None, uses size of current/first page.
-        height: Page height in points. If None, uses size of current/first page.
-    
-    Returns:
-        Tuple of (success, message)
-    """
     try:
-        # Get page dimensions from current page if not specified
         if width is None or height is None:
             if doc.page_count > 0:
                 first_page = doc[0]
                 default_width = first_page.rect.width
                 default_height = first_page.rect.height
             else:
-                # Default A4 size
                 default_width = 595
                 default_height = 842
             
@@ -752,7 +734,6 @@ def insert_blank_page(doc, page_index=None, width=None, height=None):
             if height is None:
                 height = default_height
         
-        # Append new page to the end (PyMuPDF doesn't support insert position)
         doc.new_page(width=width, height=height)
         return True, f"Sayfa sonuna eklendi (Sayfa {doc.page_count})"
     
@@ -760,17 +741,6 @@ def insert_blank_page(doc, page_index=None, width=None, height=None):
         return False, f"Sayfa eklenirken hata: {e}"
 
 def merge_pdf_pages(target_doc, source_pdf_path, insert_position=None):
-    """
-    Merge pages from a source PDF into the target PDF at the end.
-    
-    Args:
-        target_doc: PyMuPDF document (target)
-        source_pdf_path: Path to source PDF file
-        insert_position: Ignored (pages always appended to end due to PyMuPDF API).
-    
-    Returns:
-        Tuple of (success, message, pages_inserted)
-    """
     try:
         source_doc = fitz.open(source_pdf_path)
         source_page_count = source_doc.page_count
@@ -778,7 +748,6 @@ def merge_pdf_pages(target_doc, source_pdf_path, insert_position=None):
         if source_page_count == 0:
             return False, "Kaynak PDF boş.", 0
         
-        # Insert all pages from source to target (appends to end)
         target_doc.insert_pdf(source_doc, from_page=0, to_page=source_page_count - 1)
         
         source_doc.close()
@@ -789,17 +758,6 @@ def merge_pdf_pages(target_doc, source_pdf_path, insert_position=None):
         return False, f"PDF birleştirme sırasında hata: {e}", 0
 
 def move_page(doc, from_index, to_index):
-    """
-    Move a page from one position to another.
-    
-    Args:
-        doc: PyMuPDF document
-        from_index: Current page index
-        to_index: Target page index
-    
-    Returns:
-        Tuple of (success, message)
-    """
     try:
         if from_index < 0 or from_index >= doc.page_count:
             return False, "Geçersiz sayfa indeksi."
@@ -810,19 +768,7 @@ def move_page(doc, from_index, to_index):
         if from_index == to_index:
             return True, "Sayfa zaten bu konumda."
         
-        # PyMuPDF doesn't have direct page move, so we use insert/delete
-        # Get the page
-        page = doc[from_index]
-        
-        # Delete from original position
-        if from_index < to_index:
-            # If moving forward, insert first then delete
-            doc.insert_pdf(doc, from_page=from_index, to_page=from_index, index=to_index + 1)
-            doc.delete_page(from_index)
-        else:
-            # If moving backward, delete first then insert
-            doc.insert_pdf(doc, from_page=from_index, to_page=from_index, index=to_index)
-            doc.delete_page(from_index + 1)
+        doc.move_page(from_index, to_index)
         
         return True, f"Sayfa {from_index + 1} → {to_index + 1} konumuna taşındı."
     
@@ -830,16 +776,6 @@ def move_page(doc, from_index, to_index):
         return False, f"Sayfa taşıma sırasında hata: {e}"
 
 def delete_page(doc, page_index):
-    """
-    Delete a page from the document.
-    
-    Args:
-        doc: PyMuPDF document
-        page_index: Index of the page to delete
-    
-    Returns:
-        Tuple of (success, message)
-    """
     try:
         if not doc:
             return False, "Belge yok."
