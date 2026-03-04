@@ -1,11 +1,13 @@
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Gdk, GdkPixbuf, Adw, GLib
+from gi.repository import Gtk, Gdk, GdkPixbuf, Adw, GLib, GObject, Gio
+
 
 class PageThumbnailFactory(Gtk.SignalListItemFactory):
-    def __init__(self):
+    def __init__(self, editor_window=None):
         super().__init__()
+        self.editor_window = editor_window
         self.connect("setup", self._on_setup)
         self.connect("bind", self._on_bind)
 
@@ -13,9 +15,7 @@ class PageThumbnailFactory(Gtk.SignalListItemFactory):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, margin_top=6, margin_bottom=6)
         
         image = Gtk.Picture()
-        
         image.set_size_request(150, -1)
-        
         image.set_can_shrink(False)
 
         label = Gtk.Label()
@@ -39,7 +39,46 @@ class PageThumbnailFactory(Gtk.SignalListItemFactory):
             picture.set_paintable(None)
             picture.set_visible(False)
 
-        label.set_text(f"Page {pdf_page.index + 1}")
+        page_index = pdf_page.index
+        label.set_text(f"Sayfa {page_index + 1}")
+
+        # ── Drag source: lets you drag a thumbnail ──
+        # Remove any existing drag source to avoid duplicates on rebind
+        for ctrl in list(box.observe_controllers()):
+            if isinstance(ctrl, Gtk.DragSource) or isinstance(ctrl, Gtk.DropTarget):
+                box.remove_controller(ctrl)
+
+        drag_source = Gtk.DragSource.new()
+        drag_source.set_actions(Gdk.DragAction.MOVE)
+
+        def on_prepare(source, x, y, idx=page_index):
+            val = GObject.Value(GObject.TYPE_INT, idx)
+            return Gdk.ContentProvider.new_for_value(val)
+
+        def on_drag_begin(source, drag, idx=page_index, pic=picture):
+            # Use the thumbnail pixbuf as drag icon
+            pdf_pg = list_item.get_item()
+            if pdf_pg and pdf_pg.thumbnail:
+                tex = Gdk.Texture.new_for_pixbuf(pdf_pg.thumbnail)
+                Gtk.DragSource.set_icon(source, tex, 0, 0)
+
+        drag_source.connect("prepare", on_prepare)
+        drag_source.connect("drag-begin", on_drag_begin)
+        box.add_controller(drag_source)
+
+        # ── Drop target: lets you drop a thumbnail onto another ──
+        drop_target = Gtk.DropTarget.new(GObject.TYPE_INT, Gdk.DragAction.MOVE)
+
+        def on_drop(target, value, x, y, to_idx=page_index):
+            from_idx = value
+            if from_idx == to_idx:
+                return False
+            if self.editor_window:
+                self.editor_window.on_page_reorder(from_idx, to_idx)
+            return True
+
+        drop_target.connect("drop", on_drop)
+        box.add_controller(drop_target)
 
 
 def show_error_dialog(parent_window, message, title="Error"):

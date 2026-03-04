@@ -1,251 +1,157 @@
 import gi
 import os
-from pathlib import Path
+import tempfile
+import traceback
 
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, Gio, GLib, Gdk
+from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
+import cairo
 import fitz
 
 
-class PrintPreviewDialog(Gtk.Dialog):    
-    def __init__(self, parent_window, pdf_doc, current_page_index):
-        super().__init__(
-            title="Print Preview - Word-Sys's PDF Editor",
-            transient_for=parent_window,
-            modal=True
-        )
-        
-        self.pdf_doc = pdf_doc
-        self.current_page_index = current_page_index
-        self.zoom_level = 1.0
-        self.displayed_page = 0
-        
-        self.set_default_size(900, 700)
-        
-        content_area = self.get_content_area()
-        content_area.set_spacing(10)
-        content_area.set_margin_start(12)
-        content_area.set_margin_end(12)
-        content_area.set_margin_top(12)
-        content_area.set_margin_bottom(12)
-        
-        toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        
-        self.page_label = Gtk.Label()
-        self.prev_button = Gtk.Button(label="Prev", icon_name="go-previous-symbolic")
-        self.prev_button.connect("clicked", self._on_prev_page)
-        self.next_button = Gtk.Button(label="Next", icon_name="go-next-symbolic")
-        self.next_button.connect("clicked", self._on_next_page)
-        
-        toolbar.append(self.prev_button)
-        toolbar.append(self.page_label)
-        toolbar.append(self.next_button)
-        
-        toolbar.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
-        
-        zoom_out = Gtk.Button(label="Zoom -", icon_name="zoom-out-symbolic")
-        zoom_out.connect("clicked", lambda w: self._set_zoom(self.zoom_level - 0.1))
-        
-        self.zoom_label = Gtk.Label(label="100%")
-        
-        zoom_in = Gtk.Button(label="Zoom +", icon_name="zoom-in-symbolic")
-        zoom_in.connect("clicked", lambda w: self._set_zoom(self.zoom_level + 0.1))
-        
-        toolbar.append(zoom_out)
-        toolbar.append(self.zoom_label)
-        toolbar.append(zoom_in)
-        
-        content_area.append(toolbar)
-        
-        scroll = Gtk.ScrolledWindow(
-            hexpand=True,
-            vexpand=True,
-            hscrollbar_policy=Gtk.PolicyType.AUTOMATIC,
-            vscrollbar_policy=Gtk.PolicyType.AUTOMATIC
-        )
-        
-        self.preview_drawing = Gtk.DrawingArea(
-            hexpand=True,
-            vexpand=True
-        )
-        self.preview_drawing.set_draw_func(self._draw_preview)
-        
-        viewport = Gtk.Viewport()
-        viewport.set_child(self.preview_drawing)
-        scroll.set_child(viewport)
-        
-        content_area.append(scroll)
-        
-        settings_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        
-        pages_frame = Gtk.Frame(label="Pages to Print")
-        pages_inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, margin_start=6, margin_end=6, margin_top=6, margin_bottom=6)
-        
-        self.all_pages_radio = Gtk.CheckButton(label="All Pages")
-        self.all_pages_radio.set_active(True)
-        self.all_pages_radio.connect("toggled", self._on_pages_changed)
-        pages_inner.append(self.all_pages_radio)
-        
-        self.current_page_radio = Gtk.CheckButton(label="Current Page", group=self.all_pages_radio)
-        self.current_page_radio.connect("toggled", self._on_pages_changed)
-        pages_inner.append(self.current_page_radio)
-        
-        pages_frame.set_child(pages_inner)
-        settings_box.append(pages_frame)
-        
-        settings_frame = Gtk.Frame(label="Print Settings")
-        settings_inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, margin_start=6, margin_end=6, margin_top=6, margin_bottom=6)
-        
-        copies_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        copies_label = Gtk.Label(label="Copies:")
-        self.copies_spin = Gtk.SpinButton.new_with_range(1, 100, 1)
-        self.copies_spin.set_value(1)
-        copies_box.append(copies_label)
-        copies_box.append(self.copies_spin)
-        settings_inner.append(copies_box)
-        
-        color_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        color_label = Gtk.Label(label="Color Mode:")
-        self.color_combo = Gtk.ComboBoxText()
-        self.color_combo.append("color", "Color")
-        self.color_combo.append("grayscale", "Grayscale")
-        self.color_combo.set_active_id("color")
-        color_box.append(color_label)
-        color_box.append(self.color_combo)
-        settings_inner.append(color_box)
-        
-        orientation_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        orientation_label = Gtk.Label(label="Orientation:")
-        self.orientation_combo = Gtk.ComboBoxText()
-        self.orientation_combo.append("portrait", "Portrait")
-        self.orientation_combo.append("landscape", "Landscape")
-        self.orientation_combo.set_active_id("portrait")
-        orientation_box.append(orientation_label)
-        orientation_box.append(self.orientation_combo)
-        settings_inner.append(orientation_box)
-        
-        settings_frame.set_child(settings_inner)
-        settings_box.append(settings_frame)
-        
-        content_area.append(settings_box)
-        
-        self.add_button("Cancel", Gtk.ResponseType.CANCEL)
-        self.add_button("Print", Gtk.ResponseType.OK)
-        
-        self.set_default_response(Gtk.ResponseType.OK)
-        
-        self._update_preview()
-    
-    def _on_prev_page(self, button):
-        if self.displayed_page > 0:
-            self.displayed_page -= 1
-            self._update_preview()
-    
-    def _on_next_page(self, button):
-        if self.displayed_page < self.pdf_doc.page_count - 1:
-            self.displayed_page += 1
-            self._update_preview()
-    
-    def _on_pages_changed(self, radio):
-        if radio.get_active():
-            if radio == self.all_pages_radio:
-                self.prev_button.set_sensitive(True)
-                self.next_button.set_sensitive(True)
-            else:
-                self.prev_button.set_sensitive(False)
-                self.next_button.set_sensitive(False)
-                self.displayed_page = self.current_page_index
-            self._update_preview()
-    
-    def _set_zoom(self, level):
-        self.zoom_level = max(0.1, min(level, 3.0))
-        self.zoom_label.set_text(f"{int(self.zoom_level * 100)}%")
-        self.preview_drawing.queue_draw()
-    
-    def _update_preview(self):
-        page_count = self.pdf_doc.page_count
-        if self.all_pages_radio.get_active():
-            self.page_label.set_text(f"Page {self.displayed_page + 1} of {page_count}")
-        else:
-            self.page_label.set_text(f"Page {self.current_page_index + 1} of {page_count} (Current)")
-        
-        self.prev_button.set_sensitive(self.displayed_page > 0 and self.all_pages_radio.get_active())
-        self.next_button.set_sensitive(self.displayed_page < page_count - 1 and self.all_pages_radio.get_active())
-        
-        self.preview_drawing.queue_draw()
-    
-    def _draw_preview(self, drawing_area, cr, width, height):
+def print_document(parent_window, doc):
+    """
+    Print a PDF document using GTK4's native Gtk.PrintOperation.
+    This gives the user the full OS print dialog with:
+    - Printer selection
+    - Page ranges (all / current / custom range)
+    - Number of copies + collation
+    - Paper size and orientation
+    - Margins
+    - Duplex / double-sided
+    - Scale / fit-to-page
+    """
+    if not doc or doc.page_count == 0:
+        return False, "Yazdırılacak belge yok."
+
+    print_op = Gtk.PrintOperation.new()
+
+    # Persist settings across print calls within the session
+    if hasattr(parent_window, '_print_settings') and parent_window._print_settings:
+        print_op.set_print_settings(parent_window._print_settings)
+    if hasattr(parent_window, '_page_setup') and parent_window._page_setup:
+        print_op.set_default_page_setup(parent_window._page_setup)
+
+    print_op.set_n_pages(doc.page_count)
+    print_op.set_use_full_page(False)
+    print_op.set_embed_page_setup(True)
+    print_op.set_job_name("Word-Sys PDF Yazdırma")
+
+    # Set the current page so the dialog can default to "Current Page"
+    if hasattr(parent_window, 'current_page_index'):
+        print_op.set_current_page(parent_window.current_page_index)
+
+    # ── draw-page callback ──
+    def on_draw_page(operation, print_context, page_nr):
         try:
-            page = self.pdf_doc[self.displayed_page]
-            
-            pix = page.get_pixmap(matrix=fitz.Matrix(self.zoom_level, self.zoom_level))
-            img_data = pix.tobytes("ppm")
-            
-            from gi.repository import GdkPixbuf
-            loader = GdkPixbuf.PixbufLoader.new()
-            loader.write(img_data)
-            loader.close()
-            pixbuf = loader.get_pixbuf()
-            
-            if pixbuf:
-                img_width = pixbuf.get_width()
-                img_height = pixbuf.get_height()
-                
-                x = max(0, (width - img_width) / 2)
-                y = max(0, (height - img_height) / 2)
-                
-                cr.set_source_rgb(1, 1, 1)
-                cr.paint()
-                
-                cr.translate(x, y)
-                Gdk.cairo_set_source_pixbuf(cr, pixbuf, 0, 0)
-                cr.paint()
-                
-        except Exception as e:
-            print(f"Error drawing preview: {e}")
-            cr.set_source_rgb(1, 1, 1)
+            cr = print_context.get_cairo_context()
+
+            # Get the printable area dimensions (in points, 1pt = 1/72 inch)
+            print_width = print_context.get_width()
+            print_height = print_context.get_height()
+
+            # Render the PDF page via PyMuPDF at high DPI
+            page = doc.load_page(page_nr)
+            page_rect = page.rect
+            pdf_w = page_rect.width
+            pdf_h = page_rect.height
+
+            if pdf_w <= 0 or pdf_h <= 0:
+                return
+
+            # Calculate the scale so the PDF page fits the printable area
+            scale_x = print_width / pdf_w
+            scale_y = print_height / pdf_h
+            scale = min(scale_x, scale_y)
+
+            # Render at the target resolution
+            # We render at 2x the scale for higher quality, then scale down in cairo
+            render_scale = scale * 2.0
+            mat = fitz.Matrix(render_scale, render_scale)
+            pix = page.get_pixmap(matrix=mat, alpha=False)
+
+            # Convert PyMuPDF pixmap to cairo ImageSurface
+            img_w = pix.width
+            img_h = pix.height
+            samples = pix.samples
+
+            # PyMuPDF gives RGB, cairo wants BGRA (ARGB32) or BGR (RGB24)
+            # Convert RGB → BGRA for cairo FORMAT_ARGB32
+            import array
+            stride = cairo.ImageSurface.format_stride_for_width(cairo.FORMAT_ARGB32, img_w)
+            buf = bytearray(stride * img_h)
+
+            src_stride = pix.stride
+            for y_row in range(img_h):
+                src_offset = y_row * src_stride
+                dst_offset = y_row * stride
+                for x_col in range(img_w):
+                    si = src_offset + x_col * 3
+                    di = dst_offset + x_col * 4
+                    r = samples[si]
+                    g = samples[si + 1]
+                    b = samples[si + 2]
+                    # BGRA order (little-endian ARGB32)
+                    buf[di] = b
+                    buf[di + 1] = g
+                    buf[di + 2] = r
+                    buf[di + 3] = 255  # alpha
+
+            surface = cairo.ImageSurface.create_for_data(
+                buf, cairo.FORMAT_ARGB32, img_w, img_h, stride
+            )
+
+            # Center the page on the printable area
+            final_w = pdf_w * scale
+            final_h = pdf_h * scale
+            offset_x = (print_width - final_w) / 2
+            offset_y = (print_height - final_h) / 2
+
+            cr.save()
+            cr.translate(offset_x, offset_y)
+            # Scale from rendered size to final print size
+            cr.scale(final_w / img_w, final_h / img_h)
+            cr.set_source_surface(surface, 0, 0)
+            cr.get_source().set_filter(cairo.FILTER_BILINEAR)
             cr.paint()
-    
-    def get_print_settings(self):
-        return {
-            'all_pages': self.all_pages_radio.get_active(),
-            'current_page': self.current_page_index if self.current_page_radio.get_active() else None,
-            'copies': int(self.copies_spin.get_value()),
-            'color_mode': self.color_combo.get_active_id(),
-            'orientation': self.orientation_combo.get_active_id(),
-        }
+            cr.restore()
 
+        except Exception as e:
+            print(f"ERROR in print draw-page for page {page_nr}: {e}")
+            traceback.print_exc()
 
-def show_print_dialog(parent_window, pdf_doc, current_page_index):
-    dialog = PrintPreviewDialog(parent_window, pdf_doc, current_page_index)
-    response = dialog.run()
-    
-    result = None
-    if response == Gtk.ResponseType.OK:
-        result = dialog.get_print_settings()
-    
-    dialog.destroy()
-    return result
+    # ── done callback ──
+    def on_done(operation, result):
+        if result == Gtk.PrintOperationResult.ERROR:
+            print("PRINT ERROR")
+        elif result == Gtk.PrintOperationResult.APPLY:
+            # Save settings for next print
+            parent_window._print_settings = operation.get_print_settings()
+            parent_window._page_setup = operation.get_default_page_setup()
+            print("[PRINT] Yazdırma işlemi gönderildi.")
 
+    print_op.connect("draw-page", on_draw_page)
+    print_op.connect("done", on_done)
 
-def print_pdf(pdf_doc, settings):
-    try:  
-        if settings['all_pages']:
-            pages_info = f"All {pdf_doc.page_count} pages"
-        else:
-            pages_info = f"Page {settings['current_page'] + 1}"
-        
-        message = (
-            f"Print Settings:\n"
-            f"Pages: {pages_info}\n"
-            f"Copies: {settings['copies']}\n"
-            f"Color Mode: {settings['color_mode']}\n"
-            f"Orientation: {settings['orientation']}"
+    try:
+        result = print_op.run(
+            Gtk.PrintOperationAction.PRINT_DIALOG,
+            parent_window
         )
-        
-        print(f"[PRINT] {message}")
-        return True, message
-        
+
+        if result == Gtk.PrintOperationResult.ERROR:
+            return False, "Yazdırma işlemi sırasında hata oluştu."
+        elif result == Gtk.PrintOperationResult.CANCEL:
+            return False, None  # User cancelled, not an error
+        elif result == Gtk.PrintOperationResult.APPLY:
+            return True, "Yazdırma işlemi başarıyla gönderildi."
+        elif result == Gtk.PrintOperationResult.IN_PROGRESS:
+            return True, "Yazdırma işlemi devam ediyor..."
+        else:
+            return True, None
+
     except Exception as e:
-        return False, str(e)
+        print(f"ERROR starting print operation: {e}")
+        traceback.print_exc()
+        return False, f"Yazdırma başlatılamadı: {e}"

@@ -828,3 +828,30 @@ def move_page(doc, from_index, to_index):
     
     except Exception as e:
         return False, f"Sayfa taşıma sırasında hata: {e}"
+
+def delete_page(doc, page_index):
+    """
+    Delete a page from the document.
+    
+    Args:
+        doc: PyMuPDF document
+        page_index: Index of the page to delete
+    
+    Returns:
+        Tuple of (success, message)
+    """
+    try:
+        if not doc:
+            return False, "Belge yok."
+        
+        if doc.page_count <= 1:
+            return False, "Son sayfa silinemez. Belgede en az bir sayfa bulunmalıdır."
+        
+        if page_index < 0 or page_index >= doc.page_count:
+            return False, f"Geçersiz sayfa indeksi: {page_index + 1}"
+        
+        doc.delete_page(page_index)
+        return True, f"Sayfa {page_index + 1} silindi."
+    
+    except Exception as e:
+        return False, f"Sayfa silme sırasında hata: {e}"

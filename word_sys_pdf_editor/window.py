@@ -201,6 +201,11 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic")
         header.pack_end(menu_button)
+
+        self.print_button = Gtk.Button.new_from_icon_name("printer-symbolic")
+        self.print_button.set_tooltip_text("Yazdır (Ctrl+P)")
+        self.print_button.connect("clicked", lambda w: self.on_print_activated(None, None))
+        header.pack_end(self.print_button)
         menu = Gio.Menu()
         #menu.append("Baskı Önizlemesi...", "win.print")
         menu.append("Farklı Kaydet...", "win.save_as")
@@ -306,11 +311,20 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         sidebar_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL, margin_top=6, margin_bottom=6))
 
-        thumbnails_label = Gtk.Label(label="Sayfalar", xalign=0.0)
+        pages_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        thumbnails_label = Gtk.Label(label="Sayfalar", xalign=0.0, hexpand=True)
         thumbnails_label.add_css_class('title-4')
-        sidebar_box.append(thumbnails_label)
+        pages_header.append(thumbnails_label)
 
-        factory = PageThumbnailFactory()
+        self.delete_page_button = Gtk.Button.new_from_icon_name("user-trash-symbolic")
+        self.delete_page_button.set_tooltip_text("Seçili Sayfayı Sil")
+        self.delete_page_button.connect('clicked', self.on_delete_page)
+        self.delete_page_button.add_css_class('flat')
+        pages_header.append(self.delete_page_button)
+
+        sidebar_box.append(pages_header)
+
+        factory = PageThumbnailFactory(editor_window=self)
         self.thumbnails_list = Gtk.GridView.new(None, factory)
         self.thumbnails_list.set_max_columns(1)
         self.thumbnails_list.set_min_columns(1)
@@ -508,6 +522,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.lookup_action("save_as").set_enabled(has_doc)
         self.lookup_action("export_as").set_enabled(has_doc)
         self.lookup_action("print").set_enabled(has_doc)
+        self.print_button.set_sensitive(has_doc)
         self.prev_button.set_sensitive(can_go_prev)
         self.next_button.set_sensitive(can_go_next)
 
@@ -1914,24 +1929,22 @@ class PdfEditorWindow(Adw.ApplicationWindow):
              self.status_label.set_text("Dışa aktarma başarısız oldu.")
 
     def on_print_activated(self, action, param):
-        """Handle print action with preview dialog"""
+        """Handle print action using native GTK4 PrintOperation"""
         if not self.doc:
-            show_error_dialog(self, "Baskı yapmak için lütfen bir PDF dosyası açın.", "Dosya Açılmadı")
+            show_error_dialog(self, "Yazdırmak için lütfen bir PDF dosyası açın.", "Dosya Açılmadı")
             return
         
-        # Show print preview dialog
-        settings = print_handler.show_print_dialog(self, self.doc, self.current_page_index)
+        success, message = print_handler.print_document(self, self.doc)
         
-        if settings:
-            success, message = print_handler.print_pdf(self.doc, settings)
-            if success:
-                self.status_label.set_text("Baskı işlemi tamamlandı.")
-                print(f"[PRINT SUCCESS] {message}")
-            else:
-                show_error_dialog(self, f"Baskı hatası: {message}", "Baskı Başarısız")
-                self.status_label.set_text("Baskı başarısız oldu.")
+        if success:
+            if message:
+                self.status_label.set_text(message)
         else:
-            self.status_label.set_text("Baskı işlemi iptal edildi.")
+            if message:  # None means user cancelled
+                show_error_dialog(self, message, "Yazdırma Hatası")
+                self.status_label.set_text("Yazdırma başarısız oldu.")
+            else:
+                self.status_label.set_text("Yazdırma işlemi iptal edildi.")
 
     def on_zoom_in(self, button=None):
         if not self.doc: return
@@ -1983,6 +1996,43 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self._update_ui_state()
         else:
             show_error_dialog(self, message, "Sayfa Ekleme Hatası")
+
+    def on_delete_page(self, button):
+        """Delete the currently selected page"""
+        if not self.doc:
+            show_error_dialog(self, "Lütfen önce bir belge açın.", "Belge Yok")
+            return
+
+        page_count = pdf_handler.get_page_count(self.doc)
+        if page_count <= 1:
+            show_error_dialog(self, "Son sayfa silinemez. Belgede en az bir sayfa bulunmalıdır.", "Sayfa Silinemez")
+            return
+
+        page_to_delete = self.current_page_index
+        confirmed = show_confirm_dialog(
+            self,
+            f"Sayfa {page_to_delete + 1} silinecek. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?",
+            "Sayfayı Sil",
+            destructive=True
+        )
+
+        if not confirmed:
+            self.status_label.set_text("Sayfa silme iptal edildi.")
+            return
+
+        success, message = pdf_handler.delete_page(self.doc, page_to_delete)
+
+        if success:
+            self.document_modified = True
+            self.status_label.set_text(message)
+            # Navigate to a valid page
+            new_page_count = pdf_handler.get_page_count(self.doc)
+            new_page_index = min(page_to_delete, new_page_count - 1)
+            self._load_thumbnails()
+            self._load_page(new_page_index)
+            self._update_ui_state()
+        else:
+            show_error_dialog(self, message, "Sayfa Silme Hatası")
 
     def update_page_label(self):
         count = pdf_handler.get_page_count(self.doc)
