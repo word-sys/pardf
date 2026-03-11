@@ -6,8 +6,8 @@
 Geliştirici: **Barın Güzeldemirci (word-sys)**
 Lisans: **GPL-3.0-or-later**
 ---
-<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot1.png" width="256" height="256"/>
-<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot2.png" width="256" height="256"/>
+<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot1.png" width="512" height="512"/>
+<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot2.png" width="512" height="512"/>
 
 ## Temel Özellikler
 *   PDF dosyaları oluşturma
