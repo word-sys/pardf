@@ -1,4 +1,17 @@
-word-sys-pdf-editor (1.8.0) bookworm; urgency=medium
+word-sys-pdf-editor (1.8.1-1) bookworm; urgency=medium
+
+  * Implemented direct PDF to DOCX and ODT export using LibreOffice writer_pdf_import filter
+  * Fixed bug where text format changes (font, size, style) caused double-rendering
+  * Text format changes now apply immediately to the PDF for instant visual feedback
+  * Fixed bug where drawn shapes could not be selected after reopening a document
+  * Fixed bug where ellipses and shapes were not properly deleted from the PDF
+  * Thumbnails now update immediately after any modification to a page
+  * Text format selections are now remembered and applied continuously to new texts
+  * Fixed bold and italic toggle not updating the selection bounding box correctly
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 11 Mar 2026 22:00:00 +0300
+
+word-sys-pdf-editor (1.8.0-1) bookworm; urgency=medium
 
   * Added shape tools (Rectangle and Ellipse) with fill, stroke, and transparency properties
   * Added drag-to-resize handles for interactive scaling of images and shapes
@@ -11,7 +24,7 @@ word-sys-pdf-editor (1.8.0) bookworm; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Tue, 04 Mar 2026 19:00:00 +0300
 
-word-sys-pdf-editor (1.7.2) bookworm; urgency=medium
+word-sys-pdf-editor (1.7.2-1) bookworm; urgency=medium
 
   * Improved text recognition
   * Fixed save bug, now users will save the file directly to clean one or will replace with existing original file
@@ -23,13 +36,13 @@ word-sys-pdf-editor (1.7.2) bookworm; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Mon, 12 Jan 2026 00:00:00 +0000
  
-word-sys-pdf-editor (1.7.1) bookworm; urgency=medium
+word-sys-pdf-editor (1.7.1-1) bookworm; urgency=medium
 
   * Proje ismi ve logosu degistirildi
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 11 Jan 2026 12:00:00 +0300
 
-word-sys-pdf-editor (1.7.0) bookworm; urgency=medium
+word-sys-pdf-editor (1.7.0-1) bookworm; urgency=medium
 
   * Geri Alma / Yineleme (Undo/Redo) özelliği eklendi.
   * Sayfaya resim ekleme ve silme özelliği eklendi.
@@ -39,7 +52,7 @@ word-sys-pdf-editor (1.7.0) bookworm; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 01 Jan 2026 12:00:00 +0300
 
-word-sys-pdf-editor (1.6.1) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.6.1-1) yirmiuc; urgency=medium
 
   * PDF metinlerini seçme ve düzenleme temel özellikleri eklendi.
   * DOCX ve TXT formatında dışa aktarma (Export) özelliği eklendi.
@@ -50,7 +63,7 @@ word-sys-pdf-editor (1.6.1) yirmiuc; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Tue, 01 Jul 2025 12:00:00 +0300
  
-word-sys-pdf-editor (1.6.0) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.6.0-1) yirmiuc; urgency=medium
 
   * Resim Ekleme Özelliği getirildi!
   * Bugcheck yapıldı ve hatalar giderildi!
@@ -59,14 +72,14 @@ word-sys-pdf-editor (1.6.0) yirmiuc; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 08 Jun 2025 12:00:00 +0300
  
-word-sys-pdf-editor (1.5.1) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.5.1-1) yirmiuc; urgency=medium
 
   * Hakkında sayfası eklendi!
   * Yeni metin ekleme kısmındaki sayfa indexi eksikliği giderildi
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sat, 10 May 2025 12:00:00 +0300
  
-word-sys-pdf-editor (1.5.0) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.5.0-1) yirmiuc; urgency=medium
 
   [ Hata Düzeltmeleri ve Kararlılık ]
   * Yeni GNOME sistemlerinde (GNOME 46+) oluşan Segmentation Fault hatası, elle Cairo yüzeyi oluşturma yerine GdkPixbuf ve Gdk.Cairo kullanımına geçilerek çözüldü (#B2E2SEC1).
@@ -88,7 +101,7 @@ word-sys-pdf-editor (1.5.0) yirmiuc; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Fri, 09 May 2025 12:00:00 +0300
  
-word-sys-pdf-editor (1.4.1) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.4.1-1) yirmiuc; urgency=medium
 
   [ Metin Düzenleme İyileştirmeleri ]
   * Eski metnin üzerine yazılma/üst üste binme sorunu Redaksiyon yöntemi ile çözüldü.
@@ -115,7 +128,7 @@ word-sys-pdf-editor (1.4.1) yirmiuc; urgency=medium
   
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 07 May 2025 12:00:00 +0300
  
-word-sys-pdf-editor (1.4.0) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.4.0-1) yirmiuc; urgency=medium
 
   * PDF metinlerini seçme ve düzenleme temel özellikleri eklendi.
   * DOCX ve TXT formatında dışa aktarma (Export) özelliği eklendi.
@@ -124,20 +137,20 @@ word-sys-pdf-editor (1.4.0) yirmiuc; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Mon, 05 May 2025 12:00:00 +0300
  
-word-sys-pdf-editor (1.3.3) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.3.3-1) yirmiuc; urgency=medium
 
   * Turkce dil destegi eklendi
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 03 May 2025 12:00:00 +0300
  
-word-sys-pdf-editor (1.1.0) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.1.0-1) yirmiuc; urgency=medium
 
   * Bugfix
   
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Fri, 18 Apr 2025 12:00:00 +0300
  
 
-word-sys-pdf-editor (1.0.0) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.0.0-1) yirmiuc; urgency=medium
 
   * İlk sürüm (Initial Release).
   * PDF görüntüleme ve basit gezinme özellikleri.

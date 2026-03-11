@@ -396,132 +396,126 @@ def save_document(doc, save_path, incremental=False):
         
         return False, f"PDF kaydedilirken hata oluştu: {e}"
     
-def export_pdf_as_docx(doc, source_pdf_path, output_docx_path):
-    libreoffice_executable = shutil.which('libreoffice')
-    if not libreoffice_executable:
-        libreoffice_executable = shutil.which('soffice')
-    if not libreoffice_executable:
-        return False, "LibreOffice Not Found. Install 'libreoffice-writer' to enable DOCX export."
-    print(f"DEBUG [DOCX Export]: Using LibreOffice executable: {libreoffice_executable}")
-
-    temp_pdf_path = None
+def _run_lo_export(temp_pdf, outdir, target_format):
+    """Run a LibreOffice command to convert PDF to target_format directly."""
+    lo = shutil.which('libreoffice') or shutil.which('soffice')
+    if not lo:
+        return False, "LibreOffice not found."
+    
+    cmd = [
+        lo, '--headless', '--invisible', '--nologo',
+        '--infilter=writer_pdf_import',
+        '--convert-to', target_format,
+        '--outdir', str(outdir),
+        str(temp_pdf)
+    ]
+    
+    print(f"DEBUG Export running: {' '.join(cmd)}")
+    
     try:
-        fd, temp_pdf_path = tempfile.mkstemp(suffix=".pdf", prefix="wordsys_export_")
-        os.close(fd)
-        print(f"DEBUG [DOCX Export]: Saving document state to temporary file: {temp_pdf_path}")
-
-        save_success, save_msg = save_document(doc, temp_pdf_path, incremental=False)
-        if not save_success:
-            if os.path.exists(temp_pdf_path): os.unlink(temp_pdf_path)
-            return False, f"Failed to save temporary PDF for export: {save_msg}"
-        
-        if not os.path.exists(temp_pdf_path) or os.path.getsize(temp_pdf_path) == 0:
-            print(f"ERROR [DOCX Export]: Temporary PDF '{temp_pdf_path}' was not created or is empty.")
-            if os.path.exists(temp_pdf_path): os.unlink(temp_pdf_path)
-            return False, "Failed to create a valid temporary PDF for export."
-
-        print(f"DEBUG [DOCX Export]: Temp PDF Path = {temp_pdf_path} (Size: {os.path.getsize(temp_pdf_path)} bytes)")
-        temp_pdf_path_obj = Path(temp_pdf_path)
-        temp_pdf_name_no_ext = temp_pdf_path_obj.stem
-
-        final_output_dir = Path(output_docx_path).parent
-        final_output_dir.mkdir(parents=True, exist_ok=True)
-        print(f"DEBUG [DOCX Export]: Final DOCX Output Dir = {final_output_dir}")
-        print(f"DEBUG [DOCX Export]: Desired Final DOCX Path = {output_docx_path}")
-
-        python_cwd = Path(os.getcwd())
-        expected_output_in_python_cwd = python_cwd / f"{temp_pdf_name_no_ext}.docx"
-        print(f"DEBUG [DOCX Export]: Python's Current Working Directory (for output): {python_cwd}")
-        print(f"DEBUG [DOCX Export]: Expected DOCX in Python CWD: {expected_output_in_python_cwd}")
-        
-        if os.path.exists(expected_output_in_python_cwd):
-            print(f"DEBUG [DOCX Export]: Removing leftover in CWD: {expected_output_in_python_cwd}")
-            os.remove(expected_output_in_python_cwd)
-        if os.path.exists(output_docx_path):
-            print(f"DEBUG [DOCX Export]: Removing leftover final target: {output_docx_path}")
-            os.remove(output_docx_path)
-
-        command = [
-            libreoffice_executable,
-            '--headless',
-            '--invisible',
-            '--nologo',
-            '--infilter=writer_pdf_import',
-            '--convert-to', 'docx',
-            '--outdir', str(temp_pdf_path_obj.parent),
-            str(temp_pdf_path)
-        ]
-
-        expected_output_location = temp_pdf_path_obj.parent / f"{temp_pdf_name_no_ext}.docx"
-
-        print(f"DEBUG [DOCX Export]: Expected DOCX at: {expected_output_location}")
-        if os.path.exists(expected_output_location):
-            print(f"DEBUG [DOCX Export]: Removing leftover: {expected_output_location}")
-            os.remove(expected_output_location)
-
-        print(f"DEBUG [DOCX Export]: Running command: {' '.join(command)}")
-
-        current_env = os.environ.copy()
-        process = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=120,
-            env=current_env
+        proc = subprocess.run(
+            cmd, capture_output=True, text=True,
+            check=False, timeout=120, env=os.environ.copy()
         )
-
-        print(f"DEBUG [DOCX Export]: LibreOffice Return Code: {process.returncode}")
-        if process.stdout:
-            print(f"DEBUG [DOCX Export]: LibreOffice stdout:\n---\n{process.stdout.strip()}\n---")
-        if process.stderr:
-            print(f"DEBUG [DOCX Export]: LibreOffice stderr:\n---\n{process.stderr.strip()}\n---")
-
-        if "0xc10" in process.stderr or "SfxBaseModel::impl_store" in process.stderr:
-            error_msg = f"LibreOffice I/O Write Error during conversion. Stderr: {process.stderr.strip()}"
-            if "no export filter" in process.stderr.lower():
-                 error_msg += " (Also saw 'no export filter' - check LO installation and write permissions)"
-            print(f"ERROR [DOCX Export]: {error_msg}")
-            return False, error_msg
+        print(f"DEBUG Export RC={proc.returncode}")
+        if proc.stdout: print(f"  stdout: {proc.stdout.strip()}")
+        if proc.stderr: print(f"  stderr: {proc.stderr.strip()}")
         
-        if ("no export filter" in process.stderr.lower() or "no export filter" in process.stdout.lower()) and process.returncode != 0 :
-            error_msg = "LibreOffice reported: No export filter for DOCX found. Ensure 'libreoffice-writer' is fully installed."
-            print(f"ERROR [DOCX Export]: {error_msg}")
-            return False, error_msg
-            
-        if process.returncode != 0:
-            error_msg = f"LibreOffice conversion failed (code {process.returncode}).\nError:\n{process.stderr or process.stdout}"
-            print(f"ERROR [DOCX Export]: {error_msg}")
-            return False, error_msg
-
-        if os.path.exists(expected_output_location):
-            print(f"DEBUG [DOCX Export]: Found DOCX at: {expected_output_location}")
-            try:
-                Path(output_docx_path).parent.mkdir(parents=True, exist_ok=True)
-                shutil.move(str(expected_output_location), str(output_docx_path))
-                print(f"DEBUG [DOCX Export]: Moved DOCX to final destination: {output_docx_path}")
-                return True, None
-            except Exception as move_e:
-                error_msg = f"Found converted DOCX ({expected_output_location}) but failed to move to {output_docx_path}: {move_e}"
-                print(f"ERROR [DOCX Export]: {error_msg}")
-                return False, error_msg
-        else:
-            error_msg = f"LibreOffice conversion seemed to finish, but the output DOCX ({expected_output_location}) could not be located."
-            print(f"ERROR [DOCX Export]: {error_msg}")
-            return False, error_msg
-
+        if proc.returncode != 0:
+            return False, f"Export failed with code {proc.returncode}:\n{proc.stderr}"
+        return True, ""
     except subprocess.TimeoutExpired:
-        return False, "LibreOffice conversion timed out (took longer than 120 seconds)."
+        return False, "LibreOffice timed out."
     except Exception as e:
-        print(f"ERROR [DOCX Export]: General exception during DOCX export process: {e}")
-        return False, f"Error during DOCX export process: {e}"
+        return False, f"Export exception: {e}"
+
+def _save_temp_pdf(doc):
+    """Save the in-memory PDF to a temp file. Returns (path, error_msg)."""
+    try:
+        fd, path = tempfile.mkstemp(suffix=".pdf", prefix="wordsys_export_")
+        os.close(fd)
+        ok, msg = save_document(doc, path, incremental=False)
+        if not ok:
+            return None, f"Failed to save temp PDF: {msg}"
+        if not os.path.exists(path) or os.path.getsize(path) == 0:
+            return None, "Temp PDF is empty or missing after save."
+        return path, None
+    except Exception as e:
+        return None, f"Exception saving temp PDF: {e}"
+
+def _find_output(outdir, stem, extension, min_mtime):
+    """Search outdir for a converted file with the given extension."""
+    expected = outdir / f"{stem}.{extension}"
+    if expected.exists() and expected.stat().st_size > 0:
+        return expected
+    # LibreOffice may use a slightly different stem; scan the directory
+    for candidate in outdir.glob(f"*.{extension}"):
+        try:
+            if candidate.stat().st_mtime >= min_mtime - 10 and candidate.stat().st_size > 0:
+                return candidate
+        except OSError:
+            pass
+    return None
+
+def _export_pdf_direct(doc, output_path, target_format):
+    temp_pdf = None
+    try:
+        temp_pdf, err = _save_temp_pdf(doc)
+        if err:
+            return False, err
+        
+        pdf_path_obj = Path(temp_pdf)
+        outdir = pdf_path_obj.parent
+        mtime = pdf_path_obj.stat().st_mtime
+        
+        ok, msg = _run_lo_export(temp_pdf, outdir, target_format)
+        if not ok:
+            return False, msg
+            
+        found = _find_output(outdir, pdf_path_obj.stem, target_format, mtime)
+        if not found:
+            return False, f"LibreOffice conversion finished but {target_format} file not found."
+            
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(found), output_path)
+        return True, None
+    except Exception as e:
+        traceback.print_exc()
+        return False, f"Export error: {e}"
     finally:
-        if temp_pdf_path and os.path.exists(temp_pdf_path):
-            try:
-                os.unlink(temp_pdf_path)
-                print(f"DEBUG [DOCX Export]: Cleaned up temp PDF: {temp_pdf_path}")
-            except Exception as unlink_e:
-                print(f"Warning: Could not delete temporary file {temp_pdf_path}: {unlink_e}")
+        if temp_pdf and os.path.exists(temp_pdf):
+            try: os.unlink(temp_pdf)
+            except OSError: pass
+
+def export_pdf_as_odt(doc, source_pdf_path, output_odt_path):
+    """Export PDF → ODT directly using LibreOffice writer_pdf_import filter."""
+    if not output_odt_path.lower().endswith('.odt'):
+        output_odt_path += '.odt'
+    return _export_pdf_direct(doc, output_odt_path, 'odt')
+
+def export_pdf_as_docx(doc, source_pdf_path, output_docx_path):
+    """Export PDF → DOCX directly using LibreOffice writer_pdf_import filter."""
+    if not output_docx_path.lower().endswith('.docx'):
+        output_docx_path += '.docx'
+    return _export_pdf_direct(doc, output_docx_path, 'docx')
+
+
+def export_pdf_as_odt_alias(doc, source_pdf_path, output_odt_path):
+    """Alias kept for compatibility — delegates to export_pdf_as_odt."""
+    return export_pdf_as_odt(doc, source_pdf_path, output_odt_path)
+
+
+def _export_pdf_via_libreoffice(doc, output_path, target_format, format_label):
+    """Legacy wrapper — routes to the specific validated exporters."""
+    if target_format == 'docx':
+        return export_pdf_as_docx(doc, None, output_path)
+    elif target_format == 'odt':
+        return export_pdf_as_odt(doc, None, output_path)
+    return False, f"Unsupported format: {target_format}"
+
+
+
+
 
 def export_pdf_as_text(doc, output_txt_path):
     if not doc:
@@ -649,6 +643,72 @@ def delete_shape_from_page(doc, shape_obj: EditableShape):
         print(f"HATA şekil siliniyor: {e}")
         traceback.print_exc()
         return False, f"Şekil silme sırasında hata: {e}"
+
+
+def extract_editable_shapes(doc, page_index):
+    """Bug 2: reconstruct EditableShape objects from PDF vector drawings so shapes
+    remain selectable after save+reload."""
+    editable_shapes = []
+    if not doc or not (0 <= page_index < doc.page_count):
+        return [], "Invalid document or page index for shape extraction."
+    try:
+        page = doc.load_page(page_index)
+        drawings = page.get_drawings()
+        for drawing in drawings:
+            try:
+                rect = drawing.get('rect')
+                if not rect:
+                    continue
+                r = fitz.Rect(rect)
+                if r.is_empty or not r.is_valid:
+                    continue
+                if r.width < 2 or r.height < 2:
+                    continue
+
+                bbox = (r.x0, r.y0, r.x1, r.y1)
+
+                # Determine shape type from the path items
+                items = drawing.get('items', [])
+                shape_type = EditableShape.SHAPE_RECTANGLE  # default
+                for item in items:
+                    if item[0] == 'c':  # cubic bezier -> likely ellipse
+                        shape_type = EditableShape.SHAPE_ELLIPSE
+                        break
+
+                # Extract colours — PyMuPDF returns them as RGB tuples (0-1) or None
+                raw_fill = drawing.get('fill')     # None if transparent
+                raw_stroke = drawing.get('color')  # stroke colour
+                raw_width = drawing.get('width', 1.0)
+
+                is_transparent = (raw_fill is None)
+                fill_color = raw_fill if raw_fill else (1.0, 1.0, 1.0)
+                stroke_color = raw_stroke if raw_stroke else (0.0, 0.0, 0.0)
+                stroke_width = float(raw_width) if raw_width else 1.0
+
+                shape_obj = EditableShape(
+                    shape_type=shape_type,
+                    bbox=bbox,
+                    fill_color=fill_color,
+                    stroke_color=stroke_color,
+                    stroke_width=stroke_width,
+                    page_number=page_index,
+                    is_new=False,
+                    is_transparent=is_transparent
+                )
+                # Mark as already baked - exists in PDF
+                shape_obj.is_baked = True
+                editable_shapes.append(shape_obj)
+            except Exception as item_err:
+                print(f"Warning: skipping drawing item: {item_err}")
+                continue
+
+        print(f"DEBUG: Extracted {len(editable_shapes)} shapes from page {page_index}")
+        return editable_shapes, None
+    except Exception as e:
+        error_msg = f"Error extracting shapes from page {page_index}: {e}"
+        print(error_msg)
+        traceback.print_exc()
+        return [], error_msg
 
 def apply_object_edit(doc, obj):
     if not doc or not hasattr(obj, 'page_number') or obj.page_number is None:
