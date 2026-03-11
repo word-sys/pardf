@@ -1,15 +1,12 @@
 # ParDF - Word-Sys's PDF Düzenleyicisi
 <img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/word_sys_pdf_editor/img/f-pv1.svg" width="256" height="256"/>
 
-**ParDF**, Pardus ve diğer Linux dağıtımları için geliştirilmiş, PDF dosyalarındaki metin içeriğini düzenlemeye odaklanan basit ve kullanıcı dostu bir araçtır. #MilliTeknolojiHamlesi ve TEKNOFEST ruhuyla, Pardus ekosistemindeki bir ihtiyacı karşılamak üzere sıfırdan geliştirilmiştir. Kurumsal ve Bireysel'e hizmet eden Word-Sys's PDF Düzenleyicisi özgür ve milli bir PDF Düzenleyicisi olmak, bir ilk olmak hedefinde geliştirilen TEKNOFEST Pardus Geliştirme Yarışması - Yerelleştirme kategorisinde yarışan uygulamadır.
+**ParDF**, Pardus ve diğer Linux dağıtımları için geliştirilmiş, PDF dosyalarındaki metin içeriğini düzenlemeye odaklanan basit ve kullanıcı dostu bir araçtır. #MilliTeknolojiHamlesi ve TEKNOFEST ruhuyla, Pardus ekosistemindeki bir ihtiyacı karşılamak üzere sıfırdan geliştirilmiştir. Kurumsal ve Bireysel'e hizmet eden Word-Sys's PDF Düzenleyicisi özgür ve milli bir PDF Düzenleyicisi olmak, bir ilk olmak hedefinde geliştirilen TEKNOFEST Pardus Geliştirme Yarışması BİRİNCİSİ olan uygulamadır.
 
 Geliştirici: **Barın Güzeldemirci (word-sys)**
+
 Lisans: **GPL-3.0-or-later**
 ---
-> [!CAUTION]
-> Proje hala geliştirme aşamasındadır. Tespit edilen 1 hata vardır lütfen 'BUGS' kısmını dikkate alarak programı kullanın, gelecek güncellemelerde hatayı gidermeyi amaçlıyoruz. Bu hata/hatalar çoğunlukla programın ve diğer fonksiyonların çalışmasına engel değildir.
-
-> BUGS: Geri Alma/İleri Alma özellikleri tam çalışmamaktadır, çalışmadığı yerler: Yazı eklenmesi sonucu yazı geri alınamıyor, var olan veya eklenen yazının düzenlenip yazının hareket ettirilip geri alınması/ileri alınması sonucu eklenen veya silinen bölüm geri gelebilir ancak yanlış yere veya editlenemeyecek şekilde sabit olarak gelebilir. (Tespit ettiğimiz yan etkileri bunlardır)
 
 ## Temel Özellikler
 *   PDF dosyaları oluşturma
@@ -80,7 +77,7 @@ Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştir
     ```bash
     git clone https://github.com/word-sys/pardf.git
     cd pardf
-3    ```
+    ```
 
 3.  **Sanal Ortam Oluşturun ve Aktifleştirin (Önerilir):**
     Proje dizininde bir sanal ortam oluşturmak, Python bağımlılıklarını sistem genelindeki kurulumlardan izole etmenize yardımcı olur.
