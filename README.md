@@ -1,10 +1,9 @@
 # ParDF - Word-Sys's PDF Düzenleyicisi
 <img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/word_sys_pdf_editor/img/f-pv1.svg" width="256" height="256"/>
 
-**ParDF**, Pardus ve diğer Linux dağıtımları için geliştirilmiş, PDF dosyalarındaki metin içeriğini düzenlemeye odaklanan basit ve kullanıcı dostu bir araçtır. #MilliTeknolojiHamlesi ve TEKNOFEST ruhuyla, Pardus ekosistemindeki bir ihtiyacı karşılamak üzere sıfırdan geliştirilmiştir. Kurumsal ve Bireysel'e hizmet eden Word-Sys's PDF Düzenleyicisi özgür ve milli bir PDF Düzenleyicisi olmak, bir ilk olmak hedefinde geliştirilen TEKNOFEST Pardus Geliştirme Yarışması BİRİNCİSİ olan uygulamadır.
+**ParDF**, Pardus ve diğer Linux dağıtımları için geliştirilmiş, PDF dosyalarındaki metin içeriğini düzenlemeye odaklanan basit ve kullanıcı dostu bir araçtır. #MilliTeknolojiHamlesi ve TEKNOFEST ruhuyla, Pardus ekosistemindeki bir ihtiyacı karşılamak üzere sıfırdan geliştirilmiştir. Kurumsal ve Bireysel'e hizmet eden Word-Sys's PDF Düzenleyicisi özgür ve milli bir PDF Düzenleyicisi olmak, bir ilk olmak hedefinde geliştirilen TEKNOFEST Pardus Geliştirme Yarışması **BİRİNCİSİ** olan uygulamadır.
 
 Geliştirici: **Barın Güzeldemirci (word-sys)**
-
 Lisans: **GPL-3.0-or-later**
 ---
 
