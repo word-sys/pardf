@@ -608,7 +608,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         about_dialog = Gtk.AboutDialog(transient_for=self, modal=True)
 
         about_dialog.set_program_name("Word-Sys's PDF Editor")
-        about_dialog.set_version("1.8.1-1") 
+        about_dialog.set_version("1.8.1") 
         about_dialog.set_authors(["Barın Güzeldemirci (word-sys)"])
         
         try:
