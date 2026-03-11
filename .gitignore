@@ -4,6 +4,8 @@ __pycache__/
 *$py.class
 venv/
 .env
+dist/
+build/
 
 debian/word-sys-pdf-editor/
 debian/*.log

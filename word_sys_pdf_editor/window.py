@@ -70,7 +70,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.pending_format_change_obj = None
         self.before_format_change_state = None
         self.is_repaired_file = False
-        # Bug 5: remember last-used text format settings across new text creations
         self._last_font_family = None
         self._last_font_size = 11.0
         self._last_is_bold = False
@@ -837,7 +836,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         else:
             self.editable_images = images
 
-        # Bug 2: load saved shapes from the PDF page drawings so they remain selectable after reload
         shapes, shapes_error = pdf_handler.extract_editable_shapes(self.doc, page_index)
         if shapes_error:
             print(f"Warning: Could not extract shapes from page {page_index + 1}: {shapes_error}")
@@ -1004,8 +1002,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         cr.restore()
 
         if self.dragged_object:
-            # Bug 1: only draw the original-position ghost for images and shapes, NOT for text
-            # (text ghost caused a strange diagonal line artifact)
             if self.dragged_object.original_bbox and not isinstance(self.dragged_object, EditableText):
                 orig_x1, orig_y1, orig_x2, orig_y2 = self.dragged_object.original_bbox
                 cr.save()
@@ -1094,15 +1090,11 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                         cr.stroke()
             cr.restore()
             
-        # Overlay: draw only is_new texts (not yet committed to PDF).
-        # For modified existing texts, the PDF is updated in-memory immediately
-        # via apply_object_edit (see on_text_format_changed below), so the
-        # re-render from the PDF source already shows the changes without any overlay.
         for text_obj in self.editable_texts:
             if text_obj.page_number != self.current_page_index:
                 continue
             if not text_obj.is_new:
-                continue  # existing texts are visible through the PDF render
+                continue 
             if text_obj is self.dragged_object:
                 continue
             if not text_obj.bbox or not text_obj.text:
@@ -1127,8 +1119,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         for shape in self.editable_shapes:
             if shape.page_number != self.current_page_index:
                 continue
-            # Bug 4: shapes that are already baked are visible in the PDF render;
-            # only draw overlay for unbaked (newly added / modified) shapes
             if getattr(shape, 'is_baked', False):
                 continue
             
@@ -1403,7 +1393,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
     def _update_text_format_controls(self, text_obj):
         if not text_obj or self.font_scan_in_progress:
-            # Bug 5: when in add_text mode, DON'T reset — keep last-used settings visible
             if self.tool_mode == "add_text":
                 return
             if not self.font_scan_in_progress and self.font_combo.get_sensitive():
@@ -2150,7 +2139,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 self._apply_and_hide_editor()
                 return
 
-            # Bug 5: use last-remembered settings if available, otherwise fall back to toolbar
             font_fam_display, font_pdf_name, font_size, color, is_bold, is_italic = self._get_current_format_settings()
             if self._last_font_family is not None:
                 font_fam_display = self._last_font_family
@@ -2209,7 +2197,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if self.font_scan_in_progress:
             return
 
-        # Bug 5: always update last-used font settings when user changes toolbar controls
         iter = self.font_combo.get_active_iter()
         if iter:
             self._last_font_family = self.font_store[iter][1]
@@ -2274,8 +2261,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 self.pending_format_change_obj.is_italic = is_italic
                 changed = True
 
-            # Recalculate bbox whenever font family, bold, italic, or size changes
-            # (not just size — bold/italic affect text width/height too)
             if changed and self.pending_format_change_obj.bbox:
                 obj = self.pending_format_change_obj
                 x1, y1, x2, y2 = obj.bbox
@@ -2297,20 +2282,14 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                     print(f"DEBUG: Error recalculating text bbox on format change: {e}")
 
             if changed:
-                # Bug 1/2 fix: for existing (non-new) texts, immediately apply the format
-                # change to the in-memory PDF and reload the canvas, instead of using the
-                # fragile overlay + white-blanking approach. This gives immediate visual
-                # feedback without double-draw artifacts or border mismatches.
                 obj = self.pending_format_change_obj
                 if not getattr(obj, 'is_new', False):
-                    # Snapshot old bbox as original_bbox so apply_object_edit erases old area
                     obj.original_bbox = self.before_format_change_state.get('bbox') or obj.bbox
                     success, err = pdf_handler.apply_object_edit(self.doc, obj)
                     if success:
-                        obj.original_bbox = obj.bbox  # update for future edits
+                        obj.original_bbox = obj.bbox 
                     self._load_page(self.current_page_index, preserve_scroll=True)
                 else:
-                    # New text not yet committed — just redraw the overlay
                     obj.modified = True
                     self.pdf_view.queue_draw()
                 self.document_modified = True
@@ -2664,7 +2643,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 command.execute()
                 self.undo_manager.add_command(command)
                 self.document_modified = True
-                # Bug 4: immediately bake the shape into the PDF so it shows in thumbnails
                 shape_to_bake = self.temp_shape
                 self.temp_shape = None
                 if not getattr(shape_to_bake, 'is_baked', False):
@@ -2848,10 +2826,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                     if item and item.index == page_index:
                         from .models import PdfPage
                         new_item = PdfPage(page_index, thumb)
-                        # Splice replaces the item in the model, forcing the factory
-                        # to re-bind the widget and pick up the new thumbnail.
                         self.pages_model.splice(i, 1, [new_item])
-                        # Re-sync the selection since splice resets it
                         GLib.idle_add(self._sync_thumbnail_selection)
                         break
         except Exception as e:

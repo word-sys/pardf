@@ -397,7 +397,6 @@ def save_document(doc, save_path, incremental=False):
         return False, f"PDF kaydedilirken hata oluştu: {e}"
     
 def _run_lo_export(temp_pdf, outdir, target_format):
-    """Run a LibreOffice command to convert PDF to target_format directly."""
     lo = shutil.which('libreoffice') or shutil.which('soffice')
     if not lo:
         return False, "LibreOffice not found."
@@ -430,7 +429,6 @@ def _run_lo_export(temp_pdf, outdir, target_format):
         return False, f"Export exception: {e}"
 
 def _save_temp_pdf(doc):
-    """Save the in-memory PDF to a temp file. Returns (path, error_msg)."""
     try:
         fd, path = tempfile.mkstemp(suffix=".pdf", prefix="wordsys_export_")
         os.close(fd)
@@ -444,11 +442,9 @@ def _save_temp_pdf(doc):
         return None, f"Exception saving temp PDF: {e}"
 
 def _find_output(outdir, stem, extension, min_mtime):
-    """Search outdir for a converted file with the given extension."""
     expected = outdir / f"{stem}.{extension}"
     if expected.exists() and expected.stat().st_size > 0:
         return expected
-    # LibreOffice may use a slightly different stem; scan the directory
     for candidate in outdir.glob(f"*.{extension}"):
         try:
             if candidate.stat().st_mtime >= min_mtime - 10 and candidate.stat().st_size > 0:
@@ -488,33 +484,26 @@ def _export_pdf_direct(doc, output_path, target_format):
             except OSError: pass
 
 def export_pdf_as_odt(doc, source_pdf_path, output_odt_path):
-    """Export PDF → ODT directly using LibreOffice writer_pdf_import filter."""
     if not output_odt_path.lower().endswith('.odt'):
         output_odt_path += '.odt'
     return _export_pdf_direct(doc, output_odt_path, 'odt')
 
 def export_pdf_as_docx(doc, source_pdf_path, output_docx_path):
-    """Export PDF → DOCX directly using LibreOffice writer_pdf_import filter."""
     if not output_docx_path.lower().endswith('.docx'):
         output_docx_path += '.docx'
     return _export_pdf_direct(doc, output_docx_path, 'docx')
 
 
 def export_pdf_as_odt_alias(doc, source_pdf_path, output_odt_path):
-    """Alias kept for compatibility — delegates to export_pdf_as_odt."""
     return export_pdf_as_odt(doc, source_pdf_path, output_odt_path)
 
 
 def _export_pdf_via_libreoffice(doc, output_path, target_format, format_label):
-    """Legacy wrapper — routes to the specific validated exporters."""
     if target_format == 'docx':
         return export_pdf_as_docx(doc, None, output_path)
     elif target_format == 'odt':
         return export_pdf_as_odt(doc, None, output_path)
     return False, f"Unsupported format: {target_format}"
-
-
-
 
 
 def export_pdf_as_text(doc, output_txt_path):
@@ -646,8 +635,6 @@ def delete_shape_from_page(doc, shape_obj: EditableShape):
 
 
 def extract_editable_shapes(doc, page_index):
-    """Bug 2: reconstruct EditableShape objects from PDF vector drawings so shapes
-    remain selectable after save+reload."""
     editable_shapes = []
     if not doc or not (0 <= page_index < doc.page_count):
         return [], "Invalid document or page index for shape extraction."
@@ -667,16 +654,14 @@ def extract_editable_shapes(doc, page_index):
 
                 bbox = (r.x0, r.y0, r.x1, r.y1)
 
-                # Determine shape type from the path items
                 items = drawing.get('items', [])
                 shape_type = EditableShape.SHAPE_RECTANGLE  # default
                 for item in items:
-                    if item[0] == 'c':  # cubic bezier -> likely ellipse
+                    if item[0] == 'c':  
                         shape_type = EditableShape.SHAPE_ELLIPSE
                         break
 
-                # Extract colours — PyMuPDF returns them as RGB tuples (0-1) or None
-                raw_fill = drawing.get('fill')     # None if transparent
+                raw_fill = drawing.get('fill')     
                 raw_stroke = drawing.get('color')  # stroke colour
                 raw_width = drawing.get('width', 1.0)
 
@@ -695,7 +680,6 @@ def extract_editable_shapes(doc, page_index):
                     is_new=False,
                     is_transparent=is_transparent
                 )
-                # Mark as already baked - exists in PDF
                 shape_obj.is_baked = True
                 editable_shapes.append(shape_obj)
             except Exception as item_err:
