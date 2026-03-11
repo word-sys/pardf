@@ -6,6 +6,8 @@
 Geliştirici: **Barın Güzeldemirci (word-sys)**
 Lisans: **GPL-3.0-or-later**
 ---
+<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot1.png" width="256" height="256"/>
+<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot2.png" width="256" height="256"/>
 
 ## Temel Özellikler
 *   PDF dosyaları oluşturma
@@ -18,11 +20,14 @@ Lisans: **GPL-3.0-or-later**
 *   PDF'teki objelerin yerini değiştirme/taşıma
 *   Yazı tipi, boyutu ve rengini değiştirme
 *   Düzenlenmiş PDF'leri kaydetme
-*   PDF'leri DOCX (LibreOffice gerektirir) ve TXT formatlarında dışa aktarma
+*   PDF'leri DOCX veya ODT (LibreOffice gerektirir) ve TXT formatlarında dışa aktarma
 *   Kullanıcı dostu arayüz ve sayfa önizlemeleri
 *   Güvenli Kaydetme
 *   Kısıtlı Mod (Güvenli Mod)
 *   Değişiklikleri Geri Alma/İleri Alma
+*   PDF'leri birleştirme
+*   PDF'lerden sayfa ekleme/silme
+*   PDF'e şekil ekleme
 
 ---
 
