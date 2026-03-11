@@ -6,6 +6,7 @@ venv/
 .env
 dist/
 build/
+.build_venv
 
 debian/word-sys-pdf-editor/
 debian/*.log

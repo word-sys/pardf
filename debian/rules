@@ -13,9 +13,9 @@ ICON_INSTALL_DIR=$(PKGDDIR)/usr/share/icons/hicolor/$(ICON_SIZE_DIR)/apps
 	dh $@
 
 override_dh_auto_build:
-	python3 -m venv .build_venv
+	python3 -m venv --system-site-packages .build_venv
 	.build_venv/bin/pip install --upgrade pip
-	.build_venv/bin/pip install pyinstaller PyGObject pymupdf numpy pycairo
+	.build_venv/bin/pip install pyinstaller pymupdf numpy
 	.build_venv/bin/pyinstaller --name pardf --onedir \
 		--add-data "word_sys_pdf_editor/img:word_sys_pdf_editor/img" \
 		--hidden-import gi.repository.Gtk \
