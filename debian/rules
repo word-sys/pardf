@@ -46,6 +46,12 @@ override_dh_install:
 	install -d $(ICON_INSTALL_DIR)
 	install -m 644 $(ICON_SOURCE_PATH) $(ICON_INSTALL_DIR)/$(ICON_NAME).svg
 
+override_dh_strip:
+	# Do not strip PyInstaller bundled libraries
+
+override_dh_shlibdeps:
+	# Do not calculate shared library dependencies for bundled libraries
+
 override_dh_auto_clean:
 	dh_auto_clean
 	rm -rf .build_venv build dist pardf.spec __pycache__
