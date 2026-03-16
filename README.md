@@ -1,209 +1,248 @@
-# ParDF - Word-Sys's PDF Düzenleyicisi
+# ParDF - Word-Sys's PDF Editor
 <img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/word_sys_pdf_editor/img/f-pv1.svg" width="256" height="256"/>
 
-**ParDF**, Pardus ve diğer Linux dağıtımları için geliştirilmiş, PDF dosyalarındaki metin içeriğini düzenlemeye odaklanan basit ve kullanıcı dostu bir araçtır. #MilliTeknolojiHamlesi ve TEKNOFEST ruhuyla, Pardus ekosistemindeki bir ihtiyacı karşılamak üzere sıfırdan geliştirilmiştir. Kurumsal ve Bireysel'e hizmet eden Word-Sys's PDF Düzenleyicisi özgür ve milli bir PDF Düzenleyicisi olmak, bir ilk olmak hedefinde geliştirilen TEKNOFEST Pardus Geliştirme Yarışması **BİRİNCİSİ** olan uygulamadır.
+**ParDF** is a simple and user-friendly tool developed for Pardus and other Linux distributions, focused on editing text content in PDF files. Developed from scratch in the spirit of #MilliTeknolojiHamlesi and TEKNOFEST to meet a need in the Pardus ecosystem, ParDF is a free and national PDF editor serving both corporate and individual users — and the **FIRST PLACE** winner of the TEKNOFEST Pardus Development Competition.
 
-Geliştirici: **Barın Güzeldemirci (word-sys)**
-Lisans: **GPL-3.0-or-later**
+Developer: **Barın Güzeldemirci (word-sys)**  
+License: **GPL-3.0-or-later**
+
 ---
+
+> [!TIP]
+> **Recommended Stable Release: v1.7.2** — For the most stable experience, it is strongly recommended to use version **1.7.2**. See the installation sections below for details on how to install this version.
+
+---
+
 <img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot1.png" width="512" height="512"/>
 <img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot2.png" width="512" height="512"/>
 
-## Temel Özellikler
-*   PDF dosyaları oluşturma
-*   PDF dosyalarını açma ve görüntüleme
-*   Sayfa içinde var olan metin bloklarını seçme
-*   Seçili metinleri düzenleme veya silme
-*   Sayfaya yeni metin blokları ekleme
-*   Sayfaya resim ekleme
-*   Font genişliği/topluluğu
-*   PDF'teki objelerin yerini değiştirme/taşıma
-*   Yazı tipi, boyutu ve rengini değiştirme
-*   Düzenlenmiş PDF'leri kaydetme
-*   PDF'leri DOCX veya ODT (LibreOffice gerektirir) ve TXT formatlarında dışa aktarma
-*   Kullanıcı dostu arayüz ve sayfa önizlemeleri
-*   Güvenli Kaydetme
-*   Kısıtlı Mod (Güvenli Mod)
-*   Değişiklikleri Geri Alma/İleri Alma
-*   PDF'leri birleştirme
-*   PDF'lerden sayfa ekleme/silme
-*   PDF'e şekil ekleme
+## Key Features
+
+*   Create PDF files
+*   Open and view PDF files
+*   Select existing text blocks within a page
+*   Edit or delete selected text
+*   Add new text blocks to a page
+*   Add images to a page
+*   Font width/family support
+*   Move/reposition objects within the PDF
+*   Change font type, size, and color
+*   Save edited PDFs
+*   Export PDFs to DOCX or ODT (requires LibreOffice) and TXT formats
+*   User-friendly interface with page previews
+*   Safe Save
+*   Restricted Mode (Safe Mode)
+*   Undo/Redo changes
+*   Merge PDFs
+*   Add/remove pages from PDFs
+*   Add shapes to PDFs
 
 ---
 
-## Kurulum
+## Installation
 
-ParDF'i sisteminize kurmanın iki yolu vardır:
+There are two ways to install ParDF on your system:
 
-### 1. Otomatik Kurulum (Önerilen Yöntem)
+### 1. Automatic Installation (Recommended Method)
 
-Bu yöntem, Linux dağıtımları için en kolay kurulum yoludur.
+This method is the easiest installation path for Linux distributions.
 
-1.  En son `.deb` paketini [**GitHub Releases**](https://github.com/word-sys/pardf/releases) sayfasından indirin. Genellikle `word-sys-pdf-editor_X.Y.Z_all.deb` şeklinde bir dosya adı olacaktır (X.Y.Z sürüm numarasını temsil eder).
-2.  Terminali, `.deb` dosyasını indirdiğiniz dizinde açın.
-3.  Aşağıdaki komutu çalıştırarak paketi kurun:
+1.  Download the latest `.deb` package from the [**GitHub Releases**](https://github.com/word-sys/pardf/releases) page. The file will typically be named something like `word-sys-pdf-editor_1.7.2_all.deb`.
+
+    > [!TIP]
+    > **Use version 1.7.2** for the most stable experience: look for `word-sys-pdf-editor_1.7.2_all.deb` on the releases page.
+
+2.  Open a terminal in the directory where you downloaded the `.deb` file.
+3.  Run the following command to install the package:
     ```bash
     sudo apt update
-    sudo apt install ./word-sys-pdf-editor_X.Y.Z_all.deb
+    sudo apt install ./word-sys-pdf-editor_1.7.2_all.deb
     ```
-    *(Not: `word-sys-pdf-editor_X.Y.Z_all.deb` yerine indirdiğiniz dosyanın tam adını yazın.)*
-4.  Eğer kurulum sırasında bağımlılıklarla ilgili bir hata alırsanız, aşağıdaki komutu çalıştırarak eksik bağımlılıkları gidermeyi deneyin:
+    *(Note: Replace `word-sys-pdf-editor_1.7.2_all.deb` with the exact filename you downloaded if different.)*
+4.  If you encounter a dependency error during installation, try running the following command to fix missing dependencies:
     ```bash
     sudo apt --fix-broken install
     ```
-5.  Kurulum tamamlandıktan sonra ParDF'i uygulama menünüzden başlatabilirsiniz.
+5.  Once installation is complete, you can launch ParDF from your application menu.
+
 > [!CAUTION]
-> Pardus 23.4 ve Debian 12'de python3-fitz 1.21.1 problemli bir pakettir, paket güncellenene kadar ParDF DEB versiyonunda sorun yaşayabilirsiniz. Manuel kurulum tavsiye edilir !
+> On Pardus 23.4 and Debian 12, `python3-fitz` version 1.21.1 is a problematic package. Until the package is updated, you may experience issues with the ParDF DEB version. **Manual installation is recommended** for these systems.
 
-### 2. Manuel Kurulum (Geliştiriciler veya Kaynaktan Derlemek İsteyenler İçin)
+---
 
-Bu yöntem, uygulamayı doğrudan kaynak kodundan çalıştırmak veya geliştirme yapmak isteyen kullanıcılar için uygundur.
+### 2. Manual Installation (For Developers or Those Who Want to Build from Source)
 
-### Pardus 23.4 Debian 12 ve Ubuntu  XX.04 < Ubuntu 24.04 için Manuel Kurulum
+This method is suitable for users who want to run the application directly from source code or contribute to development.
 
-1.  **Gerekli Bağımlılıkları Kurun:**
-    Öncelikle sisteminizde aşağıdaki paketlerin kurulu olduğundan emin olun. Terminale şu komutu yazarak kurabilirsiniz:
+> [!TIP]
+> For a stable experience, use the **v1.7.2** tag when cloning. If you want to test the latest development changes, you can clone the `main` branch directly — but note that it may be less stable.
+
+---
+
+#### Pardus 23.4, Debian 12, and Ubuntu < 24.04 — Manual Installation
+
+1.  **Install Required Dependencies:**
+    Make sure the following packages are installed on your system. Run this command in your terminal:
     ```bash
     sudo apt update
     sudo apt install python3 python3-pip python3-venv \
-                     python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 libgirepository1.0-dev\
+                     python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 libgirepository1.0-dev \
                      python3-numpy \
                      python3-dev libcairo2-dev build-essential \
                      fonts-noto-core fonts-liberation2
     ```
-    *İsteğe Bağlı (DOCX Dışa Aktarma İçin):*
+    *Optional (for DOCX export):*
     ```bash
     sudo apt install libreoffice-common
     ```
 
-2.  **Kaynak Kodunu İndirin:**
-    En son kaynak kodunu [**GitHub Releases**](https://github.com/word-sys/pardf/releases) sayfasından `.zip` veya `.tar.gz` (veya `.tar.xz`) formatında indirin ya da depoyu klonlayın:
+2.  **Download the Source Code:**
+
+    **Recommended (stable v1.7.2):**
+    ```bash
+    git clone --branch 1.7.2 https://github.com/word-sys/pardf.git
+    cd pardf
+    ```
+
+    **For testing / latest development build (may be unstable):**
     ```bash
     git clone https://github.com/word-sys/pardf.git
     cd pardf
     ```
 
-3.  **Sanal Ortam Oluşturun ve Aktifleştirin (Önerilir):**
-    Proje dizininde bir sanal ortam oluşturmak, Python bağımlılıklarını sistem genelindeki kurulumlardan izole etmenize yardımcı olur.
+3.  **Create and Activate a Virtual Environment (Recommended):**
+    Creating a virtual environment in the project directory helps isolate Python dependencies from system-wide installations.
     ```bash
     python3 -m venv venv
     source venv/bin/activate
     ```
-    *(Sanal ortamdan çıkmak için daha sonra `deactivate` komutunu kullanabilirsiniz.)*
+    *(You can use `deactivate` later to exit the virtual environment.)*
 
-4.  **Python Bağımlılıklarını Kurun:**
-    Projenin temel Python kütüphanesi olan PyMuPDF'i (ve numpy'ı, eğer sistemden kurulmadıysa) kurun:
+4.  **Install Python Dependencies:**
+    Install the core Python library PyMuPDF (and numpy if not already installed from the system):
     ```bash
     pip install PyMuPDF numpy pygobject==3.50.0
     ```
 
-5.  **Uygulamayı Çalıştırın:**
-    Proje ana dizinindeyken (kaynak kodlarını çıkarttığınız veya klonladığınız yerde) aşağıdaki komutu çalıştırın:
+5.  **Run the Application:**
+    From the project root directory (where you extracted or cloned the source code), run:
     ```bash
     python3 run-editor.py
     ```
 
-### Diğer Dağıtımlar (Ubuntu 24.04+, Debian 13 Trixie) Manuel Kurulum
+---
 
-1.  **Gerekli Bağımlılıkları Kurun:**
-    Öncelikle sisteminizde aşağıdaki paketlerin kurulu olduğundan emin olun. Terminale şu komutu yazarak kurabilirsiniz:
+#### Ubuntu 24.04+, Debian 13 Trixie — Manual Installation
+
+1.  **Install Required Dependencies:**
     ```bash
     sudo apt update
     sudo apt install python3 python3-pip python3-venv \
-                     python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 libgirepository-2.0-dev\
+                     python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 libgirepository-2.0-dev \
                      python3-numpy \
                      python3-dev libcairo2-dev build-essential \
                      fonts-noto-core fonts-liberation2
     ```
-    *İsteğe Bağlı (DOCX Dışa Aktarma İçin):*
+    *Optional (for DOCX export):*
     ```bash
     sudo apt install libreoffice-common
     ```
 
-2.  **Kaynak Kodunu İndirin:**
-    En son kaynak kodunu [**GitHub Releases**](https://github.com/word-sys/pardf/releases) sayfasından `.zip` veya `.tar.gz` (veya `.tar.xz`) formatında indirin ya da depoyu klonlayın:
+2.  **Download the Source Code:**
+
+    **Recommended (stable v1.7.2):**
+    ```bash
+    git clone --branch 1.7.2 https://github.com/word-sys/pardf.git
+    cd pardf
+    ```
+
+    **For testing / latest development build (may be unstable):**
     ```bash
     git clone https://github.com/word-sys/pardf.git
     cd pardf
     ```
 
-3.  **Sanal Ortam Oluşturun ve Aktifleştirin:**
-    Proje dizininde bir sanal ortam oluşturmak, Python bağımlılıklarını sistem genelindeki kurulumlardan izole etmenize yardımcı olur.
+3.  **Create and Activate a Virtual Environment:**
     ```bash
     python3 -m venv venv
     source venv/bin/activate
     ```
-    *(Sanal ortamdan çıkmak için daha sonra `deactivate` komutunu kullanabilirsiniz.)*
+    *(You can use `deactivate` later to exit the virtual environment.)*
 
-4.  **Python Bağımlılıklarını Kurun:**
-    Projenin temel Python kütüphanesi olan PyMuPDF'i (ve numpy'ı, eğer sistemden kurulmadıysa) kurun:
+4.  **Install Python Dependencies:**
     ```bash
     pip install PyMuPDF numpy pygobject
     ```
 
-5.  **Uygulamayı Çalıştırın:**
-    Proje ana dizinindeyken (kaynak kodlarını çıkarttığınız veya klonladığınız yerde) aşağıdaki komutu çalıştırın:
+5.  **Run the Application:**
     ```bash
     python3 run-editor.py
     ```
 
-### Arch Linux ve Dağıtımları İçin
+---
 
-1.  **Kaynak Kodunu İndirin:**
-    En son kaynak kodunu [**GitHub Releases**](https://github.com/word-sys/pardf/releases) sayfasından `.zip` veya `.tar.gz` (veya `.tar.xz`) formatında indirin ya da depoyu klonlayın:
+#### Arch Linux and Derivatives — Manual Installation
+
+1.  **Download the Source Code:**
+
+    **Recommended (stable v1.7.2):**
+    ```bash
+    git clone --branch 1.7.2 https://github.com/word-sys/pardf.git
+    cd pardf
+    ```
+
+    **For testing / latest development build (may be unstable):**
     ```bash
     git clone https://github.com/word-sys/pardf.git
     cd pardf
     ```
-    *İsteğe Bağlı (DOCX Dışa Aktarma İçin):*
+
+    *Optional (for DOCX export):*
     ```bash
     sudo pacman -S libreoffice-fresh
     ```
 
-2.  **Sanal Ortam Oluşturun ve Aktifleştirin:**
-    Proje dizininde bir sanal ortam oluşturmak, Python bağımlılıklarını sistem genelindeki kurulumlardan izole etmenize yardımcı olur.
+2.  **Create and Activate a Virtual Environment:**
     ```bash
     python3 -m venv venv
     source venv/bin/activate
     ```
-    *(Sanal ortamdan çıkmak için daha sonra `deactivate` komutunu kullanabilirsiniz.)*
+    *(You can use `deactivate` later to exit the virtual environment.)*
 
-3.  **Python Bağımlılıklarını Kurun:**
-    Projenin temel Python kütüphanesi olan PyMuPDF'i (ve numpy'ı, eğer sistemden kurulmadıysa) kurun:
+3.  **Install Python Dependencies:**
     ```bash
     pip install PyMuPDF numpy pygobject
     ```
 
-4.  **Uygulamayı Çalıştırın:**
-    Proje ana dizinindeyken (kaynak kodlarını çıkarttığınız veya klonladığınız yerde) aşağıdaki komutu çalıştırın:
+4.  **Run the Application:**
     ```bash
     python3 run-editor.py
     ```
-    
-**TEBRİKLER! ParDF'i başarıyla çalıştırdınız!** 
+
+**CONGRATULATIONS! You have successfully launched ParDF!**
 
 ---
 
-## Hata Bildirimi ve Geri Bildirim
+## Bug Reports and Feedback
 
-Herhangi bir hata ile karşılaşırsanız, bir özellik talebiniz varsa veya genel bir geri bildirimde bulunmak isterseniz, lütfen [**GitHub Issues**](https://github.com/word-sys/pardf/issues) bölümünü kullanın.
-
----
-
-## Katkıda Bulunma
-
-ParDF açık kaynaklı bir projedir ve katkılarınıza açıktır! Katkıda bulunmak isterseniz, lütfen aşağıdaki adımları izleyin:
-
-1.  Bu depoyu forklayın.
-2.  Yeni bir özellik veya hata düzeltmesi için kendi dalınızı oluşturun (`git checkout -b ozellik/yeni-ozellik` veya `git checkout -b duzeltme/hata-adi`).
-3.  Değişikliklerinizi yapın ve commit edin (`git commit -am 'Yeni özellik eklendi'`).
-4.  Dalınızı GitHub'a itin (`git push origin ozellik/yeni-ozellik`).
-5.  Bir Pull Request (PR) oluşturun.
+If you encounter any bugs, have a feature request, or want to leave general feedback, please use the [**GitHub Issues**](https://github.com/word-sys/pardf/issues) section.
 
 ---
 
-## Lisans
+## Contributing
 
-Bu proje [**GNU General Public License v3.0 or later**](LICENSE) altında lisanslanmıştır.
+ParDF is an open-source project and welcomes contributions! If you'd like to contribute, please follow these steps:
+
+1.  Fork this repository.
+2.  Create your own branch for a new feature or bug fix (`git checkout -b feature/new-feature` or `git checkout -b fix/bug-name`).
+3.  Make your changes and commit them (`git commit -am 'Added new feature'`).
+4.  Push your branch to GitHub (`git push origin feature/new-feature`).
+5.  Open a Pull Request (PR).
+
+---
+
+## License
+
+This project is licensed under the [**GNU General Public License v3.0 or later**](LICENSE).
 
 ---
