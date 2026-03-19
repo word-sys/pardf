@@ -104,6 +104,11 @@ _STRINGS = {
         "status_open_or_drop": "Open a file or drag and drop one here.",
         "image_select_title": "Select an Image File",
         "image_filter_label": "Image files",
+        "guide_title": "Quick Start Guide",
+        "guide_item1": "<b>1. Select and Edit Tool (V)</b>\nDefault tool. Click on text or images on the page to select them. <i>Double-click</i> on a selected text to open the editing window.",
+        "guide_item2": "<b>2. Add Text Tool (T)</b>\nClick where you want to add text on the page. Type your text in the pop-up window and adjust font, size, and color from the top toolbar.",
+        "guide_item3": "<b>3. Add Image Tool (I)</b>\nClick where you want to add an image on the page. Select your image from the file selection screen that opens.",
+        "guide_item4": "<b>4. Move Tool (M)</b>\nAfter selecting this tool, you can click and drag any text or image item on the page to change its position.",
     },
 
     "tr": {
@@ -204,6 +209,11 @@ _STRINGS = {
         "status_open_or_drop": "Bir dosya açın veya sürükleyip bırakın.",
         "image_select_title": "Lütfen bir resim dosyası seçin",
         "image_filter_label": "Resim dosyaları",
+        "guide_title": "Hızlı Başlangıç Kılavuzu",
+        "guide_item1": "<b>1. Seç ve Düzenle Aracı (V)</b>\nVarsayılan araçtır. Sayfadaki metin veya resimlere tıklayarak seçin. Seçili bir metne <i>çift tıklayarak</i> düzenleme penceresini açın.",
+        "guide_item2": "<b>2. Metin Ekle Aracı (T)</b>\nSayfada metin eklemek istediğiniz yere tıklayın. Açılan pencereye metninizi yazın ve üst araç çubuğundan font, boyut ve renk ayarlarını yapın.",
+        "guide_item3": "<b>3. Resim Ekle Aracı (I)</b>\nSayfada resim eklemek istediğiniz yere tıklayın. Açılacak dosya seçme ekranından resminizi seçin.",
+        "guide_item4": "<b>4. Taşıma Aracı (M)</b>\nBu aracı seçtikten sonra, sayfadaki herhangi bir metin veya resim öğesini tıklayıp sürükleyerek yerini değiştirebilirsiniz.",
     },
 }
 

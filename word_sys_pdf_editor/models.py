@@ -136,12 +136,13 @@ class EditableText:
         self.drag_start_y = 0
 
 class EditableImage:
-    def __init__(self, bbox, page_number, xref, image_bytes):
+    def __init__(self, bbox, page_number, xref, image_bytes, is_new=False):
         self.bbox = bbox
         self.original_bbox = bbox
         self.page_number = page_number
         self.xref = xref
         self.image_bytes = image_bytes
+        self.is_new = is_new
         self.selected = False
         self.modified = False
 

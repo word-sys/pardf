@@ -986,11 +986,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.status_label.set_text(f"Kaydediliyor {os.path.basename(save_path)}...")
         if self.text_edit_popover and self.text_edit_popover.is_visible():
             self._apply_and_hide_editor(force_apply=True)
-            
-        for shape in self.editable_shapes:
-            if not getattr(shape, 'is_baked', False):
-                pdf_handler.apply_object_edit(self.doc, shape)
-                shape.is_baked = True
 
         success, error_msg = pdf_handler.save_document(self.doc, save_path, incremental=False)
         self.is_saving = False
@@ -2744,7 +2739,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                                     bbox=self.temp_image_bbox,
                                     page_number=self.current_page_index,
                                     xref=None,
-                                    image_bytes=image_bytes
+                                    image_bytes=image_bytes,
+                                    is_new=True
                                 )
                                 
                                 self.selected_image = image_obj
@@ -2820,7 +2816,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         
         dialog.set_titlebar(header)
 
-        title_label = Gtk.Label(label="Hızlı Başlangıç Kılavuzu")
+        title_label = Gtk.Label(label=_("guide_title"))
         title_label.add_css_class("title-4")
         header.set_title_widget(title_label)
         
@@ -2840,30 +2836,22 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         
         guide_select_label = Gtk.Label(
             use_markup=True,
-            label="<b>1. Seç ve Düzenle Aracı (V)</b>\n"
-                "Varsayılan araçtır. Sayfadaki metin veya resimlere tıklayarak seçin. "
-                "Seçili bir metne <i>çift tıklayarak</i> düzenleme penceresini açın.",
+            label=_("guide_item1"),
             xalign=0, wrap=True
         )
         guide_add_text_label = Gtk.Label(
             use_markup=True,
-            label="<b>2. Metin Ekle Aracı (T)</b>\n"
-                "Sayfada metin eklemek istediğiniz yere tıklayın. Açılan pencereye metninizi "
-                "yazın ve üst araç çubuğundan font, boyut ve renk ayarlarını yapın.",
+            label=_("guide_item2"),
             xalign=0, wrap=True
         )
         guide_add_image_label = Gtk.Label(
             use_markup=True,
-            label="<b>3. Resim Ekle Aracı (I)</b>\n"
-                "Sayfada resim eklemek istediğiniz yere tıklayın. Açılacak dosya seçme "
-                "ekranından resminizi seçin.",
+            label=_("guide_item3"),
             xalign=0, wrap=True
         )
         guide_move_label = Gtk.Label(
             use_markup=True,
-            label="<b>4. Taşıma Aracı (M)</b>\n"
-                "Bu aracı seçtikten sonra, sayfadaki herhangi bir metin veya resim "
-                "öğesini tıklayıp sürükleyerek yerini değiştirebilirsiniz.",
+            label=_("guide_item4"),
             xalign=0, wrap=True
         )
         content_box.append(guide_select_label)

@@ -22,7 +22,12 @@ class Command:
         
         pdf_handler.restore_page_from_snapshot(self.window.doc, page_num)
         
-        redact_rect = fitz.Rect(getattr(target_object, 'original_bbox', target_object.bbox))
+        orig_bbox = getattr(target_object, 'original_bbox', target_object.bbox)
+        if isinstance(target_object, EditableShape):
+            x0, y0, x1, y1 = orig_bbox
+            redact_rect = fitz.Rect(x0 - 20, y0 - 20, x1 + 20, y1 + 20)
+        else:
+            redact_rect = fitz.Rect(orig_bbox)
         try:
             page = self.window.doc.load_page(page_num)
             page.add_redact_annot(redact_rect)
@@ -95,7 +100,12 @@ class EditObjectCommand(Command):
         
         pdf_handler.restore_page_from_snapshot(self.window.doc, page_num)
         
-        redact_rect = fitz.Rect(getattr(self.target_object, 'original_bbox', self.target_object.bbox))
+        orig_bbox = getattr(self.target_object, 'original_bbox', self.target_object.bbox)
+        if isinstance(self.target_object, EditableShape):
+            x0, y0, x1, y1 = orig_bbox
+            redact_rect = fitz.Rect(x0 - 20, y0 - 20, x1 + 20, y1 + 20)
+        else:
+            redact_rect = fitz.Rect(orig_bbox)
         try:
             page = self.window.doc.load_page(page_num)
             page.add_redact_annot(redact_rect)
