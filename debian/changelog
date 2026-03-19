@@ -1,3 +1,19 @@
+word-sys-pdf-editor (1.8.2) bookworm; urgency=medium
+
+  * Removed PyInstaller bundling
+  * Bundled PyMuPDF and numpy via pip into _vendor/
+  * Added drag indicator ghost box (gray dashed outline) for text and image objects
+  * Added direct PDF to PowerPoint (PPTX) and OpenDocument Presentation (ODP) export
+  * Fixed bug where dragging or deleting pre-existing objects left a white artifact
+  * Fixed object duplication bug during undo, redo, and edit operations
+  * Fixed bug where text italic formatting was lost upon reloading the page
+  * Fixed LibreOffice export failures caused by complex iterative PDF streams
+  * Fixed undo button not tracking newly added objects correctly
+  * Fixed stretched images forcibly locking their aspect ratio when modified
+  * Shape property changes now apply immediately to the PDF
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 19 Mar 2026 20:30:00 +0300
+
 word-sys-pdf-editor (1.8.1) bookworm; urgency=medium
 
   * Implemented direct PDF to DOCX and ODT export using LibreOffice writer_pdf_import filter

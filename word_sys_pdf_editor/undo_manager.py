@@ -12,6 +12,38 @@ class Command:
     def undo(self):
         raise NotImplementedError
 
+    def _erase_ghost_if_needed(self, target_object, page_num):
+        if getattr(target_object, 'is_new', True) or getattr(target_object, '_ghost_redacted', False):
+            return
+            
+        import fitz
+        from . import pdf_handler
+        from .models import EditableText, EditableImage, EditableShape
+        
+        pdf_handler.restore_page_from_snapshot(self.window.doc, page_num)
+        
+        redact_rect = fitz.Rect(getattr(target_object, 'original_bbox', target_object.bbox))
+        try:
+            page = self.window.doc.load_page(page_num)
+            page.add_redact_annot(redact_rect)
+            
+            # Smart redaction to prevent wiping out background graphics if possible
+            if isinstance(target_object, EditableText):
+                page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=False)
+            elif isinstance(target_object, EditableImage):
+                page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_REMOVE, graphics=False)
+            else:
+                try:
+                    page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=True)
+                except Exception:
+                    page.apply_redactions()
+                    
+            self.window.doc.load_page(page_num)
+            pdf_handler.save_page_snapshot(self.window.doc, page_num, force=True)
+            target_object._ghost_redacted = True
+        except Exception as e:
+            print(f"Warning: could not erase ghost from snapshot for page {page_num}: {e}")
+
 class UndoManager:
     def __init__(self, window):
         self.window = window
@@ -54,15 +86,59 @@ class EditObjectCommand(Command):
         self.old_properties = old_properties
         self.new_properties = new_properties
 
+    def _erase_ghost_if_needed(self, page_num, properties_to_clear):
+        if getattr(self.target_object, 'is_new', True) or getattr(self.target_object, '_ghost_redacted', False):
+            return
+            
+        import fitz
+        from . import pdf_handler
+        from .models import EditableText, EditableImage, EditableShape
+        
+        pdf_handler.restore_page_from_snapshot(self.window.doc, page_num)
+        
+        redact_rect = fitz.Rect(getattr(self.target_object, 'original_bbox', self.target_object.bbox))
+        try:
+            page = self.window.doc.load_page(page_num)
+            page.add_redact_annot(redact_rect)
+            
+            # Smart redaction to prevent wiping out background graphics if possible
+            if isinstance(self.target_object, EditableText):
+                page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=False)
+            elif isinstance(self.target_object, EditableImage):
+                page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_REMOVE, graphics=False)
+            else:
+                try:
+                    page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=True)
+                except Exception:
+                    page.apply_redactions()
+                    
+            self.window.doc.load_page(page_num)
+            pdf_handler.save_page_snapshot(self.window.doc, page_num, force=True)
+            self.target_object._ghost_redacted = True
+        except Exception as e:
+            print(f"Warning: could not erase ghost from snapshot for page {page_num}: {e}")
+
     def _apply_properties_to_pdf(self, properties_to_apply, properties_to_clear):
+        page_num = getattr(self.target_object, 'page_number', None)
+        if page_num is not None:
+            self._erase_ghost_if_needed(page_num, properties_to_clear)
+            
         if isinstance(self.target_object, EditableShape):
             temp_obj = copy.deepcopy(self.target_object)
             temp_obj.__dict__.update(copy.deepcopy(properties_to_apply))
-            temp_obj.original_bbox = properties_to_clear['bbox']  
+            temp_obj.original_bbox = properties_to_clear['bbox']
+            # Rebuild from snapshot so accumulated writes don't stack up
+            if page_num is not None:
+                pdf_handler.rebuild_page(
+                    self.window.doc, page_num,
+                    self.window.editable_texts,
+                    self.window.editable_shapes,
+                    self.window.editable_images,
+                    exclude_obj=self.target_object
+                )
             success, msg = pdf_handler.apply_object_edit(self.window.doc, temp_obj)
             if success:
                 self.target_object.is_baked = True
-                page_num = getattr(self.target_object, 'page_number', None)
                 if page_num is not None:
                     self.window._refresh_thumbnail(page_num)
             else:
@@ -73,6 +149,18 @@ class EditObjectCommand(Command):
         temp_obj_for_pdf = copy.deepcopy(self.target_object)
         temp_obj_for_pdf.__dict__.update(copy.deepcopy(properties_to_apply))
         temp_obj_for_pdf.original_bbox = properties_to_clear['bbox']
+        
+        # Rebuild from snapshot, excluding the TRACKED object (self.target_object)
+        # not temp_obj_for_pdf (a deepcopy) — identity check must match the list member.
+        page_num_fallback = getattr(self.target_object, 'page_number', None)
+        if page_num_fallback is not None:
+            pdf_handler.rebuild_page(
+                self.window.doc, page_num_fallback,
+                self.window.editable_texts,
+                self.window.editable_shapes,
+                self.window.editable_images,
+                exclude_obj=self.target_object  # <-- identity match against tracked list
+            )
         
         success, msg = pdf_handler.apply_object_edit(self.window.doc, temp_obj_for_pdf)
         
@@ -119,38 +207,52 @@ class AddObjectCommand(Command):
 
     def execute(self):
         if self.is_text:
-            self.window.editable_texts.append(self.new_object)
-            pdf_handler.apply_object_edit(self.window.doc, self.new_object)
-            self._refresh_thumb()
+            if self.new_object not in self.window.editable_texts:
+                self.window.editable_texts.append(self.new_object)
         elif self.is_shape:
-            self.window.editable_shapes.append(self.new_object)
+            if self.new_object not in self.window.editable_shapes:
+                self.window.editable_shapes.append(self.new_object)
         else:
-            self.window.editable_images.append(self.new_object)
-            pdf_handler.apply_object_edit(self.window.doc, self.new_object)
-            self._refresh_thumb()
-        
+            if self.new_object not in self.window.editable_images:
+                self.window.editable_images.append(self.new_object)
+                
+        # The object is now in the list. Rebuild page to ensure it's drawn cleanly.
+        page_num = getattr(self.new_object, 'page_number', self.window.current_page_index)
+        pdf_handler.rebuild_page(
+            self.window.doc, page_num,
+            self.window.editable_texts,
+            self.window.editable_shapes,
+            self.window.editable_images
+        )
+        self._refresh_thumb()
+
         self.window.document_modified = True
         self.window.status_label.set_text("Nesne eklendi.")
         self.window._update_ui_state()
         self.window.pdf_view.queue_draw()
 
     def undo(self):
-        if self.is_text:
-            pdf_handler.apply_text_edit(self.window.doc, self.new_object, "")
+        if self.is_text and self.new_object in self.window.editable_texts:
             self.window.editable_texts.remove(self.new_object)
-        elif self.is_shape:
-            if self.new_object in self.window.editable_shapes:
-                self.window.editable_shapes.remove(self.new_object)
-        else:
-            pdf_handler.delete_image_from_page(self.window.doc, self.new_object)
+        elif self.is_shape and self.new_object in self.window.editable_shapes:
+            self.window.editable_shapes.remove(self.new_object)
+        elif self.is_image and self.new_object in self.window.editable_images:
             self.window.editable_images.remove(self.new_object)
-        
+
+        # Rebuild the page without the object to securely "erase" it
+        page_num = getattr(self.new_object, 'page_number', self.window.current_page_index)
+        pdf_handler.rebuild_page(
+            self.window.doc, page_num,
+            self.window.editable_texts,
+            self.window.editable_shapes,
+            self.window.editable_images
+        )
+
         self.window.document_modified = True
         self.window.status_label.set_text("Geri alındı.")
-        if not self.is_shape:
-            self.window._load_page(self.window.current_page_index, preserve_scroll=True)
-        else:
-            self.window.pdf_view.queue_draw()
+        self.window._refresh_thumbnail(page_num)
+        self.window.pdf_view.queue_draw()
+
 
 
 class DeleteObjectCommand(Command):
@@ -160,65 +262,47 @@ class DeleteObjectCommand(Command):
         self.is_text = isinstance(deleted_object, EditableText)
         self.is_shape = isinstance(deleted_object, EditableShape)
 
-    def _erase_from_pdf(self, obj):
-        try:
-            import fitz
-            page = self.window.doc.load_page(obj.page_number)
-            bbox = obj.original_bbox or obj.bbox
-            if bbox:
-                is_shape = isinstance(obj, EditableShape)
-                margin = 20 if is_shape else 2
-                redact_rect = fitz.Rect(
-                    bbox[0] - margin, bbox[1] - margin,
-                    bbox[2] + margin, bbox[3] + margin
-                )
-                if not redact_rect.is_empty and redact_rect.is_valid:
-                    page.add_redact_annot(redact_rect)
-                    try:
-                        page.apply_redactions(
-                            images=fitz.PDF_REDACT_IMAGE_NONE,
-                            graphics=is_shape
-                        )
-                    except TypeError:
-                        page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE)
-                    return True
-        except Exception as e:
-            print(f"Error erasing object from PDF: {e}")
-        return False
-
     def execute(self):
-        if self.is_text:
-            self._erase_from_pdf(self.deleted_object)
-            if self.deleted_object in self.window.editable_texts:
-                self.window.editable_texts.remove(self.deleted_object)
-        elif self.is_shape:
-            if getattr(self.deleted_object, 'is_baked', False):
-                self._erase_from_pdf(self.deleted_object)
-            if self.deleted_object in self.window.editable_shapes:
-                self.window.editable_shapes.remove(self.deleted_object)
-        else:
-            pdf_handler.delete_image_from_page(self.window.doc, self.deleted_object)
-            if self.deleted_object in self.window.editable_images:
-                self.window.editable_images.remove(self.deleted_object)
+        if self.is_text and self.deleted_object in self.window.editable_texts:
+            self.window.editable_texts.remove(self.deleted_object)
+        elif self.is_shape and self.deleted_object in self.window.editable_shapes:
+            self.window.editable_shapes.remove(self.deleted_object)
+        elif not self.is_text and not self.is_shape and self.deleted_object in self.window.editable_images:
+            self.window.editable_images.remove(self.deleted_object)
+
+        page_num = getattr(self.deleted_object, 'page_number', self.window.current_page_index)
+        if page_num is not None:
+            self._erase_ghost_if_needed(self.deleted_object, page_num)
+            
+        pdf_handler.rebuild_page(
+            self.window.doc, page_num,
+            self.window.editable_texts,
+            self.window.editable_shapes,
+            self.window.editable_images
+        )
 
         self.window.document_modified = True
-        page_num = getattr(self.deleted_object, 'page_number', self.window.current_page_index)
-        self.window._load_page(self.window.current_page_index, preserve_scroll=True)
+        self.window.status_label.set_text("Nesne silindi.")
         self.window._refresh_thumbnail(page_num)
+        self.window.pdf_view.queue_draw()
 
     def undo(self):
-        if self.is_text:
-            pdf_handler.apply_object_edit(self.window.doc, self.deleted_object)
+        if self.is_text and self.deleted_object not in self.window.editable_texts:
             self.window.editable_texts.append(self.deleted_object)
-        elif self.is_shape:
-            pdf_handler.apply_object_edit(self.window.doc, self.deleted_object)
-            self.deleted_object.is_baked = True
+        elif self.is_shape and self.deleted_object not in self.window.editable_shapes:
             self.window.editable_shapes.append(self.deleted_object)
-        else:
-            pdf_handler.apply_object_edit(self.window.doc, self.deleted_object)
+        elif not self.is_text and not self.is_shape and self.deleted_object not in self.window.editable_images:
             self.window.editable_images.append(self.deleted_object)
 
-        self.window.document_modified = True
         page_num = getattr(self.deleted_object, 'page_number', self.window.current_page_index)
-        self.window._load_page(self.window.current_page_index, preserve_scroll=True)
+        pdf_handler.rebuild_page(
+            self.window.doc, page_num,
+            self.window.editable_texts,
+            self.window.editable_shapes,
+            self.window.editable_images
+        )
+
+        self.window.document_modified = True
+        self.window.status_label.set_text("Silme geri alındı.")
         self.window._refresh_thumbnail(page_num)
+        self.window.pdf_view.queue_draw()

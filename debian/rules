@@ -13,46 +13,38 @@ ICON_INSTALL_DIR=$(PKGDDIR)/usr/share/icons/hicolor/$(ICON_SIZE_DIR)/apps
 	dh $@
 
 override_dh_auto_build:
-	python3 -m venv --system-site-packages .build_venv
-	.build_venv/bin/pip install --upgrade pip
-	.build_venv/bin/pip install pyinstaller
-	.build_venv/bin/pip install --ignore-installed --upgrade pymupdf numpy
-	.build_venv/bin/pyinstaller --name pardf --onedir \
-		--add-data "word_sys_pdf_editor/img:word_sys_pdf_editor/img" \
-		--hidden-import gi.repository.Gtk \
-		--hidden-import gi.repository.Gio \
-		--hidden-import gi.repository.GLib \
-		--hidden-import gi.repository.Adw \
-		--hidden-import gi.repository.Gdk \
-		--hidden-import gi.repository.GdkPixbuf \
-		--hidden-import gi.repository.Pango \
-		--hidden-import gi.repository.PangoCairo \
-		--hidden-import cairo \
-		run_pardf.py
+	# Bundle only PyMuPDF and numpy — GTK/gi come from apt
+	python3 -m pip install --target=debian/vendor --upgrade pymupdf numpy
 
 override_dh_install:
+	# Install Python source
 	install -d $(INSTALL_DIR)
-	cp -pr dist/pardf/* $(INSTALL_DIR)/
-	
+	cp -r word_sys_pdf_editor $(INSTALL_DIR)/
+	install -m 644 run_pardf.py $(INSTALL_DIR)/
+
+	# Copy vendored packages
+	cp -r debian/vendor $(INSTALL_DIR)/_vendor
+
+	# Launcher script: prepend _vendor to PYTHONPATH so bundled fitz/numpy take priority
 	install -d $(BIN_DIR)
-	# Create wrapper script
-	echo '#!/bin/sh' > $(BIN_DIR)/word-sys-pdf-editor
-	echo 'exec /opt/word-sys-pdf-editor/pardf "$$@"' >> $(BIN_DIR)/word-sys-pdf-editor
+	printf '#!/bin/sh\nexport PYTHONPATH=/opt/word-sys-pdf-editor/_vendor:"$$PYTHONPATH"\nexec python3 /opt/word-sys-pdf-editor/run_pardf.py "$$@"\n' \
+		> $(BIN_DIR)/word-sys-pdf-editor
 	chmod 755 $(BIN_DIR)/word-sys-pdf-editor
-	
+
+	# Desktop entry
 	install -d $(PKGDDIR)/usr/share/applications
 	install -m 644 debian/word-sys-pdf-editor.desktop $(PKGDDIR)/usr/share/applications/
-	
+
+	# Icon
 	install -d $(ICON_INSTALL_DIR)
 	install -m 644 $(ICON_SOURCE_PATH) $(ICON_INSTALL_DIR)/$(ICON_NAME).svg
 
 override_dh_strip:
-	# Do not strip PyInstaller bundled libraries
+	# Nothing to strip — pure Python
 
 override_dh_shlibdeps:
-	# Do not calculate shared library dependencies for bundled libraries
+	# No shared lib deps to calculate
 
 override_dh_auto_clean:
 	dh_auto_clean
-	rm -rf .build_venv build dist pardf.spec __pycache__
-
+	rm -rf debian/vendor __pycache__ word_sys_pdf_editor/__pycache__

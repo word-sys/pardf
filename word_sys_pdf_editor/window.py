@@ -1,5 +1,6 @@
 import copy
 from .undo_manager import UndoManager, EditObjectCommand, AddObjectCommand, DeleteObjectCommand
+from .i18n import _, get_language
 
 import gi
 import os
@@ -163,18 +164,18 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         header = Adw.HeaderBar()
         self.main_box.append(header)
 
-        self.new_button = Gtk.Button(label="Yeni")
+        self.new_button = Gtk.Button(label=_("btn_new_doc"))
         self.new_button.connect("clicked", self.on_new_clicked)
         header.pack_start(self.new_button)
 
-        self.open_button = Gtk.Button(label="Aç")
+        self.open_button = Gtk.Button(label=_("btn_open_doc"))
         self.open_button.connect("clicked", self.on_open_clicked)
         header.pack_start(self.open_button)
 
         save_button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         save_button_box.get_style_context().add_class("linked")
 
-        self.save_button = Gtk.Button(label="Kaydet")
+        self.save_button = Gtk.Button(label=_("btn_save"))
         self.save_button.get_style_context().add_class("suggested-action")
         self.save_button.connect("clicked", self.on_save_clicked)
         save_button_box.append(self.save_button)
@@ -193,28 +194,34 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         header.pack_start(save_button_box)
 
         self.undo_button = Gtk.Button.new_from_icon_name("edit-undo-symbolic")
-        self.undo_button.set_tooltip_text("Geri Al (Ctrl+Z)")
+        self.undo_button.set_tooltip_text(_("undo_tip"))
         self.undo_button.connect("clicked", lambda w: self.undo_manager.undo())
         header.pack_start(self.undo_button)
 
         self.redo_button = Gtk.Button.new_from_icon_name("edit-redo-symbolic")
-        self.redo_button.set_tooltip_text("Yinele (Ctrl+Y)")
+        self.redo_button.set_tooltip_text(_("redo_tip"))
         self.redo_button.connect("clicked", lambda w: self.undo_manager.redo())
         header.pack_start(self.redo_button)
 
         menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic")
         header.pack_end(menu_button)
 
+        # Home / back to start screen button
+        self.home_button = Gtk.Button.new_from_icon_name("go-home-symbolic")
+        self.home_button.set_tooltip_text(_("home_button_tip"))
+        self.home_button.connect("clicked", lambda w: self.go_to_welcome())
+        self.home_button.add_css_class("flat")
+        header.pack_end(self.home_button)
         self.print_button = Gtk.Button.new_from_icon_name("printer-symbolic")
-        self.print_button.set_tooltip_text("Yazdır (Ctrl+P)")
+        self.print_button.set_tooltip_text(_("print_tip"))
         self.print_button.connect("clicked", lambda w: self.on_print_activated(None, None))
         header.pack_end(self.print_button)
         menu = Gio.Menu()
-        menu.append("Farklı Kaydet...", "win.save_as")
-        menu.append("Farklı Dışarı Çıkart...", "win.export_as")
+        menu.append(_("menu_save_as"), "win.save_as")
+        menu.append(_("menu_export_as"), "win.export_as")
         menu.append_section(None, Gio.Menu())
-        menu.append("Hakkında", "win.about")
-        menu.append("Kapat", "app.quit")
+        menu.append(_("menu_about"), "win.about")
+        menu.append(_("menu_quit"), "app.quit")
         popover_menu = Gtk.PopoverMenu.new_from_model(menu)
         menu_button.set_popover(popover_menu)
 
@@ -254,7 +261,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         status_bar_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, vexpand=False)
         status_bar_box.add_css_class('statusbar')
-        self.status_label = Gtk.Label(label="Hiçbir belge yüklenmedi.", xalign=0.0)
+        self.status_label = Gtk.Label(label=_('new_doc_loaded'), xalign=0.0)
         status_bar_box.append(self.status_label)
         self.main_box.append(status_bar_box)
 
@@ -263,7 +270,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                             margin_start=6, margin_end=6, margin_top=10, margin_bottom=6)
         sidebar_box.set_size_request(190, -1)
 
-        tools_label = Gtk.Label(label="Araçlar", xalign=0.0)
+        tools_label = Gtk.Label(label="Tools", xalign=0.0)
         tools_label.add_css_class('title-4')
         sidebar_box.append(tools_label)
 
@@ -273,38 +280,38 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             column_homogeneous=True
         )
         
-        self.select_tool_button = Gtk.Button(icon_name="input-mouse-symbolic", label="Değiştir")
-        self.select_tool_button.set_tooltip_text("Nesneleri Seç ve Değiştir (V)")
+        self.select_tool_button = Gtk.Button(icon_name="input-mouse-symbolic", label=_("tool_select"))
+        self.select_tool_button.set_tooltip_text(_("tool_select_tip"))
         self.select_tool_button.connect('clicked', self.on_tool_selected, "select")
         self.select_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.select_tool_button, 0, 0, 1, 1)
 
-        self.add_text_tool_button = Gtk.Button(icon_name="insert-text-symbolic", label="Metin Ekle")
-        self.add_text_tool_button.set_tooltip_text("Yeni Metin Kutusu Ekle (T)")
+        self.add_text_tool_button = Gtk.Button(icon_name="insert-text-symbolic", label=_("tool_add_text"))
+        self.add_text_tool_button.set_tooltip_text(_("tool_add_text_tip"))
         self.add_text_tool_button.connect('clicked', self.on_tool_selected, "add_text")
         self.add_text_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.add_text_tool_button, 1, 0, 1, 1)
 
-        self.add_image_tool_button = Gtk.Button(icon_name="insert-image-symbolic", label="Resim Ekle")
-        self.add_image_tool_button.set_tooltip_text("Yeni Resim Ekle (I)")
+        self.add_image_tool_button = Gtk.Button(icon_name="insert-image-symbolic", label=_("tool_add_image"))
+        self.add_image_tool_button.set_tooltip_text(_("tool_add_image_tip"))
         self.add_image_tool_button.connect('clicked', self.on_tool_selected, "add_image")
         self.add_image_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.add_image_tool_button, 0, 1, 1, 1)
 
-        self.drag_tool_button = Gtk.Button(icon_name="object-move-symbolic", label="Taşı")
-        self.drag_tool_button.set_tooltip_text("Nesneleri Sürükle ve Taşı (M)")
+        self.drag_tool_button = Gtk.Button(icon_name="object-move-symbolic", label=_("tool_drag"))
+        self.drag_tool_button.set_tooltip_text(_("tool_drag_tip"))
         self.drag_tool_button.connect('clicked', self.on_tool_selected, "drag")
         self.drag_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.drag_tool_button, 1, 1, 1, 1)
 
-        self.add_ellipse_tool_button = Gtk.Button(icon_name="shape-circle-symbolic", label="Elips")
-        self.add_ellipse_tool_button.set_tooltip_text("Elips Şekli Ekle (C)")
+        self.add_ellipse_tool_button = Gtk.Button(icon_name="shape-circle-symbolic", label=_("tool_ellipse"))
+        self.add_ellipse_tool_button.set_tooltip_text(_("tool_ellipse_tip"))
         self.add_ellipse_tool_button.connect('clicked', self.on_tool_selected, "add_ellipse")
         self.add_ellipse_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.add_ellipse_tool_button, 0, 2, 1, 1)
 
-        self.add_rectangle_tool_button = Gtk.Button(icon_name="shape-rectangle-symbolic", label="Kare")
-        self.add_rectangle_tool_button.set_tooltip_text("Dikdörtgen Şekli Ekle (R)")
+        self.add_rectangle_tool_button = Gtk.Button(icon_name="shape-rectangle-symbolic", label=_("tool_rectangle"))
+        self.add_rectangle_tool_button.set_tooltip_text(_("tool_rectangle_tip"))
         self.add_rectangle_tool_button.connect('clicked', self.on_tool_selected, "add_rectangle")
         self.add_rectangle_tool_button.add_css_class("tool-button")
         tools_grid.attach(self.add_rectangle_tool_button, 1, 2, 1, 1)
@@ -314,12 +321,12 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         sidebar_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL, margin_top=6, margin_bottom=6))
 
         pages_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        thumbnails_label = Gtk.Label(label="Sayfalar", xalign=0.0, hexpand=True)
+        thumbnails_label = Gtk.Label(label=_("pages_label"), xalign=0.0, hexpand=True)
         thumbnails_label.add_css_class('title-4')
         pages_header.append(thumbnails_label)
 
         self.delete_page_button = Gtk.Button.new_from_icon_name("user-trash-symbolic")
-        self.delete_page_button.set_tooltip_text("Seçili Sayfayı Sil")
+        self.delete_page_button.set_tooltip_text(_("delete_page_tip"))
         self.delete_page_button.connect('clicked', self.on_delete_page)
         self.delete_page_button.add_css_class('flat')
         pages_header.append(self.delete_page_button)
@@ -348,11 +355,11 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.main_toolbar.add_css_class('toolbar')
 
         zoom_out = Gtk.Button.new_from_icon_name("zoom-out-symbolic")
-        zoom_out.set_tooltip_text("Uzaklaştır (Ctrl+Aşağı Kaydır)")
+        zoom_out.set_tooltip_text(_("zoom_out_tip"))
         zoom_out.connect("clicked", self.on_zoom_out)
         self.zoom_label = Gtk.Label(label="100%")
         zoom_in = Gtk.Button.new_from_icon_name("zoom-in-symbolic")
-        zoom_in.set_tooltip_text("Yakınlaştır (Ctrl+KaydırmaYukarı)")
+        zoom_in.set_tooltip_text(_("zoom_in_tip"))
         zoom_in.connect("clicked", self.on_zoom_in)
         self.main_toolbar.append(zoom_out)
         self.main_toolbar.append(self.zoom_label)
@@ -361,15 +368,15 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.main_toolbar.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL, margin_start=6, margin_end=6))
 
         self.prev_button = Gtk.Button.new_from_icon_name("go-previous-symbolic")
-        self.prev_button.set_tooltip_text("Önceki Sayfa")
+        self.prev_button.set_tooltip_text(_("prev_page_tip"))
         self.prev_button.connect("clicked", self.on_prev_page)
         self.page_label = Gtk.Label(label="Sayfa 0 / 0")
         self.next_button = Gtk.Button.new_from_icon_name("go-next-symbolic")
-        self.next_button.set_tooltip_text("Sonraki Sayfa")
+        self.next_button.set_tooltip_text(_("next_page_tip"))
         self.next_button.connect("clicked", self.on_next_page)
         
         self.add_page_button = Gtk.Button.new_from_icon_name("document-new-symbolic")
-        self.add_page_button.set_tooltip_text("Yeni Sayfa Ekle")
+        self.add_page_button.set_tooltip_text(_("add_page_tip"))
         self.add_page_button.connect("clicked", self.on_add_page)
         
         self.main_toolbar.append(self.prev_button)
@@ -386,14 +393,14 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.font_combo.pack_start(cell, True)
         self.font_combo.add_attribute(cell, "text", 0)
         self.font_combo.set_active(0)
-        self.font_combo.set_tooltip_text("Yazı Tipi Ailesi")
+        self.font_combo.set_tooltip_text(_("font_tip"))
         self.font_combo.connect("changed", self.on_text_format_changed)
         self.font_combo.set_sensitive(False)
         self.main_toolbar.append(self.font_combo)
 
         self.font_size_spin = Gtk.SpinButton.new_with_range(6, 96, 1)
         self.font_size_spin.set_value(11);
-        self.font_size_spin.set_tooltip_text("Yazı Tipi Boyutu")
+        self.font_size_spin.set_tooltip_text(_("font_size_tip"))
         self.font_size_spin.connect("value-changed", self.on_text_format_changed)
         self.main_toolbar.append(self.font_size_spin)
 
@@ -411,7 +418,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         default_rgba = Gdk.RGBA()
         default_rgba.parse("black")
         self.color_button.set_rgba(default_rgba)
-        self.color_button.set_tooltip_text("Yazı Tipi Rengi")
+        self.color_button.set_tooltip_text(_("color_tip"))
         self.color_button.connect("color-set", self.on_text_format_changed)
         self.main_toolbar.append(self.color_button)
 
@@ -422,13 +429,13 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         fill_rgba = Gdk.RGBA()
         fill_rgba.parse("white")
         self.shape_fill_button.set_rgba(fill_rgba)
-        self.shape_fill_button.set_tooltip_text("Şekil Dolgu Rengi")
+        self.shape_fill_button.set_tooltip_text(_("shape_fill_tip"))
         self.shape_fill_button.connect("color-set", self.on_shape_format_changed)
         self.main_toolbar.append(self.shape_fill_button)
 
-        self.shape_transparent_toggle = Gtk.ToggleButton(label="Saydam")
-        self.shape_transparent_toggle.set_active(True)  
-        self.shape_transparent_toggle.set_tooltip_text("Şekli Saydam Yap (Dolgu Yok) / Renk Dolu")
+        self.shape_transparent_toggle = Gtk.ToggleButton(label="Transparent")
+        self.shape_transparent_toggle.set_active(True)
+        self.shape_transparent_toggle.set_tooltip_text(_("shape_transparent_tip"))
         self.shape_transparent_toggle.connect("toggled", self.on_shape_format_changed)
         self.main_toolbar.append(self.shape_transparent_toggle)
 
@@ -437,13 +444,13 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         stroke_rgba = Gdk.RGBA()
         stroke_rgba.parse("black")
         self.shape_stroke_button.set_rgba(stroke_rgba)
-        self.shape_stroke_button.set_tooltip_text("Şekil Çizgi Rengi")
+        self.shape_stroke_button.set_tooltip_text(_("shape_stroke_tip"))
         self.shape_stroke_button.connect("color-set", self.on_shape_format_changed)
         self.main_toolbar.append(self.shape_stroke_button)
 
         self.shape_stroke_width_spin = Gtk.SpinButton.new_with_range(0.5, 10, 0.5)
         self.shape_stroke_width_spin.set_value(2.0)
-        self.shape_stroke_width_spin.set_tooltip_text("Şekil Çizgi Kalınlığı")
+        self.shape_stroke_width_spin.set_tooltip_text(_("shape_width_tip"))
         self.shape_stroke_width_spin.connect("value-changed", self.on_shape_format_changed)
         self.main_toolbar.append(self.shape_stroke_width_spin)
 
@@ -597,7 +604,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         else:
             self.page_label.set_text("Sayfa 0 / 0")
             self.zoom_label.set_text("100%")
-            self.status_label.set_text("Bir dosya açın veya sürükleyip bırakın.")
+            self.status_label.set_text(_("status_open_or_drop"))
             self.set_title("Word-Sys's PDF Editor")
             self.document_modified = False
         
@@ -607,7 +614,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         about_dialog = Gtk.AboutDialog(transient_for=self, modal=True)
 
         about_dialog.set_program_name("Word-Sys's PDF Editor")
-        about_dialog.set_version("1.8.1") 
+        about_dialog.set_version("1.8.2") 
         about_dialog.set_authors(["Barın Güzeldemirci (word-sys)"])
         
         try:
@@ -859,10 +866,16 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         self._sync_thumbnail_selection()
         self._update_ui_state()
+        # Save page baseline snapshot AFTER extracting objects.
+        # This snapshot represents the original PDF content without any of our
+        # edits, and is used by rebuild_page() to restore before re-applying.
+        GLib.idle_add(lambda: pdf_handler.save_page_snapshot(self.doc, page_index) if self.doc else None)
 
     def close_document(self):
         self.undo_manager.clear()
         self.is_repaired_file = False
+        if self.doc:
+            pdf_handler.release_page_snapshots(self.doc)
         pdf_handler.close_pdf_document(self.doc)
         self.doc = None
         self.current_file_path = None
@@ -880,6 +893,44 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.pdf_view.set_content_height(1)
         self.pdf_view.queue_draw()
         self._update_ui_state()
+
+    def go_to_welcome(self):
+        """Return to the start screen, prompting to save unsaved changes first."""
+        if self.doc and self.document_modified:
+            response = show_save_changes_dialog(self)
+            if response == "save":
+                if self.current_file_path:
+                    if self.text_edit_popover and self.text_edit_popover.is_visible():
+                        self._apply_and_hide_editor(force_apply=True)
+                    success, err = pdf_handler.save_document(self.doc, self.current_file_path)
+                    if not success:
+                        show_error_dialog(self, f"Save failed: {err}", "Save Error")
+                        return
+                else:
+                    # No path yet — open save dialog
+                    self.on_save_as(None, None)
+                    # If still modified (user cancelled save-as), abort
+                    if self.document_modified:
+                        return
+            elif response == "cancel":
+                return
+            # "discard" falls through
+
+        # Close the current document cleanly
+        self.close_document()
+
+        # Replace the welcome page child with a fresh WelcomeView so recent
+        # files list is up-to-date and all state is pristine.
+        old_welcome = self.stack.get_child_by_name("welcome")
+        if old_welcome:
+            self.stack.remove(old_welcome)
+        new_welcome = WelcomeView(parent_window=self)
+        self.stack.add_named(new_welcome, "welcome")
+
+        self.stack.set_visible_child_name("welcome")
+        self.set_title("Word-Sys's PDF Editor")
+
+
 
     #original
     '''
@@ -1002,7 +1053,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         cr.restore()
 
         if self.dragged_object:
-            if self.dragged_object.original_bbox and not isinstance(self.dragged_object, EditableText):
+            if self.dragged_object.original_bbox:
                 orig_x1, orig_y1, orig_x2, orig_y2 = self.dragged_object.original_bbox
                 cr.save()
                 cr.set_source_rgba(0.85, 0.85, 0.85, 0.55)
@@ -1566,7 +1617,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         
         scroll.set_child(self.text_edit_view)
         button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, halign=Gtk.Align.END)
-        done_button = Gtk.Button(label="Bitir")
+        done_button = Gtk.Button(label=_("btn_done"))
         done_button.add_css_class("suggested-action")
         done_button.connect("clicked", self.on_text_edit_done)
         button_box.append(done_button)
@@ -1650,10 +1701,11 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             text_obj_to_apply.bbox = (x1, y1, x1 + _w, y1 + _h)
             
             command = AddObjectCommand(self, text_obj_to_apply)
+            # command.execute() will call rebuild_page which draws the new text
             command.execute()
-            self.undo_manager.add_command(command)
             self._refresh_thumbnail(self.current_page_index)
             self._load_page(self.current_page_index, preserve_scroll=True)
+            self.undo_manager.add_command(command)
         else:
             new_properties = copy.deepcopy(text_obj_to_apply.__dict__)
             new_properties['text'] = new_text
@@ -1877,6 +1929,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             "PDF": ("PDF files (*.pdf)", "*.pdf", "application/pdf"),
             "DOCX": ("Word Document (*.docx)", "*.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
             "ODT": ("OpenDocument Text (*.odt)", "*.odt", "application/vnd.oasis.opendocument.text"),
+            "PPTX": ("PowerPoint Presentation (*.pptx)", "*.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
+            "ODP": ("OpenDocument Presentation (*.odp)", "*.odp", "application/vnd.oasis.opendocument.presentation"),
             "TXT": ("Text File (*.txt)", "*.txt", "text/plain"),
         }
         for name, (pattern_name, pattern, mime) in filters.items():
@@ -1911,6 +1965,12 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             elif format_name == "ODT":
                 if not output_path.lower().endswith('.odt'): output_path += '.odt'
                 success, error_msg = pdf_handler.export_pdf_as_odt(self.doc, self.current_file_path, output_path)
+            elif format_name == "PPTX":
+                if not output_path.lower().endswith('.pptx'): output_path += '.pptx'
+                success, error_msg = pdf_handler.export_pdf_as_pptx(self.doc, self.current_file_path, output_path)
+            elif format_name == "ODP":
+                if not output_path.lower().endswith('.odp'): output_path += '.odp'
+                success, error_msg = pdf_handler.export_pdf_as_odp(self.doc, self.current_file_path, output_path)
             elif format_name == "TXT":
                 if not output_path.lower().endswith('.txt'): output_path += '.txt'
                 success, error_msg = pdf_handler.export_pdf_as_text(self.doc, output_path)
@@ -2162,7 +2222,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             new_text_obj = EditableText(
                 x=page_x_unzoomed,
                 y=page_y_unzoomed,
-                text="Yeni Metin",
+                text=_("default_new_text"),
                 font_size=font_size,
                 color=color,
                 is_new=True,
@@ -2285,6 +2345,12 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 obj = self.pending_format_change_obj
                 if not getattr(obj, 'is_new', False):
                     obj.original_bbox = self.before_format_change_state.get('bbox') or obj.bbox
+                    # Rebuild from snapshot, excluding obj so it won't be double-written
+                    pdf_handler.rebuild_page(
+                        self.doc, self.current_page_index,
+                        self.editable_texts, self.editable_shapes, self.editable_images,
+                        exclude_obj=obj
+                    )
                     success, err = pdf_handler.apply_object_edit(self.doc, obj)
                     if success:
                         obj.original_bbox = obj.bbox 
@@ -2326,7 +2392,22 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             if changed:
                 self.selected_shape.modified = True
                 self.document_modified = True
-                self.pdf_view.queue_draw()
+                # If the shape is already baked into the PDF, write changes immediately
+                if getattr(self.selected_shape, 'is_baked', False):
+                    self.selected_shape.original_bbox = self.selected_shape.bbox
+                    # Rebuild from snapshot, excluding selected_shape to avoid double-write
+                    pdf_handler.rebuild_page(
+                        self.doc, self.current_page_index,
+                        self.editable_texts, self.editable_shapes, self.editable_images,
+                        exclude_obj=self.selected_shape
+                    )
+                    pdf_handler.apply_object_edit(self.doc, self.selected_shape)
+                    self.selected_shape.is_baked = True
+                    self._refresh_thumbnail(self.current_page_index)
+                    # Must reload page so the new PDF pixmap is shown (not cached old one)
+                    self._load_page(self.current_page_index, preserve_scroll=True)
+                else:
+                    self.pdf_view.queue_draw()
                 print(f"DEBUG: Şekil biçimi güncellendi")
 
     def on_text_edit_done(self, button):
@@ -2639,16 +2720,17 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 self.selected_shape = self.temp_shape
                 self.selected_text = None
                 self.selected_image = None
+                
+                # Command execution gracefully handles rebuilding the page cleanly
                 command = AddObjectCommand(self, self.temp_shape)
                 command.execute()
                 self.undo_manager.add_command(command)
                 self.document_modified = True
-                shape_to_bake = self.temp_shape
+                
+                self.temp_shape.is_baked = True
                 self.temp_shape = None
-                if not getattr(shape_to_bake, 'is_baked', False):
-                    pdf_handler.apply_object_edit(self.doc, shape_to_bake)
-                    shape_to_bake.is_baked = True
-                    self._refresh_thumbnail(self.current_page_index)
+                self._refresh_thumbnail(self.current_page_index)
+                
                 self.pdf_view.queue_draw()
                 self._update_ui_state()
             elif self.temp_image_bbox:
@@ -2659,11 +2741,11 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                     return
                 
                 dialog = Gtk.FileChooserDialog(
-                    title="Lütfen bir resim dosyası seçin",
+                    title=_("image_select_title"),
                     transient_for=self, modal=True, action=Gtk.FileChooserAction.OPEN
                 )
-                dialog.add_buttons("_İptal", Gtk.ResponseType.CANCEL, "_Aç", Gtk.ResponseType.ACCEPT)
-                filter_img = Gtk.FileFilter(name="Resim dosyaları")
+                dialog.add_buttons("_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.ACCEPT)
+                filter_img = Gtk.FileFilter(name=_("image_filter_label"))
                 for mime in ["image/png", "image/jpeg", "image/gif", "image/bmp"]:
                     filter_img.add_mime_type(mime)
                 dialog.add_filter(filter_img)
@@ -2860,7 +2942,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.doc = doc
             self.current_file_path = None
             self.current_page_index = 0
-            self.set_title("Word-Sys's PDF Editor - İsimsiz*")
+            _untitled = _("untitled")
+            self.set_title(f"Word-Sys's PDF Editor - {_untitled}*")
             self.document_modified = True
             
             self._load_thumbnails()

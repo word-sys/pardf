@@ -1,0 +1,292 @@
+"""
+i18n.py — Internationalization module for Word-Sys PDF Editor.
+
+Usage:
+    from .i18n import _, get_language, set_language
+
+The active language is loaded from ~/.config/word-sys-pdf-editor/settings.json
+and defaults to 'en'.
+"""
+
+import json
+import os
+from pathlib import Path
+
+_CONFIG_DIR = Path.home() / ".config" / "word-sys-pdf-editor"
+_CONFIG_FILE = _CONFIG_DIR / "settings.json"
+
+# ── String tables ─────────────────────────────────────────────────────────────
+
+_STRINGS = {
+    "en": {
+        # Welcome screen
+        "app_subtitle": "Simple, fast & open-source PDF editor",
+        "btn_open": "Open File…",
+        "btn_new": "New PDF",
+        "btn_guide": "Quick Start Guide",
+        "recent_header": "<b>Recent Files</b>",
+        "tip_prefix": "Tip:",
+        "tips": [
+            "Tip: Double-click a text block to edit it.",
+            "Tip: Ctrl + Scroll to zoom in and out.",
+            "Tip: Select an object and press Delete to remove it.",
+            "Tip: Use the Move tool to reposition text and images.",
+            "Tip: Drag and drop a PDF onto the window to open it.",
+            "Tip: Use the Color button to change text colour.",
+            "Tip: Use the Print button to print your PDF.",
+            "Tip: Use Save As to save a copy with a new name.",
+        ],
+        # Toolbar / header
+        "zoom_out_tip": "Zoom Out (Ctrl+Scroll Down)",
+        "zoom_in_tip": "Zoom In (Ctrl+Scroll Up)",
+        "prev_page_tip": "Previous Page",
+        "next_page_tip": "Next Page",
+        "add_page_tip": "Add New Page",
+        "font_tip": "Font Family",
+        "font_size_tip": "Font Size",
+        "bold_tip": "Bold",
+        "italic_tip": "Italic",
+        "color_tip": "Text Colour",
+        "shape_fill_tip": "Shape Fill Colour",
+        "shape_transparent_tip": "Transparent (No Fill) / Filled",
+        "shape_stroke_tip": "Shape Stroke Colour",
+        "shape_width_tip": "Shape Stroke Width",
+        # Tools
+        "tool_select": "Select",
+        "tool_select_tip": "Select & Resize Objects (S)",
+        "tool_add_text": "Add Text",
+        "tool_add_text_tip": "Add New Text Block (T)",
+        "tool_add_image": "Add Image",
+        "tool_add_image_tip": "Add Image (I)",
+        "tool_drag": "Move",
+        "tool_drag_tip": "Drag & Move Objects (M)",
+        "tool_ellipse": "Ellipse",
+        "tool_ellipse_tip": "Add Ellipse Shape (C)",
+        "tool_rectangle": "Rectangle",
+        "tool_rectangle_tip": "Add Rectangle Shape (R)",
+        # Sidebar
+        "pages_label": "Pages",
+        "delete_page_tip": "Delete Selected Page",
+        # Status / dialogs
+        "loading": "Loading {}…",
+        "thumbnails_loading": "Loading thumbnails…",
+        "thumbnail_loaded": "Thumbnail loaded {}/{}",
+        "loaded": "Loaded: {}",
+        "new_doc_loaded": "New document loaded.",
+        "saving": "Saving {}…",
+        "saved": "Saved and reloaded: {}",
+        "save_failed": "Save failed.",
+        "doc_load_failed": "Document could not be loaded.",
+        "scan_fonts": "Scanning system fonts…",
+        "unsaved_changes": "There are unsaved changes. Do you want to save before closing/opening?",
+        "unsaved_title": "Unsaved Changes",
+        "delete_page_confirm": "Are you sure you want to delete this page?",
+        "delete_confirm_title": "Delete Page",
+        "delete_text_confirm": "Delete selected text?\n'{}'",
+        "delete_shape_confirm": "Are you sure you want to delete the selected shape?",
+        "delete_image_confirm": "Are you sure you want to delete the selected image?",
+        "delete_confirm": "Delete",
+        "change_applied": "Change applied.",
+        "reverted": "Reverted.",
+        "object_added": "Object added.",
+        "image_select_title": "Please select an image file",
+        "image_filter_label": "Image files",
+        "image_add_error": "An error occurred while processing the image file:\n{}",
+        "image_error_title": "Image Error",
+        "object_moved": "Object moved.",
+        "tool_changed": "Tool changed: {}",
+        "home_button_tip": "Back to Start Screen",
+        "home_confirm": "Go back to the start screen?\nUnsaved changes will be lost if you don't save first.",
+        "home_confirm_title": "Return to Start Screen",
+        # Export
+        "export_success": "Exported successfully.",
+        "export_error": "Export failed: {}",
+        # Language
+        "lang_label": "Language / Dil",
+        "lang_en": "English",
+        "lang_tr": "Türkçe",
+        "lang_restart_msg": "The application will restart to apply the language change.",
+        "lang_restart_title": "Restart Required",
+        # Header buttons
+        "btn_new_doc": "New",
+        "btn_open_doc": "Open",
+        "btn_save": "Save",
+        "undo_tip": "Undo (Ctrl+Z)",
+        "redo_tip": "Redo (Ctrl+Y)",
+        "print_tip": "Print (Ctrl+P)",
+        # Menu
+        "menu_save_as": "Save As…",
+        "menu_export_as": "Export As…",
+        "menu_about": "About",
+        "menu_quit": "Quit",
+        # Editor
+        "btn_done": "Done",
+        "default_new_text": "New Text",
+        "untitled": "Untitled",
+        "status_open_or_drop": "Open a file or drag and drop one here.",
+        # Image picker
+        "image_select_title": "Select an Image File",
+        "image_filter_label": "Image files",
+    },
+
+    "tr": {
+        # Welcome screen
+        "app_subtitle": "Basit, hızlı ve açık kaynaklı PDF düzenleyici",
+        "btn_open": "Dosya Aç…",
+        "btn_new": "Yeni PDF",
+        "btn_guide": "Hızlı Başlangıç Kılavuzu",
+        "recent_header": "<b>Son Kullanılanlar</b>",
+        "tip_prefix": "İpucu:",
+        "tips": [
+            "İpucu: Metin kutularını düzenlemek için üzerine çift tıklayabilirsiniz.",
+            "İpucu: Ctrl + Fare Tekerleği ile sayfayı yakınlaştırıp uzaklaştırabilirsiniz.",
+            "İpucu: Bir nesneyi seçip 'Delete' tuşuna basarak silebilirsiniz.",
+            "İpucu: 'Taşı' aracı ile metin ve resimlerin yerini değiştirebilirsiniz.",
+            "İpucu: Dosyaları doğrudan pencereye sürükleyip bırakarak açabilirsiniz.",
+            "İpucu: 'Renk' aracı ile metinlerin rengini değiştirebilirsiniz.",
+            "İpucu: 'Yazdır' aracı ile PDF dosyasını yazdırabilirsiniz.",
+            "İpucu: 'Farklı Kaydet' aracı ile PDF dosyasını farklı kaydedebilirsiniz.",
+        ],
+        # Toolbar / header
+        "zoom_out_tip": "Uzaklaştır (Ctrl+Aşağı Kaydır)",
+        "zoom_in_tip": "Yakınlaştır (Ctrl+Kaydırma Yukarı)",
+        "prev_page_tip": "Önceki Sayfa",
+        "next_page_tip": "Sonraki Sayfa",
+        "add_page_tip": "Yeni Sayfa Ekle",
+        "font_tip": "Yazı Tipi Ailesi",
+        "font_size_tip": "Yazı Tipi Boyutu",
+        "bold_tip": "Kalın",
+        "italic_tip": "İtalik",
+        "color_tip": "Yazı Tipi Rengi",
+        "shape_fill_tip": "Şekil Dolgu Rengi",
+        "shape_transparent_tip": "Saydam (Dolgu Yok) / Renk Dolu",
+        "shape_stroke_tip": "Şekil Çizgi Rengi",
+        "shape_width_tip": "Şekil Çizgi Kalınlığı",
+        # Tools
+        "tool_select": "Seç",
+        "tool_select_tip": "Nesneleri Seç ve Yeniden Boyutlandır (S)",
+        "tool_add_text": "Metin Ekle",
+        "tool_add_text_tip": "Yeni Metin Bloğu Ekle (T)",
+        "tool_add_image": "Resim Ekle",
+        "tool_add_image_tip": "Resim Ekle (I)",
+        "tool_drag": "Taşı",
+        "tool_drag_tip": "Nesneleri Sürükle ve Taşı (M)",
+        "tool_ellipse": "Elips",
+        "tool_ellipse_tip": "Elips Şekli Ekle (C)",
+        "tool_rectangle": "Kare",
+        "tool_rectangle_tip": "Dikdörtgen Şekli Ekle (R)",
+        # Sidebar
+        "pages_label": "Sayfalar",
+        "delete_page_tip": "Seçili Sayfayı Sil",
+        # Status / dialogs
+        "loading": "{} yükleniyor…",
+        "thumbnails_loading": "Küçük resimler yükleniyor…",
+        "thumbnail_loaded": "Küçük resim yüklendi {}/{}",
+        "loaded": "Yüklendi: {}",
+        "new_doc_loaded": "Yeni belge yüklendi.",
+        "saving": "{} kaydediliyor…",
+        "saved": "Kaydedildi ve yeniden yüklendi: {}",
+        "save_failed": "Kaydetme başarısız oldu.",
+        "doc_load_failed": "Doküman yüklenemedi.",
+        "scan_fonts": "Sistem fontları taranıyor…",
+        "unsaved_changes": "Kaydedilmemiş değişiklikler var. Kapatmadan/açmadan önce kaydetmek ister misiniz?",
+        "unsaved_title": "Kaydedilmemiş Değişiklikler",
+        "delete_page_confirm": "Bu sayfayı silmek istediğinizden emin misiniz?",
+        "delete_confirm_title": "Sayfayı Sil",
+        "delete_text_confirm": "Seçilen metni sil?\n'{}'",
+        "delete_shape_confirm": "Seçilen şekli silmek istediğinizden emin misiniz?",
+        "delete_image_confirm": "Seçilen resmi silmek istediğinizden emin misiniz?",
+        "delete_confirm": "Sil",
+        "change_applied": "Değişiklik uygulandı.",
+        "reverted": "Geri alındı.",
+        "object_added": "Nesne eklendi.",
+        "image_select_title": "Lütfen bir resim dosyası seçin",
+        "image_filter_label": "Resim dosyaları",
+        "image_add_error": "Resim dosyası işlenirken bir hata oluştu:\n{}",
+        "image_error_title": "Resim Hatası",
+        "object_moved": "Nesne taşındı.",
+        "tool_changed": "Araç şu şekilde değiştirildi: {}",
+        "home_button_tip": "Başlangıç Ekranına Dön",
+        "home_confirm": "Başlangıç ekranına dönmek istiyor musunuz?\nKaydedilmemiş değişiklikler, önce kaydetmezseniz kaybolacaktır.",
+        "home_confirm_title": "Başlangıç Ekranına Dön",
+        # Export
+        "export_success": "Başarıyla dışa aktarıldı.",
+        "export_error": "Dışa aktarma başarısız: {}",
+        # Language
+        "lang_label": "Language / Dil",
+        "lang_en": "English",
+        "lang_tr": "Türkçe",
+        "lang_restart_msg": "Dil değişikliğini uygulamak için uygulama yeniden başlatılacak.",
+        "lang_restart_title": "Yeniden Başlatma Gerekli",
+        # Header buttons
+        "btn_new_doc": "Yeni",
+        "btn_open_doc": "Aç",
+        "btn_save": "Kaydet",
+        "undo_tip": "Geri Al (Ctrl+Z)",
+        "redo_tip": "Yinele (Ctrl+Y)",
+        "print_tip": "Yazdır (Ctrl+P)",
+        # Menu
+        "menu_save_as": "Farklı Kaydet…",
+        "menu_export_as": "Farklı Dışarı Çıkart…",
+        "menu_about": "Hakkında",
+        "menu_quit": "Kapat",
+        # Editor
+        "btn_done": "Bitir",
+        "default_new_text": "Yeni Metin",
+        "untitled": "İsimsiz",
+        "status_open_or_drop": "Bir dosya açın veya sürükleyip bırakın.",
+        # Image picker
+        "image_select_title": "Lütfen bir resim dosyası seçin",
+        "image_filter_label": "Resim dosyaları",
+    },
+}
+
+# ── Settings I/O ──────────────────────────────────────────────────────────────
+
+def _load_settings() -> dict:
+    try:
+        if _CONFIG_FILE.exists():
+            with open(_CONFIG_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+def _save_settings(data: dict):
+    try:
+        _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        with open(_CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"Warning: Could not save settings: {e}")
+
+# ── Public API ────────────────────────────────────────────────────────────────
+
+_settings = _load_settings()
+_active_lang: str = _settings.get("language", "en")
+
+def get_language() -> str:
+    return _active_lang
+
+def set_language(lang: str):
+    """Persist the language choice and restart the application."""
+    global _active_lang
+    if lang not in _STRINGS:
+        lang = "en"
+    _active_lang = lang
+    _settings["language"] = lang
+    _save_settings(_settings)
+    # Restart the process to apply the new language everywhere
+    import sys, os
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+def _(key: str, *args) -> str:
+    """Look up a translated string. Falls back to English if key missing."""
+    table = _STRINGS.get(_active_lang, _STRINGS["en"])
+    text = table.get(key, _STRINGS["en"].get(key, key))
+    if args:
+        try:
+            return text.format(*args)
+        except Exception:
+            return text
+    return text

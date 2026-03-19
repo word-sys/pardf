@@ -4,25 +4,15 @@ from pathlib import Path
 
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, Gio, GdkPixbuf
+from gi.repository import Gtk, Adw, Gio, GLib
+
+from .i18n import _, get_language, set_language
+
 
 class WelcomeView(Adw.Bin):
     def __init__(self, parent_window, **kwargs):
         super().__init__(**kwargs)
         self.parent_window = parent_window
-
-        self.tips = [
-            "İpucu: Metin kutularını düzenlemek için üzerine çift tıklayabilirsiniz.",
-            "İpucu: Ctrl + Fare Tekerleği ile sayfayı yakınlaştırıp uzaklaştırabilirsiniz.",
-            "İpucu: Bir nesneyi seçip 'Delete' tuşuna basarak silebilirsiniz.",
-            "İpucu: 'Taşı' aracı ile metin ve resimlerin yerini değiştirebilirsiniz.",
-            "İpucu: Dosyaları doğrudan pencereye sürükleyip bırakarak açabilirsiniz.",
-            "İpucu: 'Renk' aracı ile metinlerin rengini değiştirebilirsiniz.",
-            "İpucu: 'Font' aracı ile metinlerin fontunu değiştirebilirsiniz."
-            "İpucu: 'Yazdır' aracı ile PDF dosyasını yazdırabilirsiniz.",
-            "İpucu: 'Kaydet' aracı ile PDF dosyasını kaydedebilirsiniz.",
-            "İpucu: 'Farklı Kaydet' aracı ile PDF dosyasını farklı kaydedebilirsiniz.",
-        ]
 
         self.recent_manager = Gtk.RecentManager.get_default()
         self._build_ui()
@@ -37,9 +27,9 @@ class WelcomeView(Adw.Bin):
         main_box.set_vexpand(True)
         main_box.set_valign(Gtk.Align.CENTER)
         clamp.set_child(main_box)
-
         main_box.set_margin_bottom(40)
 
+        # ── App icon ──────────────────────────────────────────────────────────
         try:
             icon_path = Path(__file__).resolve().parent / "img" / "f-pv1.png"
             app_icon = Gtk.Picture.new_for_filename(str(icon_path))
@@ -51,36 +41,73 @@ class WelcomeView(Adw.Bin):
         except Exception as e:
             print(f"Welcome screen icon could not be loaded: {e}")
 
+        # ── Title / subtitle ──────────────────────────────────────────────────
         title = Gtk.Label(label="Word-Sys's PDF Editor")
         title.add_css_class("title-1")
         main_box.append(title)
 
-        subtitle = Gtk.Label(label="Basit, hızlı ve kullanıcı dostu Açık Kaynak PDF düzenleyici")
+        subtitle = Gtk.Label(label=_("app_subtitle"))
         subtitle.add_css_class("dim-label")
         main_box.append(subtitle)
 
-        button_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, halign=Gtk.Align.CENTER)
-        button_box.set_margin_top(20)
+        # ── Language switcher ─────────────────────────────────────────────────
+        lang_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=8,
+            halign=Gtk.Align.CENTER,
+        )
+        lang_box.set_margin_top(4)
+
+        lang_icon = Gtk.Image.new_from_icon_name("preferences-desktop-locale-symbolic")
+        lang_box.append(lang_icon)
+
+        lang_label = Gtk.Label(label=_("lang_label"))
+        lang_label.add_css_class("dim-label")
+        lang_box.append(lang_label)
+
+        # English button
+        self._lang_en_btn = Gtk.ToggleButton(label=_("lang_en"))
+        self._lang_en_btn.set_active(get_language() == "en")
+        self._lang_en_btn.add_css_class("flat")
+        lang_box.append(self._lang_en_btn)
+
+        # Turkish button (grouped with EN so only one can be active)
+        self._lang_tr_btn = Gtk.ToggleButton(label=_("lang_tr"), group=self._lang_en_btn)
+        self._lang_tr_btn.set_active(get_language() == "tr")
+        self._lang_tr_btn.add_css_class("flat")
+        lang_box.append(self._lang_tr_btn)
+
+        self._lang_en_btn.connect("toggled", self._on_lang_toggled, "en")
+        self._lang_tr_btn.connect("toggled", self._on_lang_toggled, "tr")
+
+        main_box.append(lang_box)
+
+        # ── Action buttons ────────────────────────────────────────────────────
+        button_box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, spacing=6, halign=Gtk.Align.CENTER
+        )
+        button_box.set_margin_top(16)
         main_box.append(button_box)
 
-        open_button = Gtk.Button(label="Dosya Aç...")
+        new_button = Gtk.Button(label=_("btn_new"))
+        new_button.connect("clicked", lambda w: self.parent_window.on_new_clicked())
+        button_box.append(new_button)
+
+        open_button = Gtk.Button(label=_("btn_open"))
         open_button.get_style_context().add_class("suggested-action")
         open_button.connect("clicked", self.on_open_clicked)
         button_box.append(open_button)
 
-        new_button = Gtk.Button(label="Yeni PDF Oluştur")
-        new_button.connect("clicked", lambda w: self.parent_window.on_new_clicked())
-        button_box.prepend(new_button)
-
-        guide_button = Gtk.Button(label="Hızlı Başlangıç Kılavuzu")
+        guide_button = Gtk.Button(label=_("btn_guide"))
         guide_button.set_action_name("win.quick_guide")
         button_box.append(guide_button)
 
+        # ── Recent files ──────────────────────────────────────────────────────
         recent_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         recent_box.set_margin_top(30)
         main_box.append(recent_box)
 
-        recent_label = Gtk.Label(label="<b>Son Kullanılanlar</b>")
+        recent_label = Gtk.Label(label=_("recent_header"))
         recent_label.set_use_markup(True)
         recent_label.set_halign(Gtk.Align.START)
         recent_box.append(recent_label)
@@ -90,13 +117,75 @@ class WelcomeView(Adw.Bin):
         self.recent_list_box.add_css_class("boxed-list")
         recent_box.append(self.recent_list_box)
 
-
-        tip_label = Gtk.Label(label=random.choice(self.tips))
+        # ── Tip ───────────────────────────────────────────────────────────────
+        tips = _("tips")
+        tip_text = random.choice(tips) if isinstance(tips, list) else str(tips)
+        tip_label = Gtk.Label(label=tip_text)
         tip_label.add_css_class("dim-label")
         tip_label.set_halign(Gtk.Align.CENTER)
         tip_label.set_wrap(True)
         tip_label.set_margin_top(40)
         main_box.append(tip_label)
+
+    # ── Language toggle ───────────────────────────────────────────────────────
+
+    def _on_lang_toggled(self, button, lang_code):
+        """Called when EN or TR toggle is activated."""
+        if not button.get_active():
+            return  # ignore the deactivation event of the other button
+        if lang_code == get_language():
+            return  # already set, nothing to do
+        self._confirm_language_switch(lang_code)
+
+    def _confirm_language_switch(self, lang_code):
+        from gi.repository import Gtk
+        from .ui_components import show_confirm_dialog
+
+        # If unsaved changes, warn first
+        if self.parent_window.doc and self.parent_window.document_modified:
+            if not show_confirm_dialog(
+                self.parent_window,
+                _("unsaved_changes"),
+                _("unsaved_title"),
+                destructive=False,
+            ):
+                # Revert buttons
+                cur = get_language()
+                self._lang_en_btn.handler_block_by_func(self._on_lang_toggled)
+                self._lang_tr_btn.handler_block_by_func(self._on_lang_toggled)
+                self._lang_en_btn.set_active(cur == "en")
+                self._lang_tr_btn.set_active(cur == "tr")
+                self._lang_en_btn.handler_unblock_by_func(self._on_lang_toggled)
+                self._lang_tr_btn.handler_unblock_by_func(self._on_lang_toggled)
+                return
+
+        # Confirm restart
+        dialog = Gtk.MessageDialog(
+            transient_for=self.parent_window,
+            modal=True,
+            message_type=Gtk.MessageType.INFO,
+            buttons=Gtk.ButtonsType.OK_CANCEL,
+            text=_("lang_restart_title") + "\n\n" + _("lang_restart_msg"),
+        )
+
+        def on_response(d, response_id):
+            d.destroy()
+            if response_id == Gtk.ResponseType.OK:
+                set_language(lang_code)  # saves + restarts via os.execv
+            else:
+                # Revert toggle state
+                cur = get_language()
+                self._lang_en_btn.handler_block_by_func(self._on_lang_toggled)
+                self._lang_tr_btn.handler_block_by_func(self._on_lang_toggled)
+                self._lang_en_btn.set_active(cur == "en")
+                self._lang_tr_btn.set_active(cur == "tr")
+                self._lang_en_btn.handler_unblock_by_func(self._on_lang_toggled)
+                self._lang_tr_btn.handler_unblock_by_func(self._on_lang_toggled)
+
+        dialog.connect("response", on_response)
+        dialog.present()
+
+    # ── Recent files ──────────────────────────────────────────────────────────
 
     def _populate_recent_files(self, *args):
         child = self.recent_list_box.get_first_child()
@@ -111,25 +200,21 @@ class WelcomeView(Adw.Bin):
                 row = self._create_recent_file_row(item)
                 self.recent_list_box.append(row)
                 pdf_files_found += 1
-        
+
         self.recent_list_box.set_visible(pdf_files_found > 0)
 
     def _create_recent_file_row(self, item):
         action_row = Adw.ActionRow()
         action_row.set_title(item.get_display_name())
-        
         try:
             file_path = Path(item.get_uri_display())
             action_row.set_subtitle(str(file_path.parent))
         except Exception:
             action_row.set_subtitle(item.get_uri_display())
-        
         action_row.set_activatable(True)
         action_row.connect("activated", self.on_recent_file_activated, item.get_uri())
-        
         icon = Gtk.Image.new_from_icon_name("application-pdf-symbolic")
         action_row.add_prefix(icon)
-        
         return action_row
 
     def on_open_clicked(self, button):

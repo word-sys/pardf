@@ -396,102 +396,178 @@ def save_document(doc, save_path, incremental=False):
         
         return False, f"PDF kaydedilirken hata oluştu: {e}"
     
-def _run_lo_export(temp_pdf, outdir, target_format):
-    lo = shutil.which('libreoffice') or shutil.which('soffice')
-    if not lo:
-        return False, "LibreOffice not found."
-    
-    cmd = [
-        lo, '--headless', '--invisible', '--nologo',
-        '--infilter=writer_pdf_import',
-        '--convert-to', target_format,
-        '--outdir', str(outdir),
-        str(temp_pdf)
-    ]
-    
-    print(f"DEBUG Export running: {' '.join(cmd)}")
-    
-    try:
-        proc = subprocess.run(
-            cmd, capture_output=True, text=True,
-            check=False, timeout=120, env=os.environ.copy()
-        )
-        print(f"DEBUG Export RC={proc.returncode}")
-        if proc.stdout: print(f"  stdout: {proc.stdout.strip()}")
-        if proc.stderr: print(f"  stderr: {proc.stderr.strip()}")
-        
-        if proc.returncode != 0:
-            return False, f"Export failed with code {proc.returncode}:\n{proc.stderr}"
-        return True, ""
-    except subprocess.TimeoutExpired:
-        return False, "LibreOffice timed out."
-    except Exception as e:
-        return False, f"Export exception: {e}"
+def _export_via_libreoffice(doc, source_pdf_path, output_path, target_format):
+    libreoffice_executable = shutil.which('libreoffice')
+    if not libreoffice_executable:
+        libreoffice_executable = shutil.which('soffice')
+    if not libreoffice_executable:
+        return False, f"LibreOffice Not Found. Install 'libreoffice-writer' to enable {target_format.upper()} export."
+    print(f"DEBUG [{target_format.upper()} Export]: Using LibreOffice executable: {libreoffice_executable}")
 
-def _save_temp_pdf(doc):
+    final_output_dir = Path(output_path).parent
+    final_output_dir.mkdir(parents=True, exist_ok=True)
+
+    temp_pdf_path = None
     try:
-        fd, path = tempfile.mkstemp(suffix=".pdf", prefix="wordsys_export_")
+        # Save temp PDF directly in the destination folder to avoid /tmp permission issues
+        fd, temp_pdf_path = tempfile.mkstemp(suffix=".pdf", prefix="wordsys_export_", dir=str(final_output_dir))
         os.close(fd)
-        ok, msg = save_document(doc, path, incremental=False)
-        if not ok:
-            return None, f"Failed to save temp PDF: {msg}"
-        if not os.path.exists(path) or os.path.getsize(path) == 0:
-            return None, "Temp PDF is empty or missing after save."
-        return path, None
-    except Exception as e:
-        return None, f"Exception saving temp PDF: {e}"
+        print(f"DEBUG [{target_format.upper()} Export]: Saving document state to temporary file: {temp_pdf_path}")
 
-def _find_output(outdir, stem, extension, min_mtime):
-    expected = outdir / f"{stem}.{extension}"
-    if expected.exists() and expected.stat().st_size > 0:
-        return expected
-    for candidate in outdir.glob(f"*.{extension}"):
+        # Produce a completely clean, garbage-collected PDF in memory.
+        # This is CRITICAL because LibreOffice's writer_pdf_import will fail with
+        # 'source file could not be loaded' if the PDF has complex iterative streams.
         try:
-            if candidate.stat().st_mtime >= min_mtime - 10 and candidate.stat().st_size > 0:
-                return candidate
-        except OSError:
-            pass
-    return None
+            pdf_bytes = doc.tobytes(garbage=4, clean=True, deflate=True)
+            with open(temp_pdf_path, 'wb') as f:
+                f.write(pdf_bytes)
+            save_success = True
+            save_msg = ""
+        except Exception as e:
+            # Fallback to standard save_document
+            save_success, save_msg = save_document(doc, temp_pdf_path, incremental=False)
 
-def _export_pdf_direct(doc, output_path, target_format):
-    temp_pdf = None
-    try:
-        temp_pdf, err = _save_temp_pdf(doc)
-        if err:
-            return False, err
+        if not save_success:
+            if os.path.exists(temp_pdf_path): os.unlink(temp_pdf_path)
+            return False, f"Failed to save temporary PDF for export: {save_msg}"
         
-        pdf_path_obj = Path(temp_pdf)
-        outdir = pdf_path_obj.parent
-        mtime = pdf_path_obj.stat().st_mtime
+        if not os.path.exists(temp_pdf_path) or os.path.getsize(temp_pdf_path) == 0:
+            print(f"ERROR [{target_format.upper()} Export]: Temporary PDF '{temp_pdf_path}' was not created or is empty.")
+            if os.path.exists(temp_pdf_path): os.unlink(temp_pdf_path)
+            return False, "Failed to create a valid temporary PDF for export."
+
+        print(f"DEBUG [{target_format.upper()} Export]: Temp PDF Path = {temp_pdf_path} (Size: {os.path.getsize(temp_pdf_path)} bytes)")
+        temp_pdf_path_obj = Path(temp_pdf_path)
+        temp_pdf_name_no_ext = temp_pdf_path_obj.stem
+
+        print(f"DEBUG [{target_format.upper()} Export]: Final {target_format.upper()} Output Dir = {final_output_dir}")
+        print(f"DEBUG [{target_format.upper()} Export]: Desired Final {target_format.upper()} Path = {output_path}")
+
+        python_cwd = Path(os.getcwd())
+        expected_output_in_python_cwd = python_cwd / f"{temp_pdf_name_no_ext}.{target_format}"
+        print(f"DEBUG [{target_format.upper()} Export]: Python's Current Working Directory (for output): {python_cwd}")
+        print(f"DEBUG [{target_format.upper()} Export]: Expected {target_format.upper()} in Python CWD: {expected_output_in_python_cwd}")
         
-        ok, msg = _run_lo_export(temp_pdf, outdir, target_format)
-        if not ok:
-            return False, msg
+        if os.path.exists(expected_output_in_python_cwd):
+            print(f"DEBUG [{target_format.upper()} Export]: Removing leftover in CWD: {expected_output_in_python_cwd}")
+            os.remove(expected_output_in_python_cwd)
+        if os.path.exists(output_path):
+            print(f"DEBUG [{target_format.upper()} Export]: Removing leftover final target: {output_path}")
+            os.remove(output_path)
+
+        # Simplify format
+        if target_format == 'odt':
+            convert_format = 'odt'
+        elif target_format == 'docx':
+            convert_format = 'docx'  
+        else:
+            convert_format = target_format
+
+        infilter = 'writer_pdf_import'
+        if target_format in ('pptx', 'odp'):
+            infilter = 'impress_pdf_import'
+
+        command = [
+            libreoffice_executable,
+            '--headless',
+            '--invisible',
+            '--nologo',
+            f'--infilter={infilter}',
+            '--convert-to', convert_format,
+            '--outdir', str(temp_pdf_path_obj.parent),
+            str(temp_pdf_path)
+        ]
+
+        expected_output_location = temp_pdf_path_obj.parent / f"{temp_pdf_name_no_ext}.{target_format}"
+
+        print(f"DEBUG [{target_format.upper()} Export]: Expected {target_format.upper()} at: {expected_output_location}")
+        if os.path.exists(expected_output_location):
+            print(f"DEBUG [{target_format.upper()} Export]: Removing leftover: {expected_output_location}")
+            os.remove(expected_output_location)
+
+        print(f"DEBUG [{target_format.upper()} Export]: Running command: {' '.join(command)}")
+
+        current_env = os.environ.copy()
+        process = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=120,
+            env=current_env
+        )
+
+        print(f"DEBUG [{target_format.upper()} Export]: LibreOffice Return Code: {process.returncode}")
+        if process.stdout:
+            print(f"DEBUG [{target_format.upper()} Export]: LibreOffice stdout:\n---\n{process.stdout.strip()}\n---")
+        if process.stderr:
+            print(f"DEBUG [{target_format.upper()} Export]: LibreOffice stderr:\n---\n{process.stderr.strip()}\n---")
+
+        if "0xc10" in process.stderr or "SfxBaseModel::impl_store" in process.stderr:
+            error_msg = f"LibreOffice I/O Write Error during conversion. Stderr: {process.stderr.strip()}"
+            if "no export filter" in process.stderr.lower():
+                 error_msg += " (Also saw 'no export filter' - check LO installation and write permissions)"
+            print(f"ERROR [{target_format.upper()} Export]: {error_msg}")
+            return False, error_msg
+        
+        if ("no export filter" in process.stderr.lower() or "no export filter" in process.stdout.lower()) and process.returncode != 0 :
+            error_msg = f"LibreOffice reported: No export filter for {target_format.upper()} found. Ensure 'libreoffice-writer' is fully installed."
+            print(f"ERROR [{target_format.upper()} Export]: {error_msg}")
+            return False, error_msg
             
-        found = _find_output(outdir, pdf_path_obj.stem, target_format, mtime)
-        if not found:
-            return False, f"LibreOffice conversion finished but {target_format} file not found."
-            
-        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(found), output_path)
-        return True, None
+        if process.returncode != 0:
+            error_msg = f"LibreOffice conversion failed (code {process.returncode}).\nError:\n{process.stderr or process.stdout}"
+            print(f"ERROR [{target_format.upper()} Export]: {error_msg}")
+            return False, error_msg
+
+        if os.path.exists(expected_output_location):
+            print(f"DEBUG [{target_format.upper()} Export]: Found {target_format.upper()} at: {expected_output_location}")
+            try:
+                Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(expected_output_location), str(output_path))
+                print(f"DEBUG [{target_format.upper()} Export]: Moved {target_format.upper()} to final destination: {output_path}")
+                return True, None
+            except Exception as move_e:
+                error_msg = f"Found converted {target_format.upper()} ({expected_output_location}) but failed to move to {output_path}: {move_e}"
+                print(f"ERROR [{target_format.upper()} Export]: {error_msg}")
+                return False, error_msg
+        else:
+            error_msg = f"LibreOffice conversion seemed to finish, but the output {target_format.upper()} ({expected_output_location}) could not be located."
+            print(f"ERROR [{target_format.upper()} Export]: {error_msg}")
+            return False, error_msg
+
+    except subprocess.TimeoutExpired:
+        return False, "LibreOffice conversion timed out (took longer than 120 seconds)."
     except Exception as e:
-        traceback.print_exc()
-        return False, f"Export error: {e}"
+        print(f"ERROR [{target_format.upper()} Export]: General exception during {target_format.upper()} export process: {e}")
+        return False, f"Error during {target_format.upper()} export process: {e}"
     finally:
-        if temp_pdf and os.path.exists(temp_pdf):
-            try: os.unlink(temp_pdf)
-            except OSError: pass
+        if temp_pdf_path and os.path.exists(temp_pdf_path):
+            try:
+                os.unlink(temp_pdf_path)
+                print(f"DEBUG [{target_format.upper()} Export]: Cleaned up temp PDF: {temp_pdf_path}")
+            except Exception as unlink_e:
+                print(f"Warning: Could not delete temporary file {temp_pdf_path}: {unlink_e}")
 
 def export_pdf_as_odt(doc, source_pdf_path, output_odt_path):
     if not output_odt_path.lower().endswith('.odt'):
         output_odt_path += '.odt'
-    return _export_pdf_direct(doc, output_odt_path, 'odt')
+    return _export_via_libreoffice(doc, source_pdf_path, output_odt_path, 'odt')
 
 def export_pdf_as_docx(doc, source_pdf_path, output_docx_path):
     if not output_docx_path.lower().endswith('.docx'):
         output_docx_path += '.docx'
-    return _export_pdf_direct(doc, output_docx_path, 'docx')
+    return _export_via_libreoffice(doc, source_pdf_path, output_docx_path, 'docx')
+
+def export_pdf_as_pptx(doc, source_pdf_path, output_pptx_path):
+    if not output_pptx_path.lower().endswith('.pptx'):
+        output_pptx_path += '.pptx'
+    return _export_via_libreoffice(doc, source_pdf_path, output_pptx_path, 'pptx')
+
+def export_pdf_as_odp(doc, source_pdf_path, output_odp_path):
+    if not output_odp_path.lower().endswith('.odp'):
+        output_odp_path += '.odp'
+    return _export_via_libreoffice(doc, source_pdf_path, output_odp_path, 'odp')
 
 
 def export_pdf_as_odt_alias(doc, source_pdf_path, output_odt_path):
@@ -694,67 +770,144 @@ def extract_editable_shapes(doc, page_index):
         traceback.print_exc()
         return [], error_msg
 
+# ── Page-snapshot registry ─────────────────────────────────────────────────────
+# Stores the original content-stream bytes for each (doc_id, page_num) pair
+# so that we can rebuild a page from scratch without destroying neighbours.
+_page_snapshots: dict = {}  # {(doc_id, page_num): bytes}
+
+def save_page_snapshot(doc, page_num: int, force: bool = False):
+    """Save the current content streams of a page as a rebuild baseline.
+    Call this once per page before any of our objects are written to it.
+    If a snapshot already exists for this page it is NOT overwritten unless
+    force=True.  This is critical: _load_page refreshes (called after edits)
+    must not overwrite the clean baseline with already-baked content.
+    """
+    key = (id(doc), page_num)
+    if key in _page_snapshots and not force:
+        return  # already captured — don't overwrite with edited content
+    try:
+        page = doc.load_page(page_num)
+        # Merge streams into one and save as bytes
+        page.clean_contents()
+        xrefs = page.get_contents()
+        content = b""
+        for xref in xrefs:
+            raw = doc.xref_stream(xref)
+            if raw:
+                content += raw
+        _page_snapshots[key] = content
+    except Exception as e:
+        print(f"Warning: could not save snapshot for page {page_num}: {e}")
+
+
+def restore_page_from_snapshot(doc, page_num: int) -> bool:
+    """Restore a page to its snapshot baseline (removes all content we added).
+    Returns True on success.
+    """
+    key = (id(doc), page_num)
+    if key not in _page_snapshots:
+        return False
+    try:
+        content = _page_snapshots[key]
+        page = doc.load_page(page_num)
+        page.clean_contents()
+        xrefs = page.get_contents()
+        if xrefs:
+            doc.update_stream(xrefs[0], content)
+            # Remove extra xrefs if page had multiple streams
+            for extra_xref in xrefs[1:]:
+                try:
+                    doc.xref_set_key(extra_xref, "Length", "0")
+                except Exception:
+                    pass
+        else:
+            # No content stream at all - insert one
+            xref = doc._newXref()
+            doc.update_stream(xref, content)
+        return True
+    except Exception as e:
+        print(f"Warning: could not restore snapshot for page {page_num}: {e}")
+        return False
+
+def release_page_snapshots(doc):
+    """Remove all snapshots for a document (call when document is closed)."""
+    doc_id = id(doc)
+    keys_to_remove = [k for k in _page_snapshots if k[0] == doc_id]
+    for k in keys_to_remove:
+        del _page_snapshots[k]
+
+def _apply_single_object_to_page(doc, page, obj):
+    """Write a single object to a page (additive only, no erasure)."""
+    if isinstance(obj, EditableText):
+        if obj.text:
+            font_arg, error_msg = _get_font_args_for_pymupdf(obj)
+            if error_msg:
+                return False, error_msg
+            lines = obj.text.split('\n')
+            line_height = obj.font_size * 1.2
+            for i, line in enumerate(lines):
+                pos = fitz.Point(obj.x, obj.baseline + (i * line_height))
+                page.insert_text(pos, line, fontsize=obj.font_size,
+                                 color=obj.color, overlay=True, **font_arg)
+    elif isinstance(obj, EditableImage):
+        page.insert_image(obj.bbox, stream=obj.image_bytes, keep_proportion=False)
+    elif isinstance(obj, EditableShape):
+        rect = fitz.Rect(obj.bbox)
+        shape = page.new_shape()
+        if obj.shape_type == EditableShape.SHAPE_RECTANGLE:
+            shape.draw_rect(rect)
+        elif obj.shape_type == EditableShape.SHAPE_ELLIPSE:
+            shape.draw_oval(rect)
+        fill = tuple(float(c) for c in obj.fill_color) if not obj.is_transparent else None
+        stroke = tuple(float(c) for c in obj.stroke_color)
+        shape.finish(color=stroke, fill=fill, width=obj.stroke_width)
+        shape.commit()
+    return True, None
+
+def rebuild_page(doc, page_num: int, all_texts, all_shapes, all_images,
+                 exclude_obj=None):
+    """Rebuild a page from its snapshot then re-apply all tracked objects.
+
+    This is the core of the zero-deletion architecture:
+    - Restore the page to the saved original content (erasing previous writes).
+    - Re-apply ALL current editable objects for this page in order,
+      EXCEPT exclude_obj (which will be re-written by the caller afterwards
+      at its new/updated position — preventing double-writing).
+    No redaction, no white boxes, no neighbour deletion.
+    """
+    if not restore_page_from_snapshot(doc, page_num):
+        # No snapshot - just proceed without restoring (best effort)
+        print(f"Warning: no snapshot for page {page_num}, skipping restore")
+    try:
+        page = doc.load_page(page_num)
+        # Apply texts, then images, then shapes (shapes on top).
+        # Skip exclude_obj so the caller can write it once at its new position.
+        for obj in all_texts:
+            if getattr(obj, 'page_number', None) == page_num and obj is not exclude_obj:
+                _apply_single_object_to_page(doc, page, obj)
+        for obj in all_images:
+            if getattr(obj, 'page_number', None) == page_num and obj is not exclude_obj:
+                _apply_single_object_to_page(doc, page, obj)
+        for obj in all_shapes:
+            if getattr(obj, 'page_number', None) == page_num and obj is not exclude_obj:
+                _apply_single_object_to_page(doc, page, obj)
+        return True, None
+    except Exception as e:
+        print(f"ERROR: rebuild_page failed for page {page_num}: {e}")
+        traceback.print_exc()
+        return False, str(e)
+
 def apply_object_edit(doc, obj):
+    """Write a single object to the PDF (additive only, no erasure).
+    For moves and format changes, the caller must call rebuild_page() first
+    with exclude_obj=obj to restore the page baseline without re-adding this
+    object, then call this function to write it once at its new position.
+    """
     if not doc or not hasattr(obj, 'page_number') or obj.page_number is None:
         return False, "Invalid object or page number."
-
     try:
         page = doc.load_page(obj.page_number)
-
-        original_bbox_to_clear = getattr(obj, 'original_bbox', None)
-        if original_bbox_to_clear:
-            img_flag = fitz.PDF_REDACT_IMAGE_REMOVE if isinstance(obj, EditableImage) else fitz.PDF_REDACT_IMAGE_NONE
-            graphics_val = True if isinstance(obj, EditableShape) else False
-            
-            x0, y0, x1, y1 = original_bbox_to_clear
-            if graphics_val:
-                redact_rect = fitz.Rect(x0 - 20, y0 - 20, x1 + 20, y1 + 20)
-            else:
-                redact_rect = fitz.Rect(original_bbox_to_clear)
-                
-            if not redact_rect.is_empty and redact_rect.is_valid:
-                page.add_redact_annot(redact_rect)
-                try:
-                    page.apply_redactions(images=img_flag, graphics=graphics_val)
-                except TypeError:
-                    page.apply_redactions(images=img_flag)
-                page = doc.load_page(obj.page_number)
-
-        if isinstance(obj, EditableText):
-            if obj.text:
-                font_arg, error_msg = _get_font_args_for_pymupdf(obj)
-                if error_msg: return False, error_msg
-                
-                lines = obj.text.split('\n')
-                line_height = obj.font_size * 1.2
-                for i, line in enumerate(lines):
-                    pos = fitz.Point(obj.x, obj.baseline + (i * line_height))
-                    page.insert_text(pos, line, fontsize=obj.font_size, color=obj.color, overlay=True, **font_arg)
-        
-        elif isinstance(obj, EditableImage):
-            page.insert_image(obj.bbox, stream=obj.image_bytes)
-            
-        elif isinstance(obj, EditableShape):
-            rect = fitz.Rect(obj.bbox)
-            shape = page.new_shape()
-            
-            if obj.shape_type == EditableShape.SHAPE_RECTANGLE:
-                shape.draw_rect(rect)
-            elif obj.shape_type == EditableShape.SHAPE_ELLIPSE:
-                shape.draw_oval(rect)
-                
-            fill = tuple(float(c) for c in obj.fill_color) if not obj.is_transparent else None
-            stroke = tuple(float(c) for c in obj.stroke_color)
-            
-            shape.finish(
-                color=stroke,
-                fill=fill,
-                width=obj.stroke_width
-            )
-            shape.commit()
-        
-        return True, None
-
+        return _apply_single_object_to_page(doc, page, obj)
     except Exception as e:
         print(f"ERROR: An error occurred while applying object edit: {e}")
         traceback.print_exc()

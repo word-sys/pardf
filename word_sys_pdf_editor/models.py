@@ -2,12 +2,11 @@ from gi.repository import GObject, GdkPixbuf
 from .utils import normalize_color
 import re
 
-FLAG_MONO = 1 
-FLAG_SERIF = 1 << 1 
-FLAG_SYMBOLIC = 1 << 2 
-FLAG_SCRIPT = 1 << 3 
-FLAG_BOLD = 1 << 4
-FLAG_ITALIC = 1 << 5 
+FLAG_SUPERSCRIPT = 1       # bit 0
+FLAG_ITALIC = 1 << 1       # bit 1
+FLAG_SERIF = 1 << 2        # bit 2
+FLAG_MONOSPACED = 1 << 3   # bit 3
+FLAG_BOLD = 1 << 4         # bit 4
 
 BASE14_FALLBACK_MAP = {
     'helvetica': 'helv', 'arial': 'helv', 'sans': 'helv', 'verdana': 'helv', 'tahoma': 'helv', 'liberation sans': 'helv',
