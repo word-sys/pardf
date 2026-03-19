@@ -27,7 +27,6 @@ class Command:
             page = self.window.doc.load_page(page_num)
             page.add_redact_annot(redact_rect)
             
-            # Smart redaction to prevent wiping out background graphics if possible
             if isinstance(target_object, EditableText):
                 page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=False)
             elif isinstance(target_object, EditableImage):
@@ -101,7 +100,6 @@ class EditObjectCommand(Command):
             page = self.window.doc.load_page(page_num)
             page.add_redact_annot(redact_rect)
             
-            # Smart redaction to prevent wiping out background graphics if possible
             if isinstance(self.target_object, EditableText):
                 page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=False)
             elif isinstance(self.target_object, EditableImage):
@@ -127,7 +125,6 @@ class EditObjectCommand(Command):
             temp_obj = copy.deepcopy(self.target_object)
             temp_obj.__dict__.update(copy.deepcopy(properties_to_apply))
             temp_obj.original_bbox = properties_to_clear['bbox']
-            # Rebuild from snapshot so accumulated writes don't stack up
             if page_num is not None:
                 pdf_handler.rebuild_page(
                     self.window.doc, page_num,
@@ -150,8 +147,6 @@ class EditObjectCommand(Command):
         temp_obj_for_pdf.__dict__.update(copy.deepcopy(properties_to_apply))
         temp_obj_for_pdf.original_bbox = properties_to_clear['bbox']
         
-        # Rebuild from snapshot, excluding the TRACKED object (self.target_object)
-        # not temp_obj_for_pdf (a deepcopy) — identity check must match the list member.
         page_num_fallback = getattr(self.target_object, 'page_number', None)
         if page_num_fallback is not None:
             pdf_handler.rebuild_page(
@@ -159,7 +154,7 @@ class EditObjectCommand(Command):
                 self.window.editable_texts,
                 self.window.editable_shapes,
                 self.window.editable_images,
-                exclude_obj=self.target_object  # <-- identity match against tracked list
+                exclude_obj=self.target_object
             )
         
         success, msg = pdf_handler.apply_object_edit(self.window.doc, temp_obj_for_pdf)
@@ -216,7 +211,6 @@ class AddObjectCommand(Command):
             if self.new_object not in self.window.editable_images:
                 self.window.editable_images.append(self.new_object)
                 
-        # The object is now in the list. Rebuild page to ensure it's drawn cleanly.
         page_num = getattr(self.new_object, 'page_number', self.window.current_page_index)
         pdf_handler.rebuild_page(
             self.window.doc, page_num,
@@ -239,7 +233,6 @@ class AddObjectCommand(Command):
         elif self.is_image and self.new_object in self.window.editable_images:
             self.window.editable_images.remove(self.new_object)
 
-        # Rebuild the page without the object to securely "erase" it
         page_num = getattr(self.new_object, 'page_number', self.window.current_page_index)
         pdf_handler.rebuild_page(
             self.window.doc, page_num,

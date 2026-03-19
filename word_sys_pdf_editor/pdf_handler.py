@@ -409,14 +409,10 @@ def _export_via_libreoffice(doc, source_pdf_path, output_path, target_format):
 
     temp_pdf_path = None
     try:
-        # Save temp PDF directly in the destination folder to avoid /tmp permission issues
         fd, temp_pdf_path = tempfile.mkstemp(suffix=".pdf", prefix="wordsys_export_", dir=str(final_output_dir))
         os.close(fd)
         print(f"DEBUG [{target_format.upper()} Export]: Saving document state to temporary file: {temp_pdf_path}")
 
-        # Produce a completely clean, garbage-collected PDF in memory.
-        # This is CRITICAL because LibreOffice's writer_pdf_import will fail with
-        # 'source file could not be loaded' if the PDF has complex iterative streams.
         try:
             pdf_bytes = doc.tobytes(garbage=4, clean=True, deflate=True)
             with open(temp_pdf_path, 'wb') as f:
@@ -424,7 +420,6 @@ def _export_via_libreoffice(doc, source_pdf_path, output_path, target_format):
             save_success = True
             save_msg = ""
         except Exception as e:
-            # Fallback to standard save_document
             save_success, save_msg = save_document(doc, temp_pdf_path, incremental=False)
 
         if not save_success:
@@ -455,7 +450,6 @@ def _export_via_libreoffice(doc, source_pdf_path, output_path, target_format):
             print(f"DEBUG [{target_format.upper()} Export]: Removing leftover final target: {output_path}")
             os.remove(output_path)
 
-        # Simplify format
         if target_format == 'odt':
             convert_format = 'odt'
         elif target_format == 'docx':
@@ -738,7 +732,7 @@ def extract_editable_shapes(doc, page_index):
                         break
 
                 raw_fill = drawing.get('fill')     
-                raw_stroke = drawing.get('color')  # stroke colour
+                raw_stroke = drawing.get('color')  
                 raw_width = drawing.get('width', 1.0)
 
                 is_transparent = (raw_fill is None)
@@ -770,24 +764,14 @@ def extract_editable_shapes(doc, page_index):
         traceback.print_exc()
         return [], error_msg
 
-# ── Page-snapshot registry ─────────────────────────────────────────────────────
-# Stores the original content-stream bytes for each (doc_id, page_num) pair
-# so that we can rebuild a page from scratch without destroying neighbours.
-_page_snapshots: dict = {}  # {(doc_id, page_num): bytes}
+_page_snapshots: dict = {}
 
 def save_page_snapshot(doc, page_num: int, force: bool = False):
-    """Save the current content streams of a page as a rebuild baseline.
-    Call this once per page before any of our objects are written to it.
-    If a snapshot already exists for this page it is NOT overwritten unless
-    force=True.  This is critical: _load_page refreshes (called after edits)
-    must not overwrite the clean baseline with already-baked content.
-    """
     key = (id(doc), page_num)
     if key in _page_snapshots and not force:
-        return  # already captured — don't overwrite with edited content
+        return  
     try:
         page = doc.load_page(page_num)
-        # Merge streams into one and save as bytes
         page.clean_contents()
         xrefs = page.get_contents()
         content = b""
@@ -801,9 +785,6 @@ def save_page_snapshot(doc, page_num: int, force: bool = False):
 
 
 def restore_page_from_snapshot(doc, page_num: int) -> bool:
-    """Restore a page to its snapshot baseline (removes all content we added).
-    Returns True on success.
-    """
     key = (id(doc), page_num)
     if key not in _page_snapshots:
         return False
@@ -814,14 +795,12 @@ def restore_page_from_snapshot(doc, page_num: int) -> bool:
         xrefs = page.get_contents()
         if xrefs:
             doc.update_stream(xrefs[0], content)
-            # Remove extra xrefs if page had multiple streams
             for extra_xref in xrefs[1:]:
                 try:
                     doc.xref_set_key(extra_xref, "Length", "0")
                 except Exception:
                     pass
         else:
-            # No content stream at all - insert one
             xref = doc._newXref()
             doc.update_stream(xref, content)
         return True
@@ -830,14 +809,12 @@ def restore_page_from_snapshot(doc, page_num: int) -> bool:
         return False
 
 def release_page_snapshots(doc):
-    """Remove all snapshots for a document (call when document is closed)."""
     doc_id = id(doc)
     keys_to_remove = [k for k in _page_snapshots if k[0] == doc_id]
     for k in keys_to_remove:
         del _page_snapshots[k]
 
 def _apply_single_object_to_page(doc, page, obj):
-    """Write a single object to a page (additive only, no erasure)."""
     if isinstance(obj, EditableText):
         if obj.text:
             font_arg, error_msg = _get_font_args_for_pymupdf(obj)
@@ -866,22 +843,10 @@ def _apply_single_object_to_page(doc, page, obj):
 
 def rebuild_page(doc, page_num: int, all_texts, all_shapes, all_images,
                  exclude_obj=None):
-    """Rebuild a page from its snapshot then re-apply all tracked objects.
-
-    This is the core of the zero-deletion architecture:
-    - Restore the page to the saved original content (erasing previous writes).
-    - Re-apply ALL current editable objects for this page in order,
-      EXCEPT exclude_obj (which will be re-written by the caller afterwards
-      at its new/updated position — preventing double-writing).
-    No redaction, no white boxes, no neighbour deletion.
-    """
     if not restore_page_from_snapshot(doc, page_num):
-        # No snapshot - just proceed without restoring (best effort)
         print(f"Warning: no snapshot for page {page_num}, skipping restore")
     try:
         page = doc.load_page(page_num)
-        # Apply texts, then images, then shapes (shapes on top).
-        # Skip exclude_obj so the caller can write it once at its new position.
         for obj in all_texts:
             if getattr(obj, 'page_number', None) == page_num and obj is not exclude_obj:
                 _apply_single_object_to_page(doc, page, obj)
@@ -898,11 +863,6 @@ def rebuild_page(doc, page_num: int, all_texts, all_shapes, all_images,
         return False, str(e)
 
 def apply_object_edit(doc, obj):
-    """Write a single object to the PDF (additive only, no erasure).
-    For moves and format changes, the caller must call rebuild_page() first
-    with exclude_obj=obj to restore the page baseline without re-adding this
-    object, then call this function to write it once at its new position.
-    """
     if not doc or not hasattr(obj, 'page_number') or obj.page_number is None:
         return False, "Invalid object or page number."
     try:

@@ -206,7 +206,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic")
         header.pack_end(menu_button)
 
-        # Home / back to start screen button
         self.home_button = Gtk.Button.new_from_icon_name("go-home-symbolic")
         self.home_button.set_tooltip_text(_("home_button_tip"))
         self.home_button.connect("clicked", lambda w: self.go_to_welcome())
@@ -866,9 +865,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         self._sync_thumbnail_selection()
         self._update_ui_state()
-        # Save page baseline snapshot AFTER extracting objects.
-        # This snapshot represents the original PDF content without any of our
-        # edits, and is used by rebuild_page() to restore before re-applying.
         GLib.idle_add(lambda: pdf_handler.save_page_snapshot(self.doc, page_index) if self.doc else None)
 
     def close_document(self):
@@ -895,7 +891,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self._update_ui_state()
 
     def go_to_welcome(self):
-        """Return to the start screen, prompting to save unsaved changes first."""
         if self.doc and self.document_modified:
             response = show_save_changes_dialog(self)
             if response == "save":
@@ -907,20 +902,13 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                         show_error_dialog(self, f"Save failed: {err}", "Save Error")
                         return
                 else:
-                    # No path yet — open save dialog
                     self.on_save_as(None, None)
-                    # If still modified (user cancelled save-as), abort
                     if self.document_modified:
                         return
             elif response == "cancel":
                 return
-            # "discard" falls through
 
-        # Close the current document cleanly
         self.close_document()
-
-        # Replace the welcome page child with a fresh WelcomeView so recent
-        # files list is up-to-date and all state is pristine.
         old_welcome = self.stack.get_child_by_name("welcome")
         if old_welcome:
             self.stack.remove(old_welcome)
@@ -1701,7 +1689,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             text_obj_to_apply.bbox = (x1, y1, x1 + _w, y1 + _h)
             
             command = AddObjectCommand(self, text_obj_to_apply)
-            # command.execute() will call rebuild_page which draws the new text
             command.execute()
             self._refresh_thumbnail(self.current_page_index)
             self._load_page(self.current_page_index, preserve_scroll=True)
@@ -2345,7 +2332,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 obj = self.pending_format_change_obj
                 if not getattr(obj, 'is_new', False):
                     obj.original_bbox = self.before_format_change_state.get('bbox') or obj.bbox
-                    # Rebuild from snapshot, excluding obj so it won't be double-written
                     pdf_handler.rebuild_page(
                         self.doc, self.current_page_index,
                         self.editable_texts, self.editable_shapes, self.editable_images,
@@ -2392,10 +2378,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             if changed:
                 self.selected_shape.modified = True
                 self.document_modified = True
-                # If the shape is already baked into the PDF, write changes immediately
                 if getattr(self.selected_shape, 'is_baked', False):
                     self.selected_shape.original_bbox = self.selected_shape.bbox
-                    # Rebuild from snapshot, excluding selected_shape to avoid double-write
                     pdf_handler.rebuild_page(
                         self.doc, self.current_page_index,
                         self.editable_texts, self.editable_shapes, self.editable_images,
@@ -2404,7 +2388,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                     pdf_handler.apply_object_edit(self.doc, self.selected_shape)
                     self.selected_shape.is_baked = True
                     self._refresh_thumbnail(self.current_page_index)
-                    # Must reload page so the new PDF pixmap is shown (not cached old one)
                     self._load_page(self.current_page_index, preserve_scroll=True)
                 else:
                     self.pdf_view.queue_draw()
@@ -2721,7 +2704,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 self.selected_text = None
                 self.selected_image = None
                 
-                # Command execution gracefully handles rebuilding the page cleanly
                 command = AddObjectCommand(self, self.temp_shape)
                 command.execute()
                 self.undo_manager.add_command(command)
@@ -2896,7 +2878,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.redo_button.set_sensitive(bool(self.undo_manager.redo_stack))
 
     def _refresh_thumbnail(self, page_index):
-        """Bug 4: regenerate thumbnail for a page and splice the model to force GTK widget refresh."""
         if not self.doc or not (0 <= page_index < pdf_handler.get_page_count(self.doc)):
             return
         try:

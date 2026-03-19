@@ -1,13 +1,3 @@
-"""
-i18n.py — Internationalization module for Word-Sys PDF Editor.
-
-Usage:
-    from .i18n import _, get_language, set_language
-
-The active language is loaded from ~/.config/word-sys-pdf-editor/settings.json
-and defaults to 'en'.
-"""
-
 import json
 import os
 from pathlib import Path
@@ -15,11 +5,8 @@ from pathlib import Path
 _CONFIG_DIR = Path.home() / ".config" / "word-sys-pdf-editor"
 _CONFIG_FILE = _CONFIG_DIR / "settings.json"
 
-# ── String tables ─────────────────────────────────────────────────────────────
-
 _STRINGS = {
     "en": {
-        # Welcome screen
         "app_subtitle": "Simple, fast & open-source PDF editor",
         "btn_open": "Open File…",
         "btn_new": "New PDF",
@@ -36,7 +23,6 @@ _STRINGS = {
             "Tip: Use the Print button to print your PDF.",
             "Tip: Use Save As to save a copy with a new name.",
         ],
-        # Toolbar / header
         "zoom_out_tip": "Zoom Out (Ctrl+Scroll Down)",
         "zoom_in_tip": "Zoom In (Ctrl+Scroll Up)",
         "prev_page_tip": "Previous Page",
@@ -51,7 +37,6 @@ _STRINGS = {
         "shape_transparent_tip": "Transparent (No Fill) / Filled",
         "shape_stroke_tip": "Shape Stroke Colour",
         "shape_width_tip": "Shape Stroke Width",
-        # Tools
         "tool_select": "Select",
         "tool_select_tip": "Select & Resize Objects (S)",
         "tool_add_text": "Add Text",
@@ -64,10 +49,8 @@ _STRINGS = {
         "tool_ellipse_tip": "Add Ellipse Shape (C)",
         "tool_rectangle": "Rectangle",
         "tool_rectangle_tip": "Add Rectangle Shape (R)",
-        # Sidebar
         "pages_label": "Pages",
         "delete_page_tip": "Delete Selected Page",
-        # Status / dialogs
         "loading": "Loading {}…",
         "thumbnails_loading": "Loading thumbnails…",
         "thumbnail_loaded": "Thumbnail loaded {}/{}",
@@ -98,39 +81,32 @@ _STRINGS = {
         "home_button_tip": "Back to Start Screen",
         "home_confirm": "Go back to the start screen?\nUnsaved changes will be lost if you don't save first.",
         "home_confirm_title": "Return to Start Screen",
-        # Export
         "export_success": "Exported successfully.",
         "export_error": "Export failed: {}",
-        # Language
         "lang_label": "Language / Dil",
         "lang_en": "English",
         "lang_tr": "Türkçe",
         "lang_restart_msg": "The application will restart to apply the language change.",
         "lang_restart_title": "Restart Required",
-        # Header buttons
         "btn_new_doc": "New",
         "btn_open_doc": "Open",
         "btn_save": "Save",
         "undo_tip": "Undo (Ctrl+Z)",
         "redo_tip": "Redo (Ctrl+Y)",
         "print_tip": "Print (Ctrl+P)",
-        # Menu
         "menu_save_as": "Save As…",
         "menu_export_as": "Export As…",
         "menu_about": "About",
         "menu_quit": "Quit",
-        # Editor
         "btn_done": "Done",
         "default_new_text": "New Text",
         "untitled": "Untitled",
         "status_open_or_drop": "Open a file or drag and drop one here.",
-        # Image picker
         "image_select_title": "Select an Image File",
         "image_filter_label": "Image files",
     },
 
     "tr": {
-        # Welcome screen
         "app_subtitle": "Basit, hızlı ve açık kaynaklı PDF düzenleyici",
         "btn_open": "Dosya Aç…",
         "btn_new": "Yeni PDF",
@@ -147,7 +123,6 @@ _STRINGS = {
             "İpucu: 'Yazdır' aracı ile PDF dosyasını yazdırabilirsiniz.",
             "İpucu: 'Farklı Kaydet' aracı ile PDF dosyasını farklı kaydedebilirsiniz.",
         ],
-        # Toolbar / header
         "zoom_out_tip": "Uzaklaştır (Ctrl+Aşağı Kaydır)",
         "zoom_in_tip": "Yakınlaştır (Ctrl+Kaydırma Yukarı)",
         "prev_page_tip": "Önceki Sayfa",
@@ -162,7 +137,6 @@ _STRINGS = {
         "shape_transparent_tip": "Saydam (Dolgu Yok) / Renk Dolu",
         "shape_stroke_tip": "Şekil Çizgi Rengi",
         "shape_width_tip": "Şekil Çizgi Kalınlığı",
-        # Tools
         "tool_select": "Seç",
         "tool_select_tip": "Nesneleri Seç ve Yeniden Boyutlandır (S)",
         "tool_add_text": "Metin Ekle",
@@ -175,10 +149,8 @@ _STRINGS = {
         "tool_ellipse_tip": "Elips Şekli Ekle (C)",
         "tool_rectangle": "Kare",
         "tool_rectangle_tip": "Dikdörtgen Şekli Ekle (R)",
-        # Sidebar
         "pages_label": "Sayfalar",
         "delete_page_tip": "Seçili Sayfayı Sil",
-        # Status / dialogs
         "loading": "{} yükleniyor…",
         "thumbnails_loading": "Küçük resimler yükleniyor…",
         "thumbnail_loaded": "Küçük resim yüklendi {}/{}",
@@ -209,39 +181,31 @@ _STRINGS = {
         "home_button_tip": "Başlangıç Ekranına Dön",
         "home_confirm": "Başlangıç ekranına dönmek istiyor musunuz?\nKaydedilmemiş değişiklikler, önce kaydetmezseniz kaybolacaktır.",
         "home_confirm_title": "Başlangıç Ekranına Dön",
-        # Export
         "export_success": "Başarıyla dışa aktarıldı.",
         "export_error": "Dışa aktarma başarısız: {}",
-        # Language
         "lang_label": "Language / Dil",
         "lang_en": "English",
         "lang_tr": "Türkçe",
         "lang_restart_msg": "Dil değişikliğini uygulamak için uygulama yeniden başlatılacak.",
         "lang_restart_title": "Yeniden Başlatma Gerekli",
-        # Header buttons
         "btn_new_doc": "Yeni",
         "btn_open_doc": "Aç",
         "btn_save": "Kaydet",
         "undo_tip": "Geri Al (Ctrl+Z)",
         "redo_tip": "Yinele (Ctrl+Y)",
         "print_tip": "Yazdır (Ctrl+P)",
-        # Menu
         "menu_save_as": "Farklı Kaydet…",
         "menu_export_as": "Farklı Dışarı Çıkart…",
         "menu_about": "Hakkında",
         "menu_quit": "Kapat",
-        # Editor
         "btn_done": "Bitir",
         "default_new_text": "Yeni Metin",
         "untitled": "İsimsiz",
         "status_open_or_drop": "Bir dosya açın veya sürükleyip bırakın.",
-        # Image picker
         "image_select_title": "Lütfen bir resim dosyası seçin",
         "image_filter_label": "Resim dosyaları",
     },
 }
-
-# ── Settings I/O ──────────────────────────────────────────────────────────────
 
 def _load_settings() -> dict:
     try:
@@ -260,8 +224,6 @@ def _save_settings(data: dict):
     except Exception as e:
         print(f"Warning: Could not save settings: {e}")
 
-# ── Public API ────────────────────────────────────────────────────────────────
-
 _settings = _load_settings()
 _active_lang: str = _settings.get("language", "en")
 
@@ -269,19 +231,16 @@ def get_language() -> str:
     return _active_lang
 
 def set_language(lang: str):
-    """Persist the language choice and restart the application."""
     global _active_lang
     if lang not in _STRINGS:
         lang = "en"
     _active_lang = lang
     _settings["language"] = lang
     _save_settings(_settings)
-    # Restart the process to apply the new language everywhere
     import sys, os
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 def _(key: str, *args) -> str:
-    """Look up a translated string. Falls back to English if key missing."""
     table = _STRINGS.get(_active_lang, _STRINGS["en"])
     text = table.get(key, _STRINGS["en"].get(key, key))
     if args:

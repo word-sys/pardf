@@ -29,7 +29,6 @@ class WelcomeView(Adw.Bin):
         clamp.set_child(main_box)
         main_box.set_margin_bottom(40)
 
-        # ── App icon ──────────────────────────────────────────────────────────
         try:
             icon_path = Path(__file__).resolve().parent / "img" / "f-pv1.png"
             app_icon = Gtk.Picture.new_for_filename(str(icon_path))
@@ -41,7 +40,6 @@ class WelcomeView(Adw.Bin):
         except Exception as e:
             print(f"Welcome screen icon could not be loaded: {e}")
 
-        # ── Title / subtitle ──────────────────────────────────────────────────
         title = Gtk.Label(label="Word-Sys's PDF Editor")
         title.add_css_class("title-1")
         main_box.append(title)
@@ -50,7 +48,6 @@ class WelcomeView(Adw.Bin):
         subtitle.add_css_class("dim-label")
         main_box.append(subtitle)
 
-        # ── Language switcher ─────────────────────────────────────────────────
         lang_box = Gtk.Box(
             orientation=Gtk.Orientation.HORIZONTAL,
             spacing=8,
@@ -65,13 +62,11 @@ class WelcomeView(Adw.Bin):
         lang_label.add_css_class("dim-label")
         lang_box.append(lang_label)
 
-        # English button
         self._lang_en_btn = Gtk.ToggleButton(label=_("lang_en"))
         self._lang_en_btn.set_active(get_language() == "en")
         self._lang_en_btn.add_css_class("flat")
         lang_box.append(self._lang_en_btn)
 
-        # Turkish button (grouped with EN so only one can be active)
         self._lang_tr_btn = Gtk.ToggleButton(label=_("lang_tr"), group=self._lang_en_btn)
         self._lang_tr_btn.set_active(get_language() == "tr")
         self._lang_tr_btn.add_css_class("flat")
@@ -82,7 +77,6 @@ class WelcomeView(Adw.Bin):
 
         main_box.append(lang_box)
 
-        # ── Action buttons ────────────────────────────────────────────────────
         button_box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL, spacing=6, halign=Gtk.Align.CENTER
         )
@@ -102,7 +96,6 @@ class WelcomeView(Adw.Bin):
         guide_button.set_action_name("win.quick_guide")
         button_box.append(guide_button)
 
-        # ── Recent files ──────────────────────────────────────────────────────
         recent_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         recent_box.set_margin_top(30)
         main_box.append(recent_box)
@@ -117,7 +110,6 @@ class WelcomeView(Adw.Bin):
         self.recent_list_box.add_css_class("boxed-list")
         recent_box.append(self.recent_list_box)
 
-        # ── Tip ───────────────────────────────────────────────────────────────
         tips = _("tips")
         tip_text = random.choice(tips) if isinstance(tips, list) else str(tips)
         tip_label = Gtk.Label(label=tip_text)
@@ -127,21 +119,17 @@ class WelcomeView(Adw.Bin):
         tip_label.set_margin_top(40)
         main_box.append(tip_label)
 
-    # ── Language toggle ───────────────────────────────────────────────────────
-
     def _on_lang_toggled(self, button, lang_code):
-        """Called when EN or TR toggle is activated."""
         if not button.get_active():
-            return  # ignore the deactivation event of the other button
+            return
         if lang_code == get_language():
-            return  # already set, nothing to do
+            return
         self._confirm_language_switch(lang_code)
 
     def _confirm_language_switch(self, lang_code):
         from gi.repository import Gtk
         from .ui_components import show_confirm_dialog
 
-        # If unsaved changes, warn first
         if self.parent_window.doc and self.parent_window.document_modified:
             if not show_confirm_dialog(
                 self.parent_window,
@@ -149,7 +137,6 @@ class WelcomeView(Adw.Bin):
                 _("unsaved_title"),
                 destructive=False,
             ):
-                # Revert buttons
                 cur = get_language()
                 self._lang_en_btn.handler_block_by_func(self._on_lang_toggled)
                 self._lang_tr_btn.handler_block_by_func(self._on_lang_toggled)
@@ -159,7 +146,6 @@ class WelcomeView(Adw.Bin):
                 self._lang_tr_btn.handler_unblock_by_func(self._on_lang_toggled)
                 return
 
-        # Confirm restart
         dialog = Gtk.MessageDialog(
             transient_for=self.parent_window,
             modal=True,
@@ -171,9 +157,8 @@ class WelcomeView(Adw.Bin):
         def on_response(d, response_id):
             d.destroy()
             if response_id == Gtk.ResponseType.OK:
-                set_language(lang_code)  # saves + restarts via os.execv
+                set_language(lang_code)
             else:
-                # Revert toggle state
                 cur = get_language()
                 self._lang_en_btn.handler_block_by_func(self._on_lang_toggled)
                 self._lang_tr_btn.handler_block_by_func(self._on_lang_toggled)
@@ -184,8 +169,6 @@ class WelcomeView(Adw.Bin):
 
         dialog.connect("response", on_response)
         dialog.present()
-
-    # ── Recent files ──────────────────────────────────────────────────────────
 
     def _populate_recent_files(self, *args):
         child = self.recent_list_box.get_first_child()

@@ -21,5 +21,5 @@ Description: Simple PDF Text Editor
  Word-sys PDF Editor allows users to open PDF files, view pages, select
  existing text blocks, modify or delete them, and add new text blocks.
  It focuses on simple text content manipulation rather than full PDF
- annotation or structural changes. It can also export to DOCX (requires
+ annotation or structural changes. It can also export to DOCX, PPTX, ODP (requires
  LibreOffice) and TXT formats.
