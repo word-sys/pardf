@@ -1686,7 +1686,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             command = AddObjectCommand(self, text_obj_to_apply)
             command.execute()
             self._refresh_thumbnail(self.current_page_index)
-            self._load_page(self.current_page_index, preserve_scroll=True)
             self.undo_manager.add_command(command)
         else:
             new_properties = copy.deepcopy(text_obj_to_apply.__dict__)
@@ -1714,7 +1713,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 command.execute() 
                 self.undo_manager.add_command(command)
                 self._refresh_thumbnail(self.current_page_index)
-                self._load_page(self.current_page_index, preserve_scroll=True)
         
         self.selected_text = None
         self._update_ui_state()
@@ -2335,7 +2333,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                     success, err = pdf_handler.apply_object_edit(self.doc, obj)
                     if success:
                         obj.original_bbox = obj.bbox 
-                    self._load_page(self.current_page_index, preserve_scroll=True)
+                    self._refresh_thumbnail(self.current_page_index)
+                    self.pdf_view.queue_draw()
                 else:
                     obj.modified = True
                     self.pdf_view.queue_draw()
@@ -2383,7 +2382,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                     pdf_handler.apply_object_edit(self.doc, self.selected_shape)
                     self.selected_shape.is_baked = True
                     self._refresh_thumbnail(self.current_page_index)
-                    self._load_page(self.current_page_index, preserve_scroll=True)
+                    self.pdf_view.queue_draw()
                 else:
                     self.pdf_view.queue_draw()
                 print(f"DEBUG: Şekil biçimi güncellendi")

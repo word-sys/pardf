@@ -849,13 +849,16 @@ def rebuild_page(doc, page_num: int, all_texts, all_shapes, all_images,
         page = doc.load_page(page_num)
         for obj in all_texts:
             if getattr(obj, 'page_number', None) == page_num and obj is not exclude_obj:
-                _apply_single_object_to_page(doc, page, obj)
+                if getattr(obj, 'is_new', False) or getattr(obj, '_ghost_redacted', False):
+                    _apply_single_object_to_page(doc, page, obj)
         for obj in all_images:
             if getattr(obj, 'page_number', None) == page_num and obj is not exclude_obj:
-                _apply_single_object_to_page(doc, page, obj)
+                if getattr(obj, 'is_new', False) or getattr(obj, '_ghost_redacted', False):
+                    _apply_single_object_to_page(doc, page, obj)
         for obj in all_shapes:
             if getattr(obj, 'page_number', None) == page_num and obj is not exclude_obj:
-                _apply_single_object_to_page(doc, page, obj)
+                if getattr(obj, 'is_new', False) or getattr(obj, '_ghost_redacted', False):
+                    _apply_single_object_to_page(doc, page, obj)
         return True, None
     except Exception as e:
         print(f"ERROR: rebuild_page failed for page {page_num}: {e}")
