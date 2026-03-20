@@ -2,6 +2,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Gdk, GdkPixbuf, Adw, GLib, GObject, Gio
+from .i18n import _
 
 
 class PageThumbnailFactory(Gtk.SignalListItemFactory):
@@ -40,7 +41,7 @@ class PageThumbnailFactory(Gtk.SignalListItemFactory):
             picture.set_visible(False)
 
         page_index = pdf_page.index
-        label.set_text(f"Sayfa {page_index + 1}")
+        label.set_text(_("page_info").format(page_index + 1))
 
         for ctrl in list(box.observe_controllers()):
             if isinstance(ctrl, Gtk.DragSource) or isinstance(ctrl, Gtk.DropTarget):
@@ -132,14 +133,14 @@ def show_save_changes_dialog(parent_window):
         modal=True,
         message_type=Gtk.MessageType.QUESTION,
         buttons=Gtk.ButtonsType.NONE,
-        text="Kaydedilmemiş Değişiklikler",
-        secondary_text="Kaydedilmemiş değişiklikler var. Ne yapmak istersiniz?"
+        text=_("unsaved_title"),
+        secondary_text=_("unsaved_changes")
     )
 
     dialog.add_buttons(
-        "İptal", Gtk.ResponseType.CANCEL,
-        "Kaydetme", Gtk.ResponseType.REJECT,
-        "Kaydet", Gtk.ResponseType.ACCEPT
+        _("btn_cancel") if _("btn_cancel") != "btn_cancel" else "İptal", Gtk.ResponseType.CANCEL,
+        _("btn_dont_save") if _("btn_dont_save") != "btn_dont_save" else "Kaydetme", Gtk.ResponseType.REJECT,
+        _("btn_save") if _("btn_save") != "btn_save" else "Kaydet", Gtk.ResponseType.ACCEPT
     )
     dialog.set_default_response(Gtk.ResponseType.ACCEPT)
 

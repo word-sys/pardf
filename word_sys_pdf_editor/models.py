@@ -75,18 +75,27 @@ class EditableText:
         cleaned_family_name_spaced = re.sub(r"(\w)([A-Z])", r"\1 \2", cleaned_family_name)
         base_name = ' '.join(word.capitalize() for word in cleaned_family_name_spaced.replace('-', ' ').replace('_', ' ').split())
         
+        self.font_fallback_used = False
         lower_base = base_name.lower().replace(" ", "")
         sans_aliases = ("arial", "helvetica", "calibri")
         serif_aliases = ("times", "timesnewroman")
+        
         if lower_base in sans_aliases or any(lower_base.startswith(a) for a in sans_aliases):
             base_name = "Liberation Sans"
         elif lower_base in serif_aliases or any(lower_base.startswith(a) for a in serif_aliases):
             base_name = "Liberation Serif"
+        elif lower_base not in ["liberationsans", "liberationserif", "dejavusans", "notosans", "courier", "ubuntu", "comic"]:
+            if "serif" in lower_base:
+                base_name = "Liberation Serif"
+            else:
+                base_name = "Liberation Sans"
+            self.font_fallback_used = base_name
             
         self.font_family_base = base_name
         
-        if not self.font_family_base:
-            self.font_family_base = "Unknown"
+        if not self.font_family_base or self.font_family_base == "Unknown":
+            self.font_family_base = "Liberation Sans"
+            self.font_fallback_used = "Liberation Sans"
         
         lower_base = self.font_family_base.lower()
         if not self.is_bold and any(s in lower_base for s in ["bold", "heavy", "black"]):

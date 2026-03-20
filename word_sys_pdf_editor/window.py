@@ -369,7 +369,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.prev_button = Gtk.Button.new_from_icon_name("go-previous-symbolic")
         self.prev_button.set_tooltip_text(_("prev_page_tip"))
         self.prev_button.connect("clicked", self.on_prev_page)
-        self.page_label = Gtk.Label(label="Sayfa 0 / 0")
+        self.page_label = Gtk.Label(label=_("page_info_count").format(0, 0))
         self.next_button = Gtk.Button.new_from_icon_name("go-next-symbolic")
         self.next_button.set_tooltip_text(_("next_page_tip"))
         self.next_button.connect("clicked", self.on_next_page)
@@ -601,7 +601,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             elif not self.document_modified and self.get_title().endswith("*"):
                 self.set_title(self.get_title()[:-1])
         else:
-            self.page_label.set_text("Sayfa 0 / 0")
+            self.page_label.set_text(_("page_info_count").format(0, 0))
             self.zoom_label.set_text("100%")
             self.status_label.set_text(_("status_open_or_drop"))
             self.set_title("Word-Sys's PDF Editor")
@@ -641,7 +641,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             about_dialog.set_license("Error reading license text.")
 
         about_dialog.set_website("https://github.com/word-sys/pardf")
-        about_dialog.set_website_label("Proje GitHub Sayfası")
+        about_dialog.set_website_label(_("github_page") if _("github_page") != "github_page" else "Project GitHub Page")
 
         comments_text = "Linux için Açık Kaynak Basit PDF Metin ve Şekil Düzenleyici.\n\n" + \
                         """Word-Sys's PDF Editor is an open-source tool for editing content in PDF files on Linux."""
@@ -688,7 +688,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         self.close_document()
 
-        self.status_label.set_text(f"Yükleniyor {os.path.basename(filepath)}...")
+        self.status_label.set_text(_("loading").format(os.path.basename(filepath)))
         GLib.idle_add(self._show_loading_state)
 
         def _load_async():
@@ -743,7 +743,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
     def _finish_loading(self, doc, error_msg, filepath, target_page=0):
         if error_msg:
             show_error_dialog(self, error_msg)
-            self.status_label.set_text("Doküman yüklenemedi.")
+            self.status_label.set_text(_("doc_load_failed"))
             self.close_document()
         elif doc:
             self.doc = doc
@@ -757,7 +757,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.current_page_index = target_page 
             
             self.set_title(f"Word-Sys's PDF Editor - {os.path.basename(filepath)}")
-            self.status_label.set_text(f"Küçük resimler yükleniyor...")
+            self.status_label.set_text(_("thumbnails_loading"))
             
             self.target_page_after_load = target_page
             GLib.idle_add(self._load_thumbnails)
@@ -786,13 +786,13 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                     self.pages_model.append(pdf_page_obj)
                 self.thumb_load_iter += 1
                 if index % 5 == 0 or index == page_count - 1:
-                    self.status_label.set_text(f"Küçük resim yüklendi {index + 1}/{page_count}")
+                    self.status_label.set_text(_("thumbnail_loaded").format(index + 1, page_count))
                 return GLib.SOURCE_CONTINUE 
             else:
                 if self.current_file_path:
-                    self.status_label.set_text(f"Yüklendi: {os.path.basename(self.current_file_path)}")
+                    self.status_label.set_text(_("loaded").format(os.path.basename(self.current_file_path)))
                 else:
-                    self.status_label.set_text("Yeni belge yüklendi.")                
+                    self.status_label.set_text(_("new_doc_loaded"))                
                 if page_count > 0:
                     target = getattr(self, 'target_page_after_load', 0)
                     if target >= page_count: target = 0
@@ -865,6 +865,15 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         self._sync_thumbnail_selection()
         self._update_ui_state()
+        
+        fallback_font = None
+        for text_obj in self.editable_texts:
+            if getattr(text_obj, 'font_fallback_used', False):
+                fallback_font = text_obj.font_fallback_used
+                break
+        if fallback_font:
+            self.status_label.set_text(f"font cannot be determinated, using {fallback_font}")
+        
         GLib.idle_add(lambda: pdf_handler.save_page_snapshot(self.doc, page_index) if self.doc else None)
 
     def close_document(self):
@@ -983,7 +992,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             return
         page_to_restore = self.current_page_index
         self.is_saving = True
-        self.status_label.set_text(f"Kaydediliyor {os.path.basename(save_path)}...")
+        self.status_label.set_text(_("saving").format(os.path.basename(save_path)))
         if self.text_edit_popover and self.text_edit_popover.is_visible():
             self._apply_and_hide_editor(force_apply=True)
 
@@ -994,10 +1003,10 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             print(f"DEBUG: Kayıt başarılı. Dosya yeniden yükleniyor: {save_path}")
             self.document_modified = False 
             self.load_document(save_path, target_page=page_to_restore)
-            self.status_label.set_text(f"Kaydedildi ve yeniden yüklendi: {os.path.basename(save_path)}")
+            self.status_label.set_text(_("saved").format(os.path.basename(save_path)))
         else:
             show_error_dialog(self, f"PDF kaydedilirken hata oluştu: {error_msg}")
-            self.status_label.set_text("Kaydetme başarısız oldu.")
+            self.status_label.set_text(_("save_failed"))
 
         self._update_ui_state()
 
@@ -1129,6 +1138,8 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 continue
             if not text_obj.is_new:
                 continue 
+            if getattr(text_obj, 'is_baked', False):
+                continue
             if text_obj is self.dragged_object:
                 continue
             if not text_obj.bbox or not text_obj.text:
@@ -1138,10 +1149,10 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             draw_y = page_offset_y + (y1 * self.zoom_level)
             cr.save()
             layout = PangoCairo.create_layout(cr)
-            font_desc_str = f"{text_obj.font_family_base} {text_obj.font_size * self.zoom_level}"
-            if text_obj.is_bold: font_desc_str += " Bold"
-            if text_obj.is_italic: font_desc_str += " Italic"
-            font_desc = Pango.FontDescription(font_desc_str)
+            font_desc = Pango.FontDescription.from_string(text_obj.font_family_base)
+            if text_obj.is_bold: font_desc.set_weight(Pango.Weight.BOLD)
+            if text_obj.is_italic: font_desc.set_style(Pango.Style.ITALIC)
+            font_desc.set_absolute_size(int(text_obj.font_size * self.zoom_level * Pango.SCALE))
             layout.set_font_description(font_desc)
             layout.set_text(text_obj.text, -1)
             r, g, b = text_obj.color
@@ -1664,6 +1675,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         if text_obj_to_apply.is_new:
             text_obj_to_apply.text = new_text
+            text_obj_to_apply.is_baked = True
             
             x1, y1, _, _ = text_obj_to_apply.bbox
             import cairo
@@ -1674,13 +1686,16 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             _surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1, 1)
             _cr = cairo.Context(_surf)
             layout = PangoCairo.create_layout(_cr)
-            desc = Pango.FontDescription.from_string(f"{text_obj_to_apply.font_family_base} {text_obj_to_apply.font_size}")
+            desc = Pango.FontDescription.from_string(text_obj_to_apply.font_family_base)
+            if text_obj_to_apply.is_bold: desc.set_weight(Pango.Weight.BOLD)
+            if text_obj_to_apply.is_italic: desc.set_style(Pango.Style.ITALIC)
+            desc.set_absolute_size(int(text_obj_to_apply.font_size * Pango.SCALE))
             layout.set_font_description(desc)
             layout.set_text(new_text, -1)
             
             _p_w, _p_h = layout.get_size()
-            _w = (_p_w / Pango.SCALE) * 0.75
-            _h = (_p_h / Pango.SCALE) * 0.75
+            _w = (_p_w / Pango.SCALE)
+            _h = (_p_h / Pango.SCALE)
             text_obj_to_apply.bbox = (x1, y1, x1 + _w, y1 + _h)
             
             command = AddObjectCommand(self, text_obj_to_apply)
@@ -1700,13 +1715,16 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 _surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1, 1)
                 _cr = cairo.Context(_surf)
                 layout = PangoCairo.create_layout(_cr)
-                desc = Pango.FontDescription.from_string(f"{new_properties['font_family_base']} {new_properties['font_size']}")
+                desc = Pango.FontDescription.from_string(new_properties['font_family_base'])
+                if new_properties.get('is_bold'): desc.set_weight(Pango.Weight.BOLD)
+                if new_properties.get('is_italic'): desc.set_style(Pango.Style.ITALIC)
+                desc.set_absolute_size(int(new_properties['font_size'] * Pango.SCALE))
                 layout.set_font_description(desc)
                 layout.set_text(new_text, -1)
                 
                 _p_w, _p_h = layout.get_size()
-                _w = (_p_w / Pango.SCALE) * 0.75
-                _h = (_p_h / Pango.SCALE) * 0.75
+                _w = (_p_w / Pango.SCALE)
+                _h = (_p_h / Pango.SCALE)
                 new_properties['bbox'] = (x1, y1, x1 + _w, y1 + _h)
 
                 command = EditObjectCommand(self, text_obj_to_apply, old_properties, new_properties)
@@ -1714,7 +1732,6 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 self.undo_manager.add_command(command)
                 self._refresh_thumbnail(self.current_page_index)
         
-        self.selected_text = None
         self._update_ui_state()
         self.pdf_view.queue_draw()
     #original
@@ -2073,7 +2090,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
     def update_page_label(self):
         count = pdf_handler.get_page_count(self.doc)
-        self.page_label.set_text(f"Sayfa {self.current_page_index + 1} of {count}" if count > 0 else "Sayfa 0 / 0")
+        self.page_label.set_text(_("page_info_count").format(self.current_page_index + 1, count) if count > 0 else _("page_info_count").format(0, 0))
 
     def on_thumbnail_selected(self, selection_model, position, n_items):
          selected_index = selection_model.get_selected()
@@ -2308,14 +2325,15 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                     _surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1, 1)
                     _cr = cairo.Context(_surf)
                     _layout = PangoCairo.create_layout(_cr)
-                    _fd_str = f"{obj.font_family_base} {obj.font_size}"
-                    if obj.is_bold: _fd_str += " Bold"
-                    if obj.is_italic: _fd_str += " Italic"
-                    _layout.set_font_description(Pango.FontDescription.from_string(_fd_str))
+                    font_desc = Pango.FontDescription.from_string(obj.font_family_base)
+                    if obj.is_bold: font_desc.set_weight(Pango.Weight.BOLD)
+                    if obj.is_italic: font_desc.set_style(Pango.Style.ITALIC)
+                    font_desc.set_absolute_size(int(obj.font_size * Pango.SCALE))
+                    _layout.set_font_description(font_desc)
                     _layout.set_text(obj.text if obj.text else "Ay", -1)
                     _p_w, _p_h = _layout.get_size()
-                    _w = (_p_w / Pango.SCALE) * 0.75
-                    _h = (_p_h / Pango.SCALE) * 0.75
+                    _w = (_p_w / Pango.SCALE)
+                    _h = (_p_h / Pango.SCALE)
                     if _w > 0 and _h > 0:
                         obj.bbox = (x1, y1, x1 + _w, y1 + _h)
                 except Exception as e:
@@ -2323,24 +2341,17 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
             if changed:
                 obj = self.pending_format_change_obj
-                if not getattr(obj, 'is_new', False):
-                    obj.original_bbox = self.before_format_change_state.get('bbox') or obj.bbox
-                    pdf_handler.rebuild_page(
-                        self.doc, self.current_page_index,
-                        self.editable_texts, self.editable_shapes, self.editable_images,
-                        exclude_obj=obj
-                    )
-                    success, err = pdf_handler.apply_object_edit(self.doc, obj)
-                    if success:
-                        obj.original_bbox = obj.bbox 
-                    self._refresh_thumbnail(self.current_page_index)
-                    self.pdf_view.queue_draw()
+                if self.text_edit_popover and self.text_edit_popover.is_visible():
+                    self._apply_and_hide_editor(force_apply=True)
                 else:
-                    obj.modified = True
+                    new_properties = copy.deepcopy(obj.__dict__)
+                    obj.__dict__.update(self.before_format_change_state)
+                    command = EditObjectCommand(self, obj, self.before_format_change_state, new_properties)
+                    command.execute()
+                    self.undo_manager.add_command(command)
+                    self.before_format_change_state = copy.deepcopy(obj.__dict__)
                     self.pdf_view.queue_draw()
-                self.document_modified = True
-                self._update_ui_state()
-                print(f"DEBUG: Format anlık olarak güncellendi: Family='{font_family_key}', Size={font_size}")
+                    self._update_ui_state()
 
     def on_shape_format_changed(self, widget, *args):
         fill_rgba = self.shape_fill_button.get_rgba()
@@ -2355,6 +2366,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.next_shape_transparent = is_transparent
 
         if self.selected_shape:
+            old_properties = copy.deepcopy(self.selected_shape.__dict__)
             changed = False
             if self.selected_shape.fill_color != fill_color:
                 self.selected_shape.fill_color = fill_color
@@ -2370,22 +2382,14 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 changed = True
 
             if changed:
-                self.selected_shape.modified = True
-                self.document_modified = True
-                if getattr(self.selected_shape, 'is_baked', False):
-                    self.selected_shape.original_bbox = self.selected_shape.bbox
-                    pdf_handler.rebuild_page(
-                        self.doc, self.current_page_index,
-                        self.editable_texts, self.editable_shapes, self.editable_images,
-                        exclude_obj=self.selected_shape
-                    )
-                    pdf_handler.apply_object_edit(self.doc, self.selected_shape)
-                    self.selected_shape.is_baked = True
-                    self._refresh_thumbnail(self.current_page_index)
-                    self.pdf_view.queue_draw()
-                else:
-                    self.pdf_view.queue_draw()
-                print(f"DEBUG: Şekil biçimi güncellendi")
+                new_properties = copy.deepcopy(self.selected_shape.__dict__)
+                self.selected_shape.__dict__.update(old_properties)
+                
+                command = EditObjectCommand(self, self.selected_shape, old_properties, new_properties)
+                command.execute()
+                self.undo_manager.add_command(command)
+                self.pdf_view.queue_draw()
+                self._update_ui_state()
 
     def on_text_edit_done(self, button):
         self._apply_and_hide_editor(force_apply=True)

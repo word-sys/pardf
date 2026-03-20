@@ -1,6 +1,7 @@
 import copy
 from . import pdf_handler
 from .models import EditableText, EditableShape
+from .i18n import _
 
 class Command:
     def __init__(self, window):
@@ -188,13 +189,13 @@ class EditObjectCommand(Command):
     def execute(self):
         if self._apply_properties_to_pdf(self.new_properties, self.old_properties):
             self._update_live_object(self.new_properties)
-            self.window.status_label.set_text("Değişiklik uygulandı.")
+            self.window.status_label.set_text(_("change_applied"))
             self.window.pdf_view.queue_draw()
 
     def undo(self):
         if self._apply_properties_to_pdf(self.old_properties, self.new_properties):
             self._update_live_object(self.old_properties)
-            self.window.status_label.set_text("Geri alındı.")
+            self.window.status_label.set_text(_("reverted"))
             self.window.pdf_view.queue_draw()
 
 class AddObjectCommand(Command):
@@ -221,6 +222,7 @@ class AddObjectCommand(Command):
             if self.new_object not in self.window.editable_images:
                 self.window.editable_images.append(self.new_object)
                 
+        self.new_object.is_baked = True
         page_num = getattr(self.new_object, 'page_number', self.window.current_page_index)
         pdf_handler.rebuild_page(
             self.window.doc, page_num,
@@ -231,7 +233,7 @@ class AddObjectCommand(Command):
         self._refresh_thumb()
 
         self.window.document_modified = True
-        self.window.status_label.set_text("Nesne eklendi.")
+        self.window.status_label.set_text(_("object_added"))
         self.window._update_ui_state()
         self.window.pdf_view.queue_draw()
 
@@ -252,7 +254,7 @@ class AddObjectCommand(Command):
         )
 
         self.window.document_modified = True
-        self.window.status_label.set_text("Geri alındı.")
+        self.window.status_label.set_text(_("reverted"))
         self.window._refresh_thumbnail(page_num)
         self.window.pdf_view.queue_draw()
 
@@ -285,7 +287,7 @@ class DeleteObjectCommand(Command):
         )
 
         self.window.document_modified = True
-        self.window.status_label.set_text("Nesne silindi.")
+        self.window.status_label.set_text(_("object_deleted"))
         self.window._refresh_thumbnail(page_num)
         self.window.pdf_view.queue_draw()
 
@@ -306,6 +308,6 @@ class DeleteObjectCommand(Command):
         )
 
         self.window.document_modified = True
-        self.window.status_label.set_text("Silme geri alındı.")
+        self.window.status_label.set_text(_("delete_reverted"))
         self.window._refresh_thumbnail(page_num)
         self.window.pdf_view.queue_draw()
