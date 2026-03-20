@@ -9,7 +9,7 @@ License: **GPL-3.0-or-later**
 ---
 
 > [!TIP]
-> **Recommended Stable Release: v1.7.2** — For the most stable experience, it is strongly recommended to use version **1.7.2**. See the installation sections below for details on how to install this version.
+> **Recommended Stable Release: v1.8.2** — For the most stable experience, it is strongly recommended to use version **1.8.2**. See the installation sections below for details on how to install this version.
 
 ---
 
@@ -47,18 +47,18 @@ There are two ways to install ParDF on your system:
 
 This method is the easiest installation path for Linux distributions.
 
-1.  Download the latest `.deb` package from the [**GitHub Releases**](https://github.com/word-sys/pardf/releases) page. The file will typically be named something like `word-sys-pdf-editor_1.7.2_all.deb`.
+1.  Download the latest `.deb` package from the [**GitHub Releases**](https://github.com/word-sys/pardf/releases) page. The file will typically be named something like `word-sys-pdf-editor_1.8.2_all.deb`.
 
     > [!TIP]
-    > **Use version 1.7.2** for the most stable experience: look for `word-sys-pdf-editor_1.7.2_all.deb` on the releases page.
+    > **Use version 1.8.2** for the most stable experience: look for `word-sys-pdf-editor_1.8.2_all.deb` on the releases page.
 
 2.  Open a terminal in the directory where you downloaded the `.deb` file.
 3.  Run the following command to install the package:
     ```bash
     sudo apt update
-    sudo apt install ./word-sys-pdf-editor_1.7.2_all.deb
+    sudo apt install ./word-sys-pdf-editor_1.8.2_all.deb
     ```
-    *(Note: Replace `word-sys-pdf-editor_1.7.2_all.deb` with the exact filename you downloaded if different.)*
+    *(Note: Replace `word-sys-pdf-editor_1.8.2_all.deb` with the exact filename you downloaded if different.)*
 4.  If you encounter a dependency error during installation, try running the following command to fix missing dependencies:
     ```bash
     sudo apt --fix-broken install
@@ -75,7 +75,7 @@ This method is the easiest installation path for Linux distributions.
 This method is suitable for users who want to run the application directly from source code or contribute to development.
 
 > [!TIP]
-> For a stable experience, use the **v1.7.2** tag when cloning. If you want to test the latest development changes, you can clone the `main` branch directly — but note that it may be less stable.
+> For a stable experience, use the **v1.8.2** tag when cloning. If you want to test the latest development changes, you can clone the `main` branch directly — but note that it may be less stable.
 
 ---
 
@@ -98,9 +98,9 @@ This method is suitable for users who want to run the application directly from 
 
 2.  **Download the Source Code:**
 
-    **Recommended (stable v1.7.2):**
+    **Recommended (stable v1.8.2):**
     ```bash
-    git clone --branch 1.7.2 https://github.com/word-sys/pardf.git
+    git clone --branch 1.8.2 https://github.com/word-sys/pardf.git
     cd pardf
     ```
 
@@ -150,9 +150,9 @@ This method is suitable for users who want to run the application directly from 
 
 2.  **Download the Source Code:**
 
-    **Recommended (stable v1.7.2):**
+    **Recommended (stable v1.8.2):**
     ```bash
-    git clone --branch 1.7.2 https://github.com/word-sys/pardf.git
+    git clone --branch 1.8.2 https://github.com/word-sys/pardf.git
     cd pardf
     ```
 
@@ -185,9 +185,9 @@ This method is suitable for users who want to run the application directly from 
 
 1.  **Download the Source Code:**
 
-    **Recommended (stable v1.7.2):**
+    **Recommended (stable v1.8.2):**
     ```bash
-    git clone --branch 1.7.2 https://github.com/word-sys/pardf.git
+    git clone --branch 1.8.2 https://github.com/word-sys/pardf.git
     cd pardf
     ```
 
