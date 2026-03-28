@@ -223,6 +223,41 @@ This method is suitable for users who want to run the application directly from 
 
 ---
 
+#### Arch Linux and Derivatives — From AUR
+
+1.  **Download, build and install:**
+
+    ```bash
+    git clone https://aur.archlinux.org/pardf
+    makepkg -sfi
+    ```
+
+    People using the yay AUR helper could build and install it using:
+    
+    ```bash
+    yay -S pardf
+    ```
+    
+    or if you prefer to use paru:
+    
+    ```bash
+    paru -S pardf
+    ```
+
+    *Optional (for DOCX export):*
+    ```bash
+    sudo pacman -S libreoffice-fresh
+    ```
+
+2.  **Run the Application:**
+    ```bash
+    pardf
+    ```
+
+    *You can also use your application launcher to execute ParDF*
+
+---
+
 ## Bug Reports and Feedback
 
 If you encounter any bugs, have a feature request, or want to leave general feedback, please use the [**GitHub Issues**](https://github.com/word-sys/pardf/issues) section.
