@@ -16,6 +16,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Gio, GLib, Adw, Gdk, GdkPixbuf, Pango, GObject, PangoCairo
 
+from . import constants
 from . import pdf_handler
 from . import print_handler
 from .welcome_view import WelcomeView 
@@ -26,7 +27,7 @@ from . import utils
 class PdfEditorWindow(Adw.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.set_title("Word-Sys's PDF Editor")
+        self.set_title(constants.APP_NAME)
         self.set_default_size(1200, 800)
         self.set_icon_name("f-pv1")
 
@@ -604,7 +605,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.page_label.set_text(_("page_info_count").format(0, 0))
             self.zoom_label.set_text("100%")
             self.status_label.set_text(_("status_open_or_drop"))
-            self.set_title("Word-Sys's PDF Editor")
+            self.set_title(constants.APP_NAME)
             self.document_modified = False
         
         self._update_undo_redo_buttons()
@@ -612,7 +613,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
     def on_about_activated(self, action, param):
         about_dialog = Gtk.AboutDialog(transient_for=self, modal=True)
 
-        about_dialog.set_program_name("Word-Sys's PDF Editor")
+        about_dialog.set_program_name(constants.APP_NAME)
         about_dialog.set_version("1.8.2") 
         about_dialog.set_authors(["Barın Güzeldemirci (word-sys)"])
         
@@ -729,7 +730,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.original_file_path = filepath
             self.allow_incremental_save = True
             self.current_page_index = 0
-            self.set_title(f"Word-Sys's PDF Editor - {os.path.basename(filepath)}")
+            self.set_title(f"{constants.APP_NAME} - {os.path.basename(filepath)}")
             self.status_label.set_text(f"Küçük resimler yükleniyor...")
             GLib.idle_add(self._load_thumbnails)
 
@@ -756,7 +757,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             
             self.current_page_index = target_page 
             
-            self.set_title(f"Word-Sys's PDF Editor - {os.path.basename(filepath)}")
+            self.set_title(f"{constants.APP_NAME} - {os.path.basename(filepath)}")
             self.status_label.set_text(_("thumbnails_loading"))
             
             self.target_page_after_load = target_page
@@ -925,7 +926,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.stack.add_named(new_welcome, "welcome")
 
         self.stack.set_visible_child_name("welcome")
-        self.set_title("Word-Sys's PDF Editor")
+        self.set_title(constants.APP_NAME)
 
 
 
@@ -946,7 +947,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if success:
             self.current_file_path = save_path
             self.document_modified = False
-            self.set_title(f"Word-Sys's PDF Editor - {os.path.basename(save_path)}")
+            self.set_title(f"{constants.APP_NAME} - {os.path.basename(save_path)}")
             self.status_label.set_text(f"Belge kaydedildi: {os.path.basename(save_path)}")
             
             self._load_page(self.current_page_index, preserve_scroll=True)
@@ -976,7 +977,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if success:
             self.current_file_path = save_path
             self.document_modified = False
-            self.set_title(f"Word-Sys's PDF Editor - {os.path.basename(save_path)}")
+            self.set_title(f"{constants.APP_NAME} - {os.path.basename(save_path)}")
             self.status_label.set_text(f"Belge kaydedildi: {os.path.basename(save_path)}")
             self._load_page(self.current_page_index, preserve_scroll=True)
         else:
@@ -2915,7 +2916,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.current_file_path = None
             self.current_page_index = 0
             _untitled = _("untitled")
-            self.set_title(f"Word-Sys's PDF Editor - {_untitled}*")
+            self.set_title(f"{constants.APP_NAME} - {_untitled}*")
             self.document_modified = True
             
             self._load_thumbnails()
