@@ -6,6 +6,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gio, GLib
 
+from . import constants
 from .i18n import _, get_language, set_language
 
 
@@ -40,7 +41,7 @@ class WelcomeView(Adw.Bin):
         except Exception as e:
             print(f"Welcome screen icon could not be loaded: {e}")
 
-        title = Gtk.Label(label="Word-Sys's PDF Editor")
+        title = Gtk.Label(label=constants.APP_NAME)
         title.add_css_class("title-1")
         main_box.append(title)
 

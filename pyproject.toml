@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ParDF"
+description = "An open-source tool for editing content in PDF files on Linux"
+readme = "README.md"
+authors = [
+    { name = "Barın Güzeldemirci (word-sys)" },
+]
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+dynamic = ["version"]
+dependencies = [
+    "PyMuPDF",
+    "numpy",
+    "pygobject"
+]
+
+[project.urls]
+Homepage = "https://github.com/word-sys/pardf/"
+Source = "https://github.com/word-sys/pardf/"
+Issues = "https://github.com/word-sys/pardf/issues"
+Releases = "https://github.com/word-sys/pardf/releases"
+
+[tool.setuptools]
+packages = ["word_sys_pdf_editor"]
+
+[tool.setuptools.dynamic]
+version = {attr = "word_sys_pdf_editor.constants.APP_VERSION"}
+
+[project.gui-scripts]
+pardf = "word_sys_pdf_editor.main:main"
+
