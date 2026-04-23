@@ -1,11 +1,10 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Word-Sys's PDF Editor
-Source: https://github.com/word-sys/pardf
+Upstream-Name: FOSPX PDF Editor
+Source: https://github.com/fospx-org/fospx-pdf-editor
 
 Files: *
 Copyright: 2026 Barın Güzeldemirci <baringuzeldemir@gmail.com>
 License: GPL-3.0-or-later
- <Optional: Add any other copyright holders for specific files/libraries>
 
 License: GPL-3.0-or-later
  This program is free software: you can redistribute it and/or modify
@@ -27,7 +26,6 @@ License: GPL-3.0-or-later
 Files: debian/*
 Copyright: 2026 Barın Güzeldemirci <baringuzeldemir@gmail.com>
 License: GPL-3.0-or-later
- <Content of license for debian/* files, usually same as upstream>
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or

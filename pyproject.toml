@@ -3,11 +3,11 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ParDF"
+name = "fospx-pdf-editor"
 description = "An open-source tool for editing content in PDF files on Linux"
 readme = "README.md"
 authors = [
-    { name = "Barın Güzeldemirci (word-sys)" },
+    { name = "Barın Güzeldemirci (word-sys) [FOSPX]" },
 ]
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
@@ -19,17 +19,16 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/word-sys/pardf/"
-Source = "https://github.com/word-sys/pardf/"
-Issues = "https://github.com/word-sys/pardf/issues"
-Releases = "https://github.com/word-sys/pardf/releases"
+Homepage = "https://github.com/fospx-org/fospx-pdf-editor/"
+Source = "https://github.com/fospx-org/fospx-pdf-editor/"
+Issues = "https://github.com/fospx-org/fospx-pdf-editor/issues"
+Releases = "https://github.com/fospx-org/fospx-pdf-editor/releases"
 
 [tool.setuptools]
-packages = ["word_sys_pdf_editor"]
+packages = ["fospx_pdf_editor"]
 
 [tool.setuptools.dynamic]
-version = {attr = "word_sys_pdf_editor.constants.APP_VERSION"}
+version = {attr = "fospx_pdf_editor.constants.APP_VERSION"}
 
 [project.gui-scripts]
-pardf = "word_sys_pdf_editor.main:main"
-
+fospx-pdf-editor = "fospx_pdf_editor.main:main"

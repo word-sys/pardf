@@ -8,11 +8,12 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
 import cairo
 import fitz
+from .i18n import _
 
 
 def print_document(parent_window, doc):
     if not doc or doc.page_count == 0:
-        return False, "Yazdırılacak belge yok."
+        return False, _("print_no_doc")
 
     print_op = Gtk.PrintOperation.new()
 
@@ -24,7 +25,7 @@ def print_document(parent_window, doc):
     print_op.set_n_pages(doc.page_count)
     print_op.set_use_full_page(False)
     print_op.set_embed_page_setup(True)
-    print_op.set_job_name("Word-Sys PDF Yazdırma")
+    print_op.set_job_name("FOSPX PDF Print")
 
     if hasattr(parent_window, 'current_page_index'):
         print_op.set_current_page(parent_window.current_page_index)
@@ -100,7 +101,7 @@ def print_document(parent_window, doc):
         elif result == Gtk.PrintOperationResult.APPLY:
             parent_window._print_settings = operation.get_print_settings()
             parent_window._page_setup = operation.get_default_page_setup()
-            print("[PRINT] Yazdırma işlemi gönderildi.")
+            print(f"[PRINT] {_('print_success')}")
 
     print_op.connect("draw-page", on_draw_page)
     print_op.connect("done", on_done)
@@ -112,17 +113,17 @@ def print_document(parent_window, doc):
         )
 
         if result == Gtk.PrintOperationResult.ERROR:
-            return False, "Yazdırma işlemi sırasında hata oluştu."
+            return False, _("print_error_occurred")
         elif result == Gtk.PrintOperationResult.CANCEL:
             return False, None  
         elif result == Gtk.PrintOperationResult.APPLY:
-            return True, "Yazdırma işlemi başarıyla gönderildi."
+            return True, _("print_success")
         elif result == Gtk.PrintOperationResult.IN_PROGRESS:
-            return True, "Yazdırma işlemi devam ediyor..."
+            return True, _("print_in_progress")
         else:
             return True, None
 
     except Exception as e:
         print(f"ERROR starting print operation: {e}")
         traceback.print_exc()
-        return False, f"Yazdırma başlatılamadı: {e}"
+        return False, _("print_start_failed").format(e)

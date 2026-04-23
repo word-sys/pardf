@@ -1,11 +1,8 @@
-# -*- mode: python ; coding: utf-8 -*-
-
-
 a = Analysis(
     ['run_pardf.py'],
     pathex=[],
     binaries=[],
-    datas=[('word_sys_pdf_editor/img', 'word_sys_pdf_editor/img')],
+    datas=[('fospx_pdf_editor/img', 'fospx_pdf_editor/img')],
     hiddenimports=['gi.repository.Gtk', 'gi.repository.Gio', 'gi.repository.GLib', 'gi.repository.Adw', 'gi.repository.Gdk', 'gi.repository.GdkPixbuf', 'gi.repository.Pango', 'gi.repository.PangoCairo', 'cairo'],
     hookspath=[],
     hooksconfig={},
@@ -21,7 +18,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='pardf',
+    name='fospx-pdf-editor',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -40,5 +37,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='pardf',
+    name='fospx-pdf-editor',
 )

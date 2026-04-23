@@ -1,11 +1,11 @@
 #!/usr/bin/make -f
 
-PKGDDIR=debian/word-sys-pdf-editor
-INSTALL_DIR=$(PKGDDIR)/opt/word-sys-pdf-editor
+PKGDDIR=debian/fospx-pdf-editor
+INSTALL_DIR=$(PKGDDIR)/opt/fospx-pdf-editor
 BIN_DIR=$(PKGDDIR)/usr/bin
 
 ICON_NAME=f-pv1
-ICON_SOURCE_PATH=word_sys_pdf_editor/img/f-pv1.svg
+ICON_SOURCE_PATH=fospx_pdf_editor/img/f-pv1.svg
 ICON_SIZE_DIR=scalable
 ICON_INSTALL_DIR=$(PKGDDIR)/usr/share/icons/hicolor/$(ICON_SIZE_DIR)/apps
 
@@ -13,38 +13,30 @@ ICON_INSTALL_DIR=$(PKGDDIR)/usr/share/icons/hicolor/$(ICON_SIZE_DIR)/apps
 	dh $@
 
 override_dh_auto_build:
-	# Bundle only PyMuPDF and numpy — GTK/gi come from apt
 	python3 -m pip install --target=debian/vendor --upgrade pymupdf numpy
 
 override_dh_install:
-	# Install Python source
 	install -d $(INSTALL_DIR)
-	cp -r word_sys_pdf_editor $(INSTALL_DIR)/
+	cp -r fospx_pdf_editor $(INSTALL_DIR)/
 	install -m 644 run_pardf.py $(INSTALL_DIR)/
 
-	# Copy vendored packages
 	cp -r debian/vendor $(INSTALL_DIR)/_vendor
 
-	# Launcher script: prepend _vendor to PYTHONPATH so bundled fitz/numpy take priority
 	install -d $(BIN_DIR)
-	printf '#!/bin/sh\nexport PYTHONPATH=/opt/word-sys-pdf-editor/_vendor:"$$PYTHONPATH"\nexec python3 /opt/word-sys-pdf-editor/run_pardf.py "$$@"\n' \
-		> $(BIN_DIR)/word-sys-pdf-editor
-	chmod 755 $(BIN_DIR)/word-sys-pdf-editor
+	printf '#!/bin/sh\nexport PYTHONPATH=/opt/fospx-pdf-editor/_vendor:"$$PYTHONPATH"\nexec python3 /opt/fospx-pdf-editor/run_pardf.py "$$@"\n' \
+		> $(BIN_DIR)/fospx-pdf-editor
+	chmod 755 $(BIN_DIR)/fospx-pdf-editor
 
-	# Desktop entry
 	install -d $(PKGDDIR)/usr/share/applications
-	install -m 644 debian/word-sys-pdf-editor.desktop $(PKGDDIR)/usr/share/applications/
+	install -m 644 debian/fospx-pdf-editor.desktop $(PKGDDIR)/usr/share/applications/
 
-	# Icon
 	install -d $(ICON_INSTALL_DIR)
 	install -m 644 $(ICON_SOURCE_PATH) $(ICON_INSTALL_DIR)/$(ICON_NAME).svg
 
 override_dh_strip:
-	# Nothing to strip — pure Python
 
 override_dh_shlibdeps:
-	# No shared lib deps to calculate
 
 override_dh_auto_clean:
 	dh_auto_clean
-	rm -rf debian/vendor __pycache__ word_sys_pdf_editor/__pycache__
+	rm -rf debian/vendor __pycache__ fospx_pdf_editor/__pycache__

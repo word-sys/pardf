@@ -1,4 +1,16 @@
-word-sys-pdf-editor (1.8.2) bookworm; urgency=medium
+fospx-pdf-editor (1.8.3) bookworm; urgency=medium
+
+  * Renamed project from Word-Sys's PDF Editor to FOSPX PDF Editor
+  * Updated all branding references from word-sys to FOSPX
+  * Fixed language support (i18n) for About page — comments, website label, and author now respect active language
+  * Fixed hardcoded Turkish strings in font combo, shape color dialogs, bold/italic tooltips, and status bar
+  * Updated config directory from word-sys-pdf-editor to fospx-pdf-editor
+  * Updated repository URLs to github.com/fospx-org/fospx-pdf-editor
+  * Added missing i18n keys: about_comments, about_website_label, font_loading, font_warning, shape dialog titles, transparent label
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Thu, 23 Apr 2026 22:30:00 +0300
+
+fospx-pdf-editor (1.8.2) bookworm; urgency=medium
 
   * Removed PyInstaller bundling
   * Bundled PyMuPDF and numpy via pip into _vendor/
@@ -14,7 +26,7 @@ word-sys-pdf-editor (1.8.2) bookworm; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 19 Mar 2026 20:30:00 +0300
 
-word-sys-pdf-editor (1.8.1) bookworm; urgency=medium
+fospx-pdf-editor (1.8.1) bookworm; urgency=medium
 
   * Implemented direct PDF to DOCX and ODT export using LibreOffice writer_pdf_import filter
   * Fixed bug where text format changes (font, size, style) caused double-rendering
@@ -27,7 +39,7 @@ word-sys-pdf-editor (1.8.1) bookworm; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 11 Mar 2026 22:00:00 +0300
 
-word-sys-pdf-editor (1.8.0) bookworm; urgency=medium
+fospx-pdf-editor (1.8.0) bookworm; urgency=medium
 
   * Added shape tools (Rectangle and Ellipse) with fill, stroke, and transparency properties
   * Added drag-to-resize handles for interactive scaling of images and shapes
@@ -40,35 +52,35 @@ word-sys-pdf-editor (1.8.0) bookworm; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Tue, 04 Mar 2026 19:00:00 +0300
 
-word-sys-pdf-editor (1.7.2) bookworm; urgency=medium
+fospx-pdf-editor (1.7.2) bookworm; urgency=medium
 
   * Improved text recognition
   * Fixed save bug, now users will save the file directly to clean one or will replace with existing original file
   * Print Preview disabled for being not completed
   * The `shrink-start-child` parameter in `gtkPaned` was changed to `false`, resolving the left panel compression issue
   * The package URL has been fixed
-  * Removed Pardus-specific icon, replaced with hand-made word-sys's Icon
+  * Removed Pardus-specific icon, replaced with hand-made FOSPX icon
   * Fixed building bug
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Mon, 12 Jan 2026 00:00:00 +0000
- 
-word-sys-pdf-editor (1.7.1) bookworm; urgency=medium
+
+fospx-pdf-editor (1.7.1) bookworm; urgency=medium
 
   * Proje ismi ve logosu degistirildi
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 11 Jan 2026 12:00:00 +0300
 
-word-sys-pdf-editor (1.7.0) bookworm; urgency=medium
+fospx-pdf-editor (1.7.0) bookworm; urgency=medium
 
   * Geri Alma / Yineleme (Undo/Redo) özelliği eklendi.
   * Sayfaya resim ekleme ve silme özelliği eklendi.
   * Metin düzenleme motoru iyileştirildi.
-  * UI ikonları güncellendi, Pardus ikonu yerine word-sys ikonu eklendi.
+  * UI ikonları güncellendi, FOSPX ikonu eklendi.
   * Metin kutusu seçimi ve taşıma hassasiyeti artırıldı.
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 01 Jan 2026 12:00:00 +0300
 
-word-sys-pdf-editor (1.6.1) yirmiuc; urgency=medium
+fospx-pdf-editor (1.6.1) yirmiuc; urgency=medium
 
   * PDF metinlerini seçme ve düzenleme temel özellikleri eklendi.
   * DOCX ve TXT formatında dışa aktarma (Export) özelliği eklendi.
@@ -78,8 +90,8 @@ word-sys-pdf-editor (1.6.1) yirmiuc; urgency=medium
   * Lisans Bilgileri Düzeltildi!
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Tue, 01 Jul 2025 12:00:00 +0300
- 
-word-sys-pdf-editor (1.6.0) yirmiuc; urgency=medium
+
+fospx-pdf-editor (1.6.0) yirmiuc; urgency=medium
 
   * Resim Ekleme Özelliği getirildi!
   * Bugcheck yapıldı ve hatalar giderildi!
@@ -87,15 +99,15 @@ word-sys-pdf-editor (1.6.0) yirmiuc; urgency=medium
   * Sık kullanılan fontlar eklendi!
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 08 Jun 2025 12:00:00 +0300
- 
-word-sys-pdf-editor (1.5.1) yirmiuc; urgency=medium
+
+fospx-pdf-editor (1.5.1) yirmiuc; urgency=medium
 
   * Hakkında sayfası eklendi!
   * Yeni metin ekleme kısmındaki sayfa indexi eksikliği giderildi
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sat, 10 May 2025 12:00:00 +0300
- 
-word-sys-pdf-editor (1.5.0) yirmiuc; urgency=medium
+
+fospx-pdf-editor (1.5.0) yirmiuc; urgency=medium
 
   [ Hata Düzeltmeleri ve Kararlılık ]
   * Yeni GNOME sistemlerinde (GNOME 46+) oluşan Segmentation Fault hatası, elle Cairo yüzeyi oluşturma yerine GdkPixbuf ve Gdk.Cairo kullanımına geçilerek çözüldü (#B2E2SEC1).
@@ -116,8 +128,8 @@ word-sys-pdf-editor (1.5.0) yirmiuc; urgency=medium
   * Uygulama ikonu eklendi ve kurulum yolları düzeltildi.
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Fri, 09 May 2025 12:00:00 +0300
- 
-word-sys-pdf-editor (1.4.1) yirmiuc; urgency=medium
+
+fospx-pdf-editor (1.4.1) yirmiuc; urgency=medium
 
   [ Metin Düzenleme İyileştirmeleri ]
   * Eski metnin üzerine yazılma/üst üste binme sorunu Redaksiyon yöntemi ile çözüldü.
@@ -141,10 +153,10 @@ word-sys-pdf-editor (1.4.1) yirmiuc; urgency=medium
   * PDF sayfası ortalandı ve gölge efekti eklendi.
   * Seçim vurgusu, tema rengiyle uyumlu ve yuvarlak kenarlı yapıldı.
   * Metin düzenleme kutusunun (Popover) konumu ve tasarımı iyileştirildi.
-  
+
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 07 May 2025 12:00:00 +0300
- 
-word-sys-pdf-editor (1.4.0) yirmiuc; urgency=medium
+
+fospx-pdf-editor (1.4.0) yirmiuc; urgency=medium
 
   * PDF metinlerini seçme ve düzenleme temel özellikleri eklendi.
   * DOCX ve TXT formatında dışa aktarma (Export) özelliği eklendi.
@@ -152,25 +164,23 @@ word-sys-pdf-editor (1.4.0) yirmiuc; urgency=medium
   * Arayüz GTK4 ve LibAdwaita ile modernize edildi.
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Mon, 05 May 2025 12:00:00 +0300
- 
-word-sys-pdf-editor (1.3.3) yirmiuc; urgency=medium
+
+fospx-pdf-editor (1.3.3) yirmiuc; urgency=medium
 
   * Turkce dil destegi eklendi
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 03 May 2025 12:00:00 +0300
- 
-word-sys-pdf-editor (1.1.0) yirmiuc; urgency=medium
+
+fospx-pdf-editor (1.1.0) yirmiuc; urgency=medium
 
   * Bugfix
-  
- -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Fri, 18 Apr 2025 12:00:00 +0300
- 
 
-word-sys-pdf-editor (1.0.0) yirmiuc; urgency=medium
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Fri, 18 Apr 2025 12:00:00 +0300
+
+fospx-pdf-editor (1.0.0) yirmiuc; urgency=medium
 
   * İlk sürüm (Initial Release).
   * PDF görüntüleme ve basit gezinme özellikleri.
   * Temel dosya açma ve kapama işlevleri.
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 02 Apr 2025 12:00:00 +0300
- 

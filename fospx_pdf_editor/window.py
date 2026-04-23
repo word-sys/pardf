@@ -84,7 +84,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self._apply_css()
         self._update_ui_state() 
 
-        self.status_label.set_text("Sistem fontları taranıyor...")
+        self.status_label.set_text(_("scan_fonts"))
         utils.scan_system_fonts_async(callback_on_done=self._on_font_scan_complete)
 
     def _on_font_scan_complete(self):
@@ -99,9 +99,9 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self._populate_font_combo() 
 
         if not utils.UNICODE_FONT_PATH:
-             show_error_dialog(self, "Uygun bir Unicode yazı tipi bulunamadı (örneğin DejaVuSans.ttf). Özel karakterler (örn. Türkçe) içeren metinlerin düzenlenmesi düzgün çalışmayabilir.", "Yazı Tipi Uyarısı")
+             show_error_dialog(self, _("font_warning_msg"), _("font_warning_title"))
         
-        self.status_label.set_text("Fontlar yüklendi. Bir dosya açın." if not self.doc else f"Yüklendi: {os.path.basename(self.current_file_path)}")
+        self.status_label.set_text(_("fonts_loaded_open") if not self.doc else _("loaded").format(os.path.basename(self.current_file_path)))
         self._update_ui_state()
 
     def _populate_font_combo(self):
@@ -113,14 +113,14 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             for family_name in utils.FONT_FAMILY_LIST_SORTED:
                 self.font_store.append([family_name, family_name])
             if len(self.font_store) > 0:
-                self.font_combo.set_active(0) 
+                self.font_combo.set_active(0)
             else:
-                 self.font_store.append(["<Font Yok (Hata)>", ""])
+                 self.font_store.append([_("font_none_error"), ""])
                  self.font_combo.set_active(0)
         else:
-            self.font_store.append(["<Font Yok>", ""])
+            self.font_store.append([_("font_none"), ""])
             self.font_combo.set_active(0)
-            print("WARNING: utils.FONT_FAMILY_LIST_SORTED is empty. Combo shows <Font Yok>.")
+            print("WARNING: utils.FONT_FAMILY_LIST_SORTED is empty.")
         
         self._update_ui_state()
 
@@ -387,7 +387,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.main_toolbar.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL, margin_start=6, margin_end=6))
 
         self.font_store = Gtk.ListStore(str, str)
-        self.font_store.append(["Fontlar yükleniyor...", ""])
+        self.font_store.append([_("font_loading"), ""])
         self.font_combo = Gtk.ComboBox(model=self.font_store)
         cell = Gtk.CellRendererText()
         self.font_combo.pack_start(cell, True)
@@ -405,12 +405,12 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.main_toolbar.append(self.font_size_spin)
 
         self.bold_button = Gtk.ToggleButton(icon_name="format-text-bold-symbolic")
-        self.bold_button.set_tooltip_text("Bold")
+        self.bold_button.set_tooltip_text(_("bold_tip"))
         self.bold_button.connect("toggled", self.on_text_format_changed)
         self.main_toolbar.append(self.bold_button)
 
         self.italic_button = Gtk.ToggleButton(icon_name="format-text-italic-symbolic")
-        self.italic_button.set_tooltip_text("Italic")
+        self.italic_button.set_tooltip_text(_("italic_tip"))
         self.italic_button.connect("toggled", self.on_text_format_changed)
         self.main_toolbar.append(self.italic_button)
 
@@ -425,7 +425,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.main_toolbar.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL, margin_start=6, margin_end=6))
 
         self.shape_fill_button = Gtk.ColorButton()
-        self.shape_fill_button.set_title("Şekil Dolgu Rengini Seç")
+        self.shape_fill_button.set_title(_("shape_fill_dialog_title"))
         fill_rgba = Gdk.RGBA()
         fill_rgba.parse("white")
         self.shape_fill_button.set_rgba(fill_rgba)
@@ -433,14 +433,14 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.shape_fill_button.connect("color-set", self.on_shape_format_changed)
         self.main_toolbar.append(self.shape_fill_button)
 
-        self.shape_transparent_toggle = Gtk.ToggleButton(label="Transparent")
+        self.shape_transparent_toggle = Gtk.ToggleButton(label=_("transparent_label"))
         self.shape_transparent_toggle.set_active(True)
         self.shape_transparent_toggle.set_tooltip_text(_("shape_transparent_tip"))
         self.shape_transparent_toggle.connect("toggled", self.on_shape_format_changed)
         self.main_toolbar.append(self.shape_transparent_toggle)
 
         self.shape_stroke_button = Gtk.ColorButton()
-        self.shape_stroke_button.set_title("Şekil Çizgi Rengini Seç")
+        self.shape_stroke_button.set_title(_("shape_stroke_dialog_title"))
         stroke_rgba = Gdk.RGBA()
         stroke_rgba.parse("black")
         self.shape_stroke_button.set_rgba(stroke_rgba)
@@ -615,15 +615,14 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         about_dialog.set_program_name(constants.APP_NAME)
         about_dialog.set_version(constants.APP_VERSION)
-        about_dialog.set_authors(["Barın Güzeldemirci (word-sys)"])
-        
+        about_dialog.set_authors(["Barın Güzeldemirci (word-sys) [FOSPX]"])
+
         try:
             about_dialog.set_license_type(Gtk.License.GPL_3_0_OR_LATER)
         except AttributeError:
             try:
                 about_dialog.set_license_type(Gtk.License.GPL_3_0)
             except AttributeError:
-                print("Warning: Gtk.License.GPL_3_0 not found, setting custom license type.")
                 about_dialog.set_license_type(Gtk.License.CUSTOM)
         try:
             license_path = Path(__file__).resolve().parent.parent / "LICENSE"
@@ -641,12 +640,9 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             print(f"Error reading LICENSE file: {e}")
             about_dialog.set_license("Error reading license text.")
 
-        about_dialog.set_website("https://github.com/word-sys/pardf")
-        about_dialog.set_website_label(_("github_page") if _("github_page") != "github_page" else "Project GitHub Page")
-
-        comments_text = "Linux için Açık Kaynak Basit PDF Metin ve Şekil Düzenleyici.\n\n" + \
-                        """Word-Sys's PDF Editor is an open-source tool for editing content in PDF files on Linux."""
-        about_dialog.set_comments(comments_text)
+        about_dialog.set_website("https://github.com/fospx-org/fospx-pdf-editor")
+        about_dialog.set_website_label(_("about_website_label"))
+        about_dialog.set_comments(_("about_comments"))
 
         try:
             app_icon_path = Path(__file__).resolve().parent / "img" / "f-pv1.svg"
@@ -659,7 +655,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             print(f"Warning: Could not load application icon for About dialog: {e}")
             about_dialog.set_logo_icon_name("application-x-executable")
 
-        about_dialog.set_copyright("© 2024-2026 Barın Güzeldemirci")
+        about_dialog.set_copyright("© 2024-2026 Barın Güzeldemirci (word-sys) [FOSPX]")
         about_dialog.present()
 
     #original
@@ -838,7 +834,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             
         images, error = pdf_handler.extract_editable_images(self.doc, page_index)
         if error:
-            show_error_dialog(self, f"Sayfa {page_index + 1} içinden resimler çıkarılamadı.\n{error}")
+            show_error_dialog(self, _("image_extract_error").format(page_index + 1, error))
             self.editable_images = []
         else:
             self.editable_images = images
@@ -1992,7 +1988,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
     def on_print_activated(self, action, param):
         if not self.doc:
-            show_error_dialog(self, "Yazdırmak için lütfen bir PDF dosyası açın.", "Dosya Açılmadı")
+            show_error_dialog(self, _("print_no_doc"), _("print_no_doc_title"))
             return
         
         success, message = print_handler.print_document(self, self.doc)
@@ -2002,10 +1998,10 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 self.status_label.set_text(message)
         else:
             if message:
-                show_error_dialog(self, message, "Yazdırma Hatası")
-                self.status_label.set_text("Yazdırma başarısız oldu.")
+                show_error_dialog(self, message, _("print_error_title"))
+                self.status_label.set_text(_("print_failed"))
             else:
-                self.status_label.set_text("Yazdırma işlemi iptal edildi.")
+                self.status_label.set_text(_("print_cancelled"))
 
     def on_zoom_in(self, button=None):
         if not self.doc: return

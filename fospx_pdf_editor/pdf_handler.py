@@ -31,7 +31,7 @@ def _get_font_args_for_pymupdf(text_obj):
         if not style_suffix: style_suffix = "Regular"
 
         safe_family_name = re.sub(r'\W+', '', text_obj.font_family_base or "UnknownFont")
-        internal_font_name = f"WordSys_{safe_family_name}_{style_suffix}"
+        internal_font_name = f"FOSPX_{safe_family_name}_{style_suffix}"
         
         font_arg = {"fontfile": font_to_embed_path, "fontname": internal_font_name}
         print(f"DEBUG (FontHelper): Using TTF: {font_to_embed_path} as '{internal_font_name}'")
@@ -39,7 +39,7 @@ def _get_font_args_for_pymupdf(text_obj):
     else:
         generic_unicode_font = get_default_unicode_font_path()
         if generic_unicode_font:
-            internal_font_name = "WordSysEditFont_GenericUnicode"
+            internal_font_name = "FOSPXEditFont_GenericUnicode"
             font_arg = {"fontfile": generic_unicode_font, "fontname": internal_font_name}
             print(f"DEBUG (FontHelper): WARNING: Could not find specific TTF. Using generic fallback: {generic_unicode_font}")
             return font_arg, None
@@ -409,7 +409,7 @@ def _export_via_libreoffice(doc, source_pdf_path, output_path, target_format):
 
     temp_pdf_path = None
     try:
-        fd, temp_pdf_path = tempfile.mkstemp(suffix=".pdf", prefix="wordsys_export_", dir=str(final_output_dir))
+        fd, temp_pdf_path = tempfile.mkstemp(suffix=".pdf", prefix="fospx_export_", dir=str(final_output_dir))
         os.close(fd)
         print(f"DEBUG [{target_format.upper()} Export]: Saving document state to temporary file: {temp_pdf_path}")
 

@@ -1,7 +1,7 @@
 # FOSPX PDF Editor
-<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/word_sys_pdf_editor/img/f-pv1.svg" width="256" height="256"/>
+<img src="https://raw.githubusercontent.com/fospx-org/fospx-pdf-editor/refs/heads/main/fospx_pdf_editor/img/f-pv1.svg" width="256" height="256"/>
 
-**FOSPX PDF Editor** is a simple and user-friendly tool developed for Pardus and other Linux distributions, focused on editing text content in PDF files. Developed from scratch in the spirit of #MilliTeknolojiHamlesi and TEKNOFEST to meet a need in the Pardus ecosystem, ParDF is a free and national PDF editor serving both corporate and individual users — and the **FIRST PLACE** winner of the TEKNOFEST Pardus Development Competition.
+**FOSPX PDF Editor** is a simple and user-friendly tool developed for Pardus, Debian and other Linux distributions, focused on editing text content in PDF files. Developed from scratch in the spirit of #MilliTeknolojiHamlesi and TEKNOFEST to meet a need in the Pardus ecosystem, FOSPX PDF Editor is a free and open PDF editor serving both corporate and individual users — and the **FIRST PLACE** winner of the TEKNOFEST Pardus Development Competition.
 
 Developer: **Barın Güzeldemirci (word-sys) [FOSPX]**  
 License: **GPL-3.0-or-later**
@@ -9,12 +9,12 @@ License: **GPL-3.0-or-later**
 ---
 
 > [!TIP]
-> **Recommended Stable Release: v1.8.2** — For the most stable experience, it is strongly recommended to use version **1.8.2**. See the installation sections below for details on how to install this version.
+> **Recommended Stable Release: v1.8.3** — For the most stable experience, it is strongly recommended to use version **1.8.3**. See the installation sections below for details on how to install this version.
 
 ---
 
-<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot1.png" width="1460" height="960"/>
-<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot2.png" width="1460" height="960"/>
+<img src="https://raw.githubusercontent.com/fospx-org/fospx-pdf-editor/refs/heads/main/screenshots/screenshot1.png" width="1460" height="960"/>
+<img src="https://raw.githubusercontent.com/fospx-org/fospx-pdf-editor/refs/heads/main/screenshots/screenshot2.png" width="1460" height="960"/>
 
 ## Key Features
 
@@ -41,32 +41,32 @@ License: **GPL-3.0-or-later**
 
 ## Installation
 
-There are two ways to install ParDF on your system:
+There are two ways to install FOSPX PDF Editor on your system:
 
 ### 1. Automatic Installation (Recommended Method)
 
 This method is the easiest installation path for Linux distributions.
 
-1.  Download the latest `.deb` package from the [**GitHub Releases**](https://github.com/word-sys/pardf/releases) page. The file will typically be named something like `word-sys-pdf-editor_1.8.2_all.deb`.
+1.  Download the latest `.deb` package from the [**GitHub Releases**](https://github.com/fospx-org/fospx-pdf-editor/releases) page. The file will typically be named something like `fospx-pdf-editor_1.8.3_all.deb`.
 
     > [!TIP]
-    > **Use version 1.8.2** for the most stable experience: look for `word-sys-pdf-editor_1.8.2_all.deb` on the releases page.
+    > **Use version 1.8.3** for the most stable experience: look for `fospx-pdf-editor_1.8.3_all.deb` on the releases page.
 
 2.  Open a terminal in the directory where you downloaded the `.deb` file.
 3.  Run the following command to install the package:
     ```bash
     sudo apt update
-    sudo apt install ./word-sys-pdf-editor_1.8.2_all.deb
+    sudo apt install ./fospx-pdf-editor_1.8.3_all.deb
     ```
-    *(Note: Replace `word-sys-pdf-editor_1.8.2_all.deb` with the exact filename you downloaded if different.)*
+    *(Note: Replace `fospx-pdf-editor_1.8.3_all.deb` with the exact filename you downloaded if different.)*
 4.  If you encounter a dependency error during installation, try running the following command to fix missing dependencies:
     ```bash
     sudo apt --fix-broken install
     ```
-5.  Once installation is complete, you can launch ParDF from your application menu.
+5.  Once installation is complete, you can launch FOSPX PDF Editor from your application menu.
 
 > [!CAUTION]
-> On Pardus 23.4 and Debian 12, `python3-fitz` version 1.21.1 is a problematic package. Until the package is updated, you may experience issues with the ParDF DEB version. **Manual installation is recommended** for these systems.
+> On Pardus 23.4 and Debian 12, `python3-fitz` version 1.21.1 is a problematic package. Until the package is updated, you may experience issues with the DEB version. **Manual installation is recommended** for these systems.
 
 ---
 
@@ -75,7 +75,7 @@ This method is the easiest installation path for Linux distributions.
 This method is suitable for users who want to run the application directly from source code or contribute to development.
 
 > [!TIP]
-> For a stable experience, use the **v1.8.2** tag when cloning. If you want to test the latest development changes, you can clone the `main` branch directly — but note that it may be less stable.
+> For a stable experience, use the **v1.8.3** tag when cloning. If you want to test the latest development changes, you can clone the `main` branch directly — but note that it may be less stable.
 
 ---
 
@@ -98,16 +98,16 @@ This method is suitable for users who want to run the application directly from 
 
 2.  **Download the Source Code:**
 
-    **Recommended (stable v1.8.2):**
+    **Recommended (stable v1.8.3):**
     ```bash
-    git clone --branch 1.8.2 https://github.com/word-sys/pardf.git
-    cd pardf
+    git clone --branch 1.8.3 https://github.com/fospx-org/fospx-pdf-editor.git
+    cd fospx-pdf-editor
     ```
 
     **For testing / latest development build (may be unstable):**
     ```bash
-    git clone https://github.com/word-sys/pardf.git
-    cd pardf
+    git clone https://github.com/fospx-org/fospx-pdf-editor.git
+    cd fospx-pdf-editor
     ```
 
 3.  **Create and Activate a Virtual Environment (Recommended):**
@@ -150,16 +150,16 @@ This method is suitable for users who want to run the application directly from 
 
 2.  **Download the Source Code:**
 
-    **Recommended (stable v1.8.2):**
+    **Recommended (stable v1.8.3):**
     ```bash
-    git clone --branch 1.8.2 https://github.com/word-sys/pardf.git
-    cd pardf
+    git clone --branch 1.8.3 https://github.com/fospx-org/fospx-pdf-editor.git
+    cd fospx-pdf-editor
     ```
 
     **For testing / latest development build (may be unstable):**
     ```bash
-    git clone https://github.com/word-sys/pardf.git
-    cd pardf
+    git clone https://github.com/fospx-org/fospx-pdf-editor.git
+    cd fospx-pdf-editor
     ```
 
 3.  **Create and Activate a Virtual Environment:**
@@ -185,16 +185,16 @@ This method is suitable for users who want to run the application directly from 
 
 1.  **Download the Source Code:**
 
-    **Recommended (stable v1.8.2):**
+    **Recommended (stable v1.8.3):**
     ```bash
-    git clone --branch 1.8.2 https://github.com/word-sys/pardf.git
-    cd pardf
+    git clone --branch 1.8.3 https://github.com/fospx-org/fospx-pdf-editor.git
+    cd fospx-pdf-editor
     ```
 
     **For testing / latest development build (may be unstable):**
     ```bash
-    git clone https://github.com/word-sys/pardf.git
-    cd pardf
+    git clone https://github.com/fospx-org/fospx-pdf-editor.git
+    cd fospx-pdf-editor
     ```
 
     *Optional (for DOCX export):*
@@ -219,7 +219,7 @@ This method is suitable for users who want to run the application directly from 
     python3 run-editor.py
     ```
 
-**CONGRATULATIONS! You have successfully launched ParDF!**
+**CONGRATULATIONS! You have successfully launched FOSPX PDF Editor!**
 
 ---
 
@@ -228,20 +228,20 @@ This method is suitable for users who want to run the application directly from 
 1.  **Download, build and install:**
 
     ```bash
-    git clone https://aur.archlinux.org/pardf
+    git clone https://aur.archlinux.org/fospx-pdf-editor
     makepkg -sfi
     ```
 
     People using the yay AUR helper could build and install it using:
     
     ```bash
-    yay -S pardf
+    yay -S fospx-pdf-editor
     ```
     
     or if you prefer to use paru:
     
     ```bash
-    paru -S pardf
+    paru -S fospx-pdf-editor
     ```
 
     *Optional (for DOCX export):*
@@ -251,22 +251,22 @@ This method is suitable for users who want to run the application directly from 
 
 2.  **Run the Application:**
     ```bash
-    pardf
+    fospx-pdf-editor
     ```
 
-    *You can also use your application launcher to execute ParDF*
+    *You can also use your application launcher to execute FOSPX PDF Editor*
 
 ---
 
 ## Bug Reports and Feedback
 
-If you encounter any bugs, have a feature request, or want to leave general feedback, please use the [**GitHub Issues**](https://github.com/word-sys/pardf/issues) section.
+If you encounter any bugs, have a feature request, or want to leave general feedback, please use the [**GitHub Issues**](https://github.com/fospx-org/fospx-pdf-editor/issues) section.
 
 ---
 
 ## Contributing
 
-ParDF is an open-source project and welcomes contributions! If you'd like to contribute, please follow these steps:
+FOSPX PDF Editor is an open-source project and welcomes contributions! If you'd like to contribute, please follow these steps:
 
 1.  Fork this repository.
 2.  Create your own branch for a new feature or bug fix (`git checkout -b feature/new-feature` or `git checkout -b fix/bug-name`).

@@ -1,12 +1,12 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Word-Sys PDF Editor
+Name=FOSPX PDF Editor
 Comment=Edit text content in PDF files
-Exec=word-sys-pdf-editor %F
+Exec=fospx-pdf-editor %F
 Icon=f-pv1
 Terminal=false
 Categories=Office;Graphics;GTK;
-Keywords=PDF;Editor;Text;
+Keywords=PDF;Editor;Text;FOSPX;
 MimeType=application/pdf;
 StartupNotify=true
