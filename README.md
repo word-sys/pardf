@@ -1,3 +1,4 @@
+# NOTE: Moved to https://github.com/fospx-org/fospx-pdf-editor This repository will be archived!
 # ParDF - Word-Sys's PDF Editor
 <img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/word_sys_pdf_editor/img/f-pv1.svg" width="256" height="256"/>
 
