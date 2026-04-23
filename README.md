@@ -1,7 +1,7 @@
 # FOSPX PDF Editor
 <img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/word_sys_pdf_editor/img/f-pv1.svg" width="256" height="256"/>
 
-**FOSPX PDF Esitor** is a simple and user-friendly tool developed for Pardus and other Linux distributions, focused on editing text content in PDF files. Developed from scratch in the spirit of #MilliTeknolojiHamlesi and TEKNOFEST to meet a need in the Pardus ecosystem, ParDF is a free and national PDF editor serving both corporate and individual users — and the **FIRST PLACE** winner of the TEKNOFEST Pardus Development Competition.
+**FOSPX PDF Editor** is a simple and user-friendly tool developed for Pardus and other Linux distributions, focused on editing text content in PDF files. Developed from scratch in the spirit of #MilliTeknolojiHamlesi and TEKNOFEST to meet a need in the Pardus ecosystem, ParDF is a free and national PDF editor serving both corporate and individual users — and the **FIRST PLACE** winner of the TEKNOFEST Pardus Development Competition.
 
 Developer: **Barın Güzeldemirci (word-sys) [FOSPX]**  
 License: **GPL-3.0-or-later**
@@ -13,8 +13,8 @@ License: **GPL-3.0-or-later**
 
 ---
 
-<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot1.png" width="512" height="512"/>
-<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot2.png" width="512" height="512"/>
+<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot1.png" width="1460" height="960"/>
+<img src="https://raw.githubusercontent.com/word-sys/pardf/refs/heads/main/screenshots/screenshot2.png" width="1460" height="960"/>
 
 ## Key Features
 
