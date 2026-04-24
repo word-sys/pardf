@@ -7,8 +7,18 @@ fospx-pdf-editor (1.8.3) bookworm; urgency=medium
   * Updated config directory from word-sys-pdf-editor to fospx-pdf-editor
   * Updated repository URLs to github.com/fospx-org/fospx-pdf-editor
   * Added missing i18n keys: about_comments, about_website_label, font_loading, font_warning, shape dialog titles, transparent label
+  * Multi-distro compatibility: package now works on Debian 12 (bookworm),
+    Debian 13 (trixie), and Ubuntu 22.04 (Jammy) from a single .deb file
+  * Architecture changed from amd64-only to Architecture: all — supports both
+    x86_64 and arm64 hosts from the same package
+  * Replaced build-time pip vendoring of PyMuPDF/numpy with a postinst script
+    that creates a per-host Python venv at /opt/fospx-pdf-editor/.venv and
+    installs the correct binary wheel for the host Python version at install time
+  * Added prerm script to cleanly remove the venv on package uninstall
+  * Added python3-venv and python3-pip as runtime dependencies
+  * Always installs latest PyMuPDF at package-install time via pip (requires-python >= 3.10)
 
- -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Thu, 23 Apr 2026 22:30:00 +0300
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Thu, 24 Apr 2026 23:24:00 +0300
 
 fospx-pdf-editor (1.8.2) bookworm; urgency=medium
 

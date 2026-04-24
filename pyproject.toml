@@ -12,6 +12,7 @@ authors = [
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 dynamic = ["version"]
+requires-python = ">=3.10"
 dependencies = [
     "PyMuPDF",
     "numpy",

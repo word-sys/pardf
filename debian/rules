@@ -13,17 +13,16 @@ ICON_INSTALL_DIR=$(PKGDDIR)/usr/share/icons/hicolor/$(ICON_SIZE_DIR)/apps
 	dh $@
 
 override_dh_auto_build:
-	python3 -m pip install --target=debian/vendor --upgrade pymupdf numpy
+	# PyMuPDF and numpy are installed at package-install time via debian/postinst
+	# using a per-host Python venv, so no build-time pip vendoring is needed.
 
 override_dh_install:
 	install -d $(INSTALL_DIR)
 	cp -r fospx_pdf_editor $(INSTALL_DIR)/
 	install -m 644 run_pardf.py $(INSTALL_DIR)/
 
-	cp -r debian/vendor $(INSTALL_DIR)/_vendor
-
 	install -d $(BIN_DIR)
-	printf '#!/bin/sh\nexport PYTHONPATH=/opt/fospx-pdf-editor/_vendor:"$$PYTHONPATH"\nexec python3 /opt/fospx-pdf-editor/run_pardf.py "$$@"\n' \
+	printf '#!/bin/sh\nexec /opt/fospx-pdf-editor/.venv/bin/python3 /opt/fospx-pdf-editor/run_pardf.py "$$@"\n' \
 		> $(BIN_DIR)/fospx-pdf-editor
 	chmod 755 $(BIN_DIR)/fospx-pdf-editor
 
@@ -39,4 +38,4 @@ override_dh_shlibdeps:
 
 override_dh_auto_clean:
 	dh_auto_clean
-	rm -rf debian/vendor __pycache__ fospx_pdf_editor/__pycache__
+	rm -rf __pycache__ fospx_pdf_editor/__pycache__

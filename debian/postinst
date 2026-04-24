@@ -1,0 +1,29 @@
+#!/bin/sh
+set -e
+
+INSTALL_DIR="/opt/fospx-pdf-editor"
+VENV_DIR="${INSTALL_DIR}/.venv"
+
+case "$1" in
+    configure)
+        echo "fospx-pdf-editor: Setting up Python virtual environment..."
+
+        python3 -m venv --system-site-packages "${VENV_DIR}"
+
+        echo "fospx-pdf-editor: Installing PyMuPDF and numpy (this may take a moment)..."
+        "${VENV_DIR}/bin/pip" install --upgrade --quiet pymupdf numpy
+
+        echo "fospx-pdf-editor: Setup complete."
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        echo "postinst called with unknown argument '$1'" >&2
+        exit 1
+        ;;
+esac
+
+
+exit 0

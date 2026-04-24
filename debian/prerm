@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+INSTALL_DIR="/opt/fospx-pdf-editor"
+VENV_DIR="${INSTALL_DIR}/.venv"
+
+case "$1" in
+    remove|upgrade|deconfigure)
+        echo "fospx-pdf-editor: Removing Python virtual environment..."
+        rm -rf "${VENV_DIR}"
+        ;;
+
+    failed-upgrade)
+        ;;
+
+    *)
+        echo "prerm called with unknown argument '$1'" >&2
+        exit 1
+        ;;
+esac
+
+
+exit 0
