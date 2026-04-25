@@ -65,9 +65,6 @@ This method is the easiest installation path for Linux distributions.
     ```
 5.  Once installation is complete, you can launch FOSPX PDF Editor from your application menu.
 
-> [!CAUTION]
-> On Pardus 23.4 and Debian 12, `python3-fitz` version 1.21.1 is a problematic package. Until the package is updated, you may experience issues with the DEB version. **Manual installation is recommended** for these systems.
-
 ---
 
 ### 2. Manual Installation (For Developers or Those Who Want to Build from Source)
