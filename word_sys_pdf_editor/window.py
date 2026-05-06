@@ -723,7 +723,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         about_dialog.set_program_name(constants.APP_NAME)
         about_dialog.set_version(constants.APP_VERSION)
-        about_dialog.set_authors(["Barın Güzeldemirci (word-sys) [word-sys]"])
+        about_dialog.set_authors(["Barın Güzeldemirci (word-sys)"])
 
         try:
             about_dialog.set_license_type(Gtk.License.GPL_3_0_OR_LATER)
@@ -763,7 +763,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             print(f"Warning: Could not load application icon for About dialog: {e}")
             about_dialog.set_logo_icon_name("application-x-executable")
 
-        about_dialog.set_copyright("© 2024-2026 Barın Güzeldemirci (word-sys) [word-sys]")
+        about_dialog.set_copyright("© 2024-2026 Barın Güzeldemirci (word-sys)")
         about_dialog.present()
 
 
