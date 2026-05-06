@@ -311,3 +311,16 @@ class DeleteObjectCommand(Command):
         self.window.status_label.set_text(_("delete_reverted"))
         self.window._refresh_thumbnail(page_num)
         self.window.pdf_view.queue_draw()
+
+class CompositeCommand(Command):
+    def __init__(self, window, commands):
+        super().__init__(window)
+        self.commands = commands
+        
+    def execute(self):
+        for command in self.commands:
+            command.execute()
+            
+    def undo(self):
+        for command in reversed(self.commands):
+            command.undo()

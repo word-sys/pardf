@@ -1,13 +1,13 @@
-Source: fospx-pdf-editor
+Source: word-sys-pdf-editor
 Section: graphics
 Priority: optional
 Maintainer: Barın Güzeldemirci <baringuzeldemir@gmail.com>
 Build-Depends: debhelper-compat (= 13), python3
 Standards-Version: 4.6.2
-Homepage: https://github.com/fospx-org/fospx-pdf-editor
+Homepage: https://github.com/word-sys/word-sys-pdf-editor
 Rules-Requires-Root: no
 
-Package: fospx-pdf-editor
+Package: word-sys-pdf-editor
 Architecture: all
 Depends: ${misc:Depends},
          python3 (>= 3.10),
@@ -19,8 +19,8 @@ Depends: ${misc:Depends},
          gir1.2-adw-1
 Recommends: ttf-dejavu-core | fonts-noto-core | fonts-liberation2,
             libreoffice-common
-Description: FOSPX PDF Editor - Simple PDF Text Editor
- FOSPX PDF Editor allows users to open PDF files, view pages, select
+Description: word-sys's PDF Editor - Simple PDF Text Editor
+ word-sys's PDF Editor allows users to open PDF files, view pages, select
  existing text blocks, modify or delete them, and add new text blocks.
  It focuses on simple text content manipulation rather than full PDF
  annotation or structural changes. It can also export to DOCX, PPTX, ODP (requires

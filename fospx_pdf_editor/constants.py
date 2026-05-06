@@ -1,2 +1,0 @@
-APP_NAME = "FOSPX PDF Editor"
-APP_VERSION = "1.8.3"

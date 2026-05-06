@@ -8,7 +8,7 @@ from .window import PdfEditorWindow
 
 class PdfEditorApplication(Adw.Application):
     def __init__(self):
-        super().__init__(application_id='org.fospx.pdfeditor',
+        super().__init__(application_id='org.word-sys.pdfeditor',
                          flags=Gio.ApplicationFlags.HANDLES_OPEN)
         self.window = None
 

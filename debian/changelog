@@ -1,18 +1,18 @@
-fospx-pdf-editor (1.8.3) bookworm; urgency=medium
+word-sys-pdf-editor (1.8.3) bookworm; urgency=medium
 
-  * Renamed project from Word-Sys's PDF Editor to FOSPX PDF Editor
-  * Updated all branding references from word-sys to FOSPX
+  * Renamed project from Word-Sys's PDF Editor to word-sys's PDF Editor
+  * Updated all branding references from word-sys to word-sys
   * Fixed language support (i18n) for About page — comments, website label, and author now respect active language
   * Fixed hardcoded Turkish strings in font combo, shape color dialogs, bold/italic tooltips, and status bar
-  * Updated config directory from word-sys-pdf-editor to fospx-pdf-editor
-  * Updated repository URLs to github.com/fospx-org/fospx-pdf-editor
+  * Updated config directory from word-sys-pdf-editor to word-sys-pdf-editor
+  * Updated repository URLs to github.com/word-sys/word-sys-pdf-editor
   * Added missing i18n keys: about_comments, about_website_label, font_loading, font_warning, shape dialog titles, transparent label
   * Multi-distro compatibility: package now works on Debian 12 (bookworm),
     Debian 13 (trixie), and Ubuntu 22.04 (Jammy) from a single .deb file
   * Architecture changed from amd64-only to Architecture: all — supports both
     x86_64 and arm64 hosts from the same package
   * Replaced build-time pip vendoring of PyMuPDF/numpy with a postinst script
-    that creates a per-host Python venv at /opt/fospx-pdf-editor/.venv and
+    that creates a per-host Python venv at /opt/word-sys-pdf-editor/.venv and
     installs the correct binary wheel for the host Python version at install time
   * Added prerm script to cleanly remove the venv on package uninstall
   * Added python3-venv and python3-pip as runtime dependencies
@@ -20,7 +20,7 @@ fospx-pdf-editor (1.8.3) bookworm; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Thu, 24 Apr 2026 23:24:00 +0300
 
-fospx-pdf-editor (1.8.2) bookworm; urgency=medium
+word-sys-pdf-editor (1.8.2) bookworm; urgency=medium
 
   * Removed PyInstaller bundling
   * Bundled PyMuPDF and numpy via pip into _vendor/
@@ -36,7 +36,7 @@ fospx-pdf-editor (1.8.2) bookworm; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 19 Mar 2026 20:30:00 +0300
 
-fospx-pdf-editor (1.8.1) bookworm; urgency=medium
+word-sys-pdf-editor (1.8.1) bookworm; urgency=medium
 
   * Implemented direct PDF to DOCX and ODT export using LibreOffice writer_pdf_import filter
   * Fixed bug where text format changes (font, size, style) caused double-rendering
@@ -49,7 +49,7 @@ fospx-pdf-editor (1.8.1) bookworm; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 11 Mar 2026 22:00:00 +0300
 
-fospx-pdf-editor (1.8.0) bookworm; urgency=medium
+word-sys-pdf-editor (1.8.0) bookworm; urgency=medium
 
   * Added shape tools (Rectangle and Ellipse) with fill, stroke, and transparency properties
   * Added drag-to-resize handles for interactive scaling of images and shapes
@@ -62,35 +62,35 @@ fospx-pdf-editor (1.8.0) bookworm; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Tue, 04 Mar 2026 19:00:00 +0300
 
-fospx-pdf-editor (1.7.2) bookworm; urgency=medium
+word-sys-pdf-editor (1.7.2) bookworm; urgency=medium
 
   * Improved text recognition
   * Fixed save bug, now users will save the file directly to clean one or will replace with existing original file
   * Print Preview disabled for being not completed
   * The `shrink-start-child` parameter in `gtkPaned` was changed to `false`, resolving the left panel compression issue
   * The package URL has been fixed
-  * Removed Pardus-specific icon, replaced with hand-made FOSPX icon
+  * Removed Pardus-specific icon, replaced with hand-made word-sys icon
   * Fixed building bug
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Mon, 12 Jan 2026 00:00:00 +0000
 
-fospx-pdf-editor (1.7.1) bookworm; urgency=medium
+word-sys-pdf-editor (1.7.1) bookworm; urgency=medium
 
   * Proje ismi ve logosu degistirildi
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 11 Jan 2026 12:00:00 +0300
 
-fospx-pdf-editor (1.7.0) bookworm; urgency=medium
+word-sys-pdf-editor (1.7.0) bookworm; urgency=medium
 
   * Geri Alma / Yineleme (Undo/Redo) özelliği eklendi.
   * Sayfaya resim ekleme ve silme özelliği eklendi.
   * Metin düzenleme motoru iyileştirildi.
-  * UI ikonları güncellendi, FOSPX ikonu eklendi.
+  * UI ikonları güncellendi, word-sys ikonu eklendi.
   * Metin kutusu seçimi ve taşıma hassasiyeti artırıldı.
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 01 Jan 2026 12:00:00 +0300
 
-fospx-pdf-editor (1.6.1) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.6.1) yirmiuc; urgency=medium
 
   * PDF metinlerini seçme ve düzenleme temel özellikleri eklendi.
   * DOCX ve TXT formatında dışa aktarma (Export) özelliği eklendi.
@@ -101,7 +101,7 @@ fospx-pdf-editor (1.6.1) yirmiuc; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Tue, 01 Jul 2025 12:00:00 +0300
 
-fospx-pdf-editor (1.6.0) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.6.0) yirmiuc; urgency=medium
 
   * Resim Ekleme Özelliği getirildi!
   * Bugcheck yapıldı ve hatalar giderildi!
@@ -110,14 +110,14 @@ fospx-pdf-editor (1.6.0) yirmiuc; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 08 Jun 2025 12:00:00 +0300
 
-fospx-pdf-editor (1.5.1) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.5.1) yirmiuc; urgency=medium
 
   * Hakkında sayfası eklendi!
   * Yeni metin ekleme kısmındaki sayfa indexi eksikliği giderildi
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sat, 10 May 2025 12:00:00 +0300
 
-fospx-pdf-editor (1.5.0) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.5.0) yirmiuc; urgency=medium
 
   [ Hata Düzeltmeleri ve Kararlılık ]
   * Yeni GNOME sistemlerinde (GNOME 46+) oluşan Segmentation Fault hatası, elle Cairo yüzeyi oluşturma yerine GdkPixbuf ve Gdk.Cairo kullanımına geçilerek çözüldü (#B2E2SEC1).
@@ -139,7 +139,7 @@ fospx-pdf-editor (1.5.0) yirmiuc; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Fri, 09 May 2025 12:00:00 +0300
 
-fospx-pdf-editor (1.4.1) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.4.1) yirmiuc; urgency=medium
 
   [ Metin Düzenleme İyileştirmeleri ]
   * Eski metnin üzerine yazılma/üst üste binme sorunu Redaksiyon yöntemi ile çözüldü.
@@ -166,7 +166,7 @@ fospx-pdf-editor (1.4.1) yirmiuc; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 07 May 2025 12:00:00 +0300
 
-fospx-pdf-editor (1.4.0) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.4.0) yirmiuc; urgency=medium
 
   * PDF metinlerini seçme ve düzenleme temel özellikleri eklendi.
   * DOCX ve TXT formatında dışa aktarma (Export) özelliği eklendi.
@@ -175,19 +175,19 @@ fospx-pdf-editor (1.4.0) yirmiuc; urgency=medium
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Mon, 05 May 2025 12:00:00 +0300
 
-fospx-pdf-editor (1.3.3) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.3.3) yirmiuc; urgency=medium
 
   * Turkce dil destegi eklendi
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Sun, 03 May 2025 12:00:00 +0300
 
-fospx-pdf-editor (1.1.0) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.1.0) yirmiuc; urgency=medium
 
   * Bugfix
 
  -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Fri, 18 Apr 2025 12:00:00 +0300
 
-fospx-pdf-editor (1.0.0) yirmiuc; urgency=medium
+word-sys-pdf-editor (1.0.0) yirmiuc; urgency=medium
 
   * İlk sürüm (Initial Release).
   * PDF görüntüleme ve basit gezinme özellikleri.

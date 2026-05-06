@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-_CONFIG_DIR = Path.home() / ".config" / "fospx-pdf-editor"
+_CONFIG_DIR = Path.home() / ".config" / "word-sys-pdf-editor"
 _CONFIG_FILE = _CONFIG_DIR / "settings.json"
 
 _STRINGS = {
@@ -123,7 +123,7 @@ _STRINGS = {
         "shape_fill_dialog_title": "Select Shape Fill Colour",
         "shape_stroke_dialog_title": "Select Shape Stroke Colour",
         "transparent_label": "Transparent",
-        "about_comments": "FOSPX PDF Editor is an open-source tool for editing content in PDF files on Linux.",
+        "about_comments": "word-sys's PDF Editor is an open-source tool for editing content in PDF files on Linux.",
         "about_website_label": "Project GitHub Page",
         "github_page": "Project GitHub Page",
         "print_no_doc": "Please open a PDF file to print.",
@@ -254,7 +254,7 @@ _STRINGS = {
         "shape_fill_dialog_title": "Şekil Dolgu Rengini Seç",
         "shape_stroke_dialog_title": "Şekil Çizgi Rengini Seç",
         "transparent_label": "Saydam",
-        "about_comments": "FOSPX PDF Editor, Linux'ta PDF dosyalarındaki içeriği düzenlemek için açık kaynaklı bir araçtır.",
+        "about_comments": "word-sys's PDF Editor, Linux'ta PDF dosyalarındaki içeriği düzenlemek için açık kaynaklı bir araçtır.",
         "about_website_label": "Proje GitHub Sayfası",
         "github_page": "Proje GitHub Sayfası",
         "print_no_doc": "Yazdırmak için lütfen bir PDF dosyası açın.",

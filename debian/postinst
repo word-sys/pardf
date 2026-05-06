@@ -1,19 +1,19 @@
 #!/bin/sh
 set -e
 
-INSTALL_DIR="/opt/fospx-pdf-editor"
+INSTALL_DIR="/opt/word-sys-pdf-editor"
 VENV_DIR="${INSTALL_DIR}/.venv"
 
 case "$1" in
     configure)
-        echo "fospx-pdf-editor: Setting up Python virtual environment..."
+        echo "word-sys-pdf-editor: Setting up Python virtual environment..."
 
         python3 -m venv --system-site-packages "${VENV_DIR}"
 
-        echo "fospx-pdf-editor: Installing PyMuPDF and numpy (this may take a moment)..."
+        echo "word-sys-pdf-editor: Installing PyMuPDF and numpy (this may take a moment)..."
         "${VENV_DIR}/bin/pip" install --upgrade --quiet pymupdf numpy
 
-        echo "fospx-pdf-editor: Setup complete."
+        echo "word-sys-pdf-editor: Setup complete."
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

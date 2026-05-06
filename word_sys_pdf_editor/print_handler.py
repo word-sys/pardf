@@ -25,7 +25,7 @@ def print_document(parent_window, doc):
     print_op.set_n_pages(doc.page_count)
     print_op.set_use_full_page(False)
     print_op.set_embed_page_setup(True)
-    print_op.set_job_name("FOSPX PDF Print")
+    print_op.set_job_name("word-sys PDF Print")
 
     if hasattr(parent_window, 'current_page_index'):
         print_op.set_current_page(parent_window.current_page_index)

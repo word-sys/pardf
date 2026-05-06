@@ -31,7 +31,7 @@ def _get_font_args_for_pymupdf(text_obj):
         if not style_suffix: style_suffix = "Regular"
 
         safe_family_name = re.sub(r'\W+', '', text_obj.font_family_base or "UnknownFont")
-        internal_font_name = f"FOSPX_{safe_family_name}_{style_suffix}"
+        internal_font_name = f"word-sys_{safe_family_name}_{style_suffix}"
         
         font_arg = {"fontfile": font_to_embed_path, "fontname": internal_font_name}
         print(f"DEBUG (FontHelper): Using TTF: {font_to_embed_path} as '{internal_font_name}'")
@@ -39,7 +39,7 @@ def _get_font_args_for_pymupdf(text_obj):
     else:
         generic_unicode_font = get_default_unicode_font_path()
         if generic_unicode_font:
-            internal_font_name = "FOSPXEditFont_GenericUnicode"
+            internal_font_name = "word-sysEditFont_GenericUnicode"
             font_arg = {"fontfile": generic_unicode_font, "fontname": internal_font_name}
             print(f"DEBUG (FontHelper): WARNING: Could not find specific TTF. Using generic fallback: {generic_unicode_font}")
             return font_arg, None
@@ -409,7 +409,7 @@ def _export_via_libreoffice(doc, source_pdf_path, output_path, target_format):
 
     temp_pdf_path = None
     try:
-        fd, temp_pdf_path = tempfile.mkstemp(suffix=".pdf", prefix="fospx_export_", dir=str(final_output_dir))
+        fd, temp_pdf_path = tempfile.mkstemp(suffix=".pdf", prefix="word-sys_export_", dir=str(final_output_dir))
         os.close(fd)
         print(f"DEBUG [{target_format.upper()} Export]: Saving document state to temporary file: {temp_pdf_path}")
 
@@ -957,3 +957,75 @@ def delete_page(doc, page_index):
     
     except Exception as e:
         return False, f"Sayfa silme sırasında hata: {e}"
+
+def add_highlight_annotation(doc, page_index, rect_unzoomed, color=(1, 0.93, 0)):
+    if not doc or not (0 <= page_index < doc.page_count):
+        return False, "Invalid document or page index."
+    try:
+        page = doc.load_page(page_index)
+        r = fitz.Rect(*rect_unzoomed)
+        if r.is_empty or not r.is_valid:
+            return False, "Empty or invalid rect."
+        annot = page.add_highlight_annot(r)
+        annot.set_colors(stroke=color)
+        annot.update()
+        return True, None
+    except Exception as e:
+        traceback.print_exc()
+        return False, f"Highlight annotation error: {e}"
+
+def remove_highlight_annotations(doc, page_index, rect_unzoomed=None):
+    """Remove highlight annotations from a page or region."""
+    if not doc or not (0 <= page_index < doc.page_count):
+        return False, "Invalid document or page index."
+    try:
+        page = doc.load_page(page_index)
+        annots = page.annots()
+        removed_count = 0
+        
+        if annots:
+            target_rect = None
+            if rect_unzoomed:
+                target_rect = fitz.Rect(*rect_unzoomed)
+            
+            for annot in annots:
+                annot_type = annot.type[0]
+                # type 8 is Highlight annotation in fitz
+                if annot_type == 8:
+                    if target_rect is None or target_rect.intersects(annot.rect):
+                        page.delete_annot(annot)
+                        removed_count += 1
+        
+        return True, removed_count
+    except Exception as e:
+        traceback.print_exc()
+        return False, f"Error removing highlights: {e}"
+
+def get_text_in_rect(doc, page_index, rect_unzoomed):
+    if not doc or not (0 <= page_index < doc.page_count):
+        return ""
+    try:
+        page = doc.load_page(page_index)
+        r = fitz.Rect(*rect_unzoomed)
+        words = page.get_text("words", clip=r, sort=True)
+        return " ".join(w[4] for w in words)
+    except Exception as e:
+        print(f"get_text_in_rect error: {e}")
+        return ""
+
+def get_word_at_pos(doc, page_index, pos_unzoomed):
+    if not doc or not (0 <= page_index < doc.page_count):
+        return None
+    try:
+        page = doc.load_page(page_index)
+        x, y = pos_unzoomed
+        p = fitz.Point(x, y)
+        words = page.get_text("words")
+        for w in words:
+            r = fitz.Rect(w[0], w[1], w[2], w[3])
+            if r.contains(p):
+                return {'bbox': (w[0], w[1], w[2], w[3]), 'text': w[4]}
+        return None
+    except Exception as e:
+        print(f"get_word_at_pos error: {e}")
+        return None

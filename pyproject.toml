@@ -3,11 +3,11 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fospx-pdf-editor"
+name = "word-sys-pdf-editor"
 description = "An open-source tool for editing content in PDF files on Linux"
 readme = "README.md"
 authors = [
-    { name = "Barın Güzeldemirci (word-sys) [FOSPX]" },
+    { name = "Barın Güzeldemirci (word-sys) [word-sys]" },
 ]
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
@@ -20,16 +20,16 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/fospx-org/fospx-pdf-editor/"
-Source = "https://github.com/fospx-org/fospx-pdf-editor/"
-Issues = "https://github.com/fospx-org/fospx-pdf-editor/issues"
-Releases = "https://github.com/fospx-org/fospx-pdf-editor/releases"
+Homepage = "https://github.com/word-sys/word-sys-pdf-editor/"
+Source = "https://github.com/word-sys/word-sys-pdf-editor/"
+Issues = "https://github.com/word-sys/word-sys-pdf-editor/issues"
+Releases = "https://github.com/word-sys/word-sys-pdf-editor/releases"
 
 [tool.setuptools]
-packages = ["fospx_pdf_editor"]
+packages = ["word_sys_pdf_editor"]
 
 [tool.setuptools.dynamic]
-version = {attr = "fospx_pdf_editor.constants.APP_VERSION"}
+version = {attr = "word_sys_pdf_editor.constants.APP_VERSION"}
 
 [project.gui-scripts]
-fospx-pdf-editor = "fospx_pdf_editor.main:main"
+word-sys-pdf-editor = "word_sys_pdf_editor.main:main"

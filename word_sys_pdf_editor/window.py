@@ -78,6 +78,15 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self._last_is_italic = False
         self._last_color = (0.0, 0.0, 0.0)
 
+        self.view_mode = True
+        self.view_sel_start = None
+        self.view_sel_rect = None
+        self.view_selected_text = ""
+        self.view_drag_active = False
+
+        self.inline_editor_widget = None
+        self.inline_editor_text_obj = None
+
         self._build_ui()
         self._setup_controllers()
         self._connect_actions()
@@ -216,6 +225,12 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.print_button.set_tooltip_text(_("print_tip"))
         self.print_button.connect("clicked", lambda w: self.on_print_activated(None, None))
         header.pack_end(self.print_button)
+
+        self.mode_toggle_button = Gtk.Button(label="Edit")
+        self.mode_toggle_button.set_tooltip_text("Switch between View and Edit mode")
+        self.mode_toggle_button.get_style_context().add_class("suggested-action")
+        self.mode_toggle_button.connect("clicked", self._toggle_view_edit_mode)
+        header.pack_end(self.mode_toggle_button)
         menu = Gio.Menu()
         menu.append(_("menu_save_as"), "win.save_as")
         menu.append(_("menu_export_as"), "win.export_as")
@@ -248,8 +263,11 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.pdf_view.set_draw_func(self.draw_pdf_page)
         self.pdf_view.add_css_class('pdf-view')
 
+        self.pdf_overlay = Gtk.Overlay()
+        self.pdf_overlay.set_child(self.pdf_view)
+
         self.pdf_viewport = Gtk.Viewport()
-        self.pdf_viewport.set_child(self.pdf_view)
+        self.pdf_viewport.set_child(self.pdf_overlay)
         self.pdf_scroll.set_child(self.pdf_viewport)
         
         content_box.append(self.pdf_scroll)
@@ -374,18 +392,18 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.next_button = Gtk.Button.new_from_icon_name("go-next-symbolic")
         self.next_button.set_tooltip_text(_("next_page_tip"))
         self.next_button.connect("clicked", self.on_next_page)
-        
         self.add_page_button = Gtk.Button.new_from_icon_name("document-new-symbolic")
         self.add_page_button.set_tooltip_text(_("add_page_tip"))
         self.add_page_button.connect("clicked", self.on_add_page)
-        
         self.main_toolbar.append(self.prev_button)
         self.main_toolbar.append(self.page_label)
         self.main_toolbar.append(self.next_button)
         self.main_toolbar.append(self.add_page_button)
 
-        self.main_toolbar.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL, margin_start=6, margin_end=6))
+        self.text_format_sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL, margin_start=6, margin_end=6)
+        self.main_toolbar.append(self.text_format_sep)
 
+        self.text_format_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.font_store = Gtk.ListStore(str, str)
         self.font_store.append([_("font_loading"), ""])
         self.font_combo = Gtk.ComboBox(model=self.font_store)
@@ -396,23 +414,23 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.font_combo.set_tooltip_text(_("font_tip"))
         self.font_combo.connect("changed", self.on_text_format_changed)
         self.font_combo.set_sensitive(False)
-        self.main_toolbar.append(self.font_combo)
+        self.text_format_box.append(self.font_combo)
 
         self.font_size_spin = Gtk.SpinButton.new_with_range(6, 96, 1)
-        self.font_size_spin.set_value(11);
+        self.font_size_spin.set_value(11)
         self.font_size_spin.set_tooltip_text(_("font_size_tip"))
         self.font_size_spin.connect("value-changed", self.on_text_format_changed)
-        self.main_toolbar.append(self.font_size_spin)
+        self.text_format_box.append(self.font_size_spin)
 
         self.bold_button = Gtk.ToggleButton(icon_name="format-text-bold-symbolic")
         self.bold_button.set_tooltip_text(_("bold_tip"))
         self.bold_button.connect("toggled", self.on_text_format_changed)
-        self.main_toolbar.append(self.bold_button)
+        self.text_format_box.append(self.bold_button)
 
         self.italic_button = Gtk.ToggleButton(icon_name="format-text-italic-symbolic")
         self.italic_button.set_tooltip_text(_("italic_tip"))
         self.italic_button.connect("toggled", self.on_text_format_changed)
-        self.main_toolbar.append(self.italic_button)
+        self.text_format_box.append(self.italic_button)
 
         self.color_button = Gtk.ColorButton()
         default_rgba = Gdk.RGBA()
@@ -420,10 +438,13 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.color_button.set_rgba(default_rgba)
         self.color_button.set_tooltip_text(_("color_tip"))
         self.color_button.connect("color-set", self.on_text_format_changed)
-        self.main_toolbar.append(self.color_button)
+        self.text_format_box.append(self.color_button)
+        self.main_toolbar.append(self.text_format_box)
 
-        self.main_toolbar.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL, margin_start=6, margin_end=6))
+        self.shape_toolbar_sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL, margin_start=6, margin_end=6)
+        self.main_toolbar.append(self.shape_toolbar_sep)
 
+        self.shape_toolbar_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.shape_fill_button = Gtk.ColorButton()
         self.shape_fill_button.set_title(_("shape_fill_dialog_title"))
         fill_rgba = Gdk.RGBA()
@@ -431,13 +452,13 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.shape_fill_button.set_rgba(fill_rgba)
         self.shape_fill_button.set_tooltip_text(_("shape_fill_tip"))
         self.shape_fill_button.connect("color-set", self.on_shape_format_changed)
-        self.main_toolbar.append(self.shape_fill_button)
+        self.shape_toolbar_box.append(self.shape_fill_button)
 
         self.shape_transparent_toggle = Gtk.ToggleButton(label=_("transparent_label"))
         self.shape_transparent_toggle.set_active(True)
         self.shape_transparent_toggle.set_tooltip_text(_("shape_transparent_tip"))
         self.shape_transparent_toggle.connect("toggled", self.on_shape_format_changed)
-        self.main_toolbar.append(self.shape_transparent_toggle)
+        self.shape_toolbar_box.append(self.shape_transparent_toggle)
 
         self.shape_stroke_button = Gtk.ColorButton()
         self.shape_stroke_button.set_title(_("shape_stroke_dialog_title"))
@@ -446,13 +467,36 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.shape_stroke_button.set_rgba(stroke_rgba)
         self.shape_stroke_button.set_tooltip_text(_("shape_stroke_tip"))
         self.shape_stroke_button.connect("color-set", self.on_shape_format_changed)
-        self.main_toolbar.append(self.shape_stroke_button)
+        self.shape_toolbar_box.append(self.shape_stroke_button)
 
         self.shape_stroke_width_spin = Gtk.SpinButton.new_with_range(0.5, 10, 0.5)
         self.shape_stroke_width_spin.set_value(2.0)
         self.shape_stroke_width_spin.set_tooltip_text(_("shape_width_tip"))
         self.shape_stroke_width_spin.connect("value-changed", self.on_shape_format_changed)
-        self.main_toolbar.append(self.shape_stroke_width_spin)
+        self.shape_toolbar_box.append(self.shape_stroke_width_spin)
+        self.main_toolbar.append(self.shape_toolbar_box)
+        self.shape_toolbar_box.set_visible(False)
+        self.shape_toolbar_sep.set_visible(False)
+
+        self.view_toolbar_sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL, margin_start=6, margin_end=6)
+        self.main_toolbar.append(self.view_toolbar_sep)
+        self.view_toolbar_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        
+        self.highlight_color_button = Gtk.ColorButton()
+        hl_rgba = Gdk.RGBA()
+        hl_rgba.parse("yellow")
+        self.highlight_color_button.set_rgba(hl_rgba)
+        self.highlight_color_button.set_tooltip_text("Highlight Color")
+        self.view_toolbar_box.append(self.highlight_color_button)
+        
+        self.highlight_button = Gtk.Button(icon_name="format-text-highlight-symbolic", label="Highlight")
+        self.highlight_button.set_tooltip_text("Highlight selected text")
+        self.highlight_button.connect("clicked", self.on_highlight_clicked)
+        self.view_toolbar_box.append(self.highlight_button)
+        
+        self.main_toolbar.append(self.view_toolbar_box)
+        self.view_toolbar_box.set_visible(False)
+        self.view_toolbar_sep.set_visible(False)
 
     def _setup_controllers(self):
         drop_target = Gtk.DropTarget.new(Gio.File, Gdk.DragAction.COPY)
@@ -466,6 +510,11 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         click_controller = Gtk.GestureClick.new()
         click_controller.connect('pressed', self.on_pdf_view_pressed)
         self.pdf_view.add_controller(click_controller)
+
+        right_click_controller = Gtk.GestureClick.new()
+        right_click_controller.set_button(3)
+        right_click_controller.connect('pressed', self._on_right_click)
+        self.pdf_view.add_controller(right_click_controller)
 
         key_controller = Gtk.EventControllerKey.new()
         key_controller.connect('key-pressed', self.on_key_pressed)
@@ -532,23 +581,64 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.prev_button.set_sensitive(can_go_prev)
         self.next_button.set_sensitive(can_go_next)
 
-        text_tool_active = self.tool_mode == "add_text"
-        text_selected = self.selected_text is not None
+        in_edit = not self.view_mode
+        if hasattr(self, 'mode_toggle_button'):
+            self.mode_toggle_button.set_sensitive(has_doc)
+            if self.view_mode:
+                self.mode_toggle_button.set_label("Edit")
+            else:
+                self.mode_toggle_button.set_label("View")
+
+        sidebar_tools = [self.select_tool_button, self.add_text_tool_button,
+                         self.add_image_tool_button, self.drag_tool_button,
+                         self.add_ellipse_tool_button, self.add_rectangle_tool_button]
+        for btn in sidebar_tools:
+            btn.set_sensitive(in_edit and has_doc)
+            
+        if hasattr(self, 'delete_page_button'):
+            self.delete_page_button.set_sensitive(in_edit and has_doc)
+
         shape_selected = self.selected_shape is not None
-        format_enabled_base = ((self.selected_text is not None) or (self.tool_mode == "add_text")) and (self.selected_image is None) and (self.selected_shape is None)
-        
+        shape_controls_active = in_edit and (shape_selected or self.tool_mode in ("add_ellipse", "add_rectangle"))
+        text_selected = self.selected_text is not None
+        format_enabled_base = in_edit and ((text_selected or self.tool_mode == "add_text") and
+                               self.selected_image is None and not shape_selected)
+
+        if hasattr(self, 'text_format_box'):
+            self.text_format_box.set_visible(in_edit and not shape_controls_active)
+            self.text_format_sep.set_visible(in_edit and not shape_controls_active)
+
         self.font_combo.set_sensitive(format_enabled_base and not self.font_scan_in_progress)
         self.font_size_spin.set_sensitive(format_enabled_base)
         self.color_button.set_sensitive(format_enabled_base)
         if self.bold_button: self.bold_button.set_sensitive(format_enabled_base)
         if self.italic_button: self.italic_button.set_sensitive(format_enabled_base)
 
-        shape_controls_enabled = shape_selected or self.tool_mode in ("add_ellipse", "add_rectangle")
-        self.shape_fill_button.set_sensitive(shape_controls_enabled)
-        self.shape_stroke_button.set_sensitive(shape_controls_enabled)
-        self.shape_stroke_width_spin.set_sensitive(shape_controls_enabled)
-        self.shape_transparent_toggle.set_sensitive(shape_controls_enabled)
-        
+        if hasattr(self, 'shape_toolbar_box'):
+            self.shape_toolbar_box.set_visible(shape_controls_active)
+            self.shape_toolbar_sep.set_visible(shape_controls_active)
+
+        self.shape_fill_button.set_sensitive(shape_controls_active)
+        self.shape_stroke_button.set_sensitive(shape_controls_active)
+        self.shape_stroke_width_spin.set_sensitive(shape_controls_active)
+        self.shape_transparent_toggle.set_sensitive(shape_controls_active)
+
+        if hasattr(self, 'view_toolbar_box'):
+            # The user wants highlight in Edit Mode as well!
+            self.view_toolbar_box.set_visible(has_doc)
+            self.view_toolbar_sep.set_visible(has_doc)
+            
+            can_highlight = False
+            if self.view_mode:
+                can_highlight = self.view_sel_rect is not None
+            else:
+                can_highlight = self.selected_text is not None
+                
+            if hasattr(self, 'highlight_button'):
+                self.highlight_button.set_sensitive(can_highlight)
+            if hasattr(self, 'highlight_color_button'):
+                self.highlight_color_button.set_sensitive(can_highlight)
+
         if shape_selected:
             self.shape_transparent_toggle.handler_block_by_func(self.on_shape_format_changed)
             self.shape_transparent_toggle.set_active(self.selected_shape.is_transparent)
@@ -556,7 +646,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         if text_selected:
             self._update_text_format_controls(self.selected_text)
-        elif not (self.text_edit_popover and self.text_edit_popover.is_visible()):
+        elif not self.inline_editor_widget:
             self._update_text_format_controls(None)
 
         if shape_selected:
@@ -570,8 +660,10 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.drag_tool_button.get_style_context().remove_class('active')
         self.add_ellipse_tool_button.get_style_context().remove_class('active')
         self.add_rectangle_tool_button.get_style_context().remove_class('active')
-        
-        if self.tool_mode == "select":
+
+        if self.view_mode:
+            self.pdf_view.set_cursor(Gdk.Cursor.new_from_name("text"))
+        elif self.tool_mode == "select":
             self.select_tool_button.get_style_context().add_class('active')
             self.pdf_view.set_cursor(None)
         elif self.tool_mode == "add_text":
@@ -607,7 +699,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.status_label.set_text(_("status_open_or_drop"))
             self.set_title(constants.APP_NAME)
             self.document_modified = False
-        
+
         self._update_undo_redo_buttons()
 
     def on_about_activated(self, action, param):
@@ -615,7 +707,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         about_dialog.set_program_name(constants.APP_NAME)
         about_dialog.set_version(constants.APP_VERSION)
-        about_dialog.set_authors(["Barın Güzeldemirci (word-sys) [FOSPX]"])
+        about_dialog.set_authors(["Barın Güzeldemirci (word-sys) [word-sys]"])
 
         try:
             about_dialog.set_license_type(Gtk.License.GPL_3_0_OR_LATER)
@@ -640,7 +732,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             print(f"Error reading LICENSE file: {e}")
             about_dialog.set_license("Error reading license text.")
 
-        about_dialog.set_website("https://github.com/fospx-org/fospx-pdf-editor")
+        about_dialog.set_website("https://github.com/word-sys/word-sys-pdf-editor")
         about_dialog.set_website_label(_("about_website_label"))
         about_dialog.set_comments(_("about_comments"))
 
@@ -655,7 +747,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             print(f"Warning: Could not load application icon for About dialog: {e}")
             about_dialog.set_logo_icon_name("application-x-executable")
 
-        about_dialog.set_copyright("© 2024-2026 Barın Güzeldemirci (word-sys) [FOSPX]")
+        about_dialog.set_copyright("© 2024-2026 Barın Güzeldemirci (word-sys) [word-sys]")
         about_dialog.present()
 
     #original
@@ -901,7 +993,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             response = show_save_changes_dialog(self)
             if response == "save":
                 if self.current_file_path:
-                    if self.text_edit_popover and self.text_edit_popover.is_visible():
+                    if self.inline_editor_widget is not None:
                         self._apply_and_hide_editor(force_apply=True)
                     success, err = pdf_handler.save_document(self.doc, self.current_file_path)
                     if not success:
@@ -934,7 +1026,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.is_saving = True
         self.status_label.set_text(f"Kaydediliyor {os.path.basename(save_path)}...")
 
-        if self.text_edit_popover and self.text_edit_popover.is_visible():
+        if self.inline_editor_widget is not None:
             self._apply_and_hide_editor(force_apply=True)
 
         success, error_msg = pdf_handler.save_document(self.doc, save_path, incremental=incremental)
@@ -963,7 +1055,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.is_saving = True
         self.status_label.set_text(f"Kaydediliyor {os.path.basename(save_path)}...")
 
-        if self.text_edit_popover and self.text_edit_popover.is_visible():
+        if self.inline_editor_widget is not None:
             self._apply_and_hide_editor(force_apply=True)
 
         success, error_msg = pdf_handler.save_document(self.doc, save_path, incremental=incremental)
@@ -990,7 +1082,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         page_to_restore = self.current_page_index
         self.is_saving = True
         self.status_label.set_text(_("saving").format(os.path.basename(save_path)))
-        if self.text_edit_popover and self.text_edit_popover.is_visible():
+        if self.inline_editor_widget is not None:
             self._apply_and_hide_editor(force_apply=True)
 
         success, error_msg = pdf_handler.save_document(self.doc, save_path, incremental=False)
@@ -1094,8 +1186,14 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 layout.set_font_description(font_desc)
                 layout.set_text(self.dragged_object.text, -1)
 
-                r, g, b = self.dragged_object.color
-                cr.set_source_rgba(r, g, b, 0.6)
+                if getattr(self.dragged_object, 'is_link', False):
+                    cr.set_source_rgba(0.0, 0.33, 0.8, 0.6)
+                    attr_list = Pango.AttrList()
+                    attr_list.insert(Pango.attr_underline_new(Pango.Underline.SINGLE))
+                    layout.set_attributes(attr_list)
+                else:
+                    r, g, b = self.dragged_object.color
+                    cr.set_source_rgba(r, g, b, 0.6)
                 
                 cr.move_to(ghost_x, ghost_y)
                 PangoCairo.show_layout(cr, layout)
@@ -1152,8 +1250,14 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             font_desc.set_absolute_size(int(text_obj.font_size * self.zoom_level * Pango.SCALE))
             layout.set_font_description(font_desc)
             layout.set_text(text_obj.text, -1)
-            r, g, b = text_obj.color
-            cr.set_source_rgba(r, g, b, 1.0)
+            if text_obj.is_link:
+                cr.set_source_rgba(0.0, 0.33, 0.8, 1.0)
+                attr_list = Pango.AttrList()
+                attr_list.insert(Pango.attr_underline_new(Pango.Underline.SINGLE))
+                layout.set_attributes(attr_list)
+            else:
+                r, g, b = text_obj.color
+                cr.set_source_rgba(r, g, b, 1.0)
             cr.move_to(draw_x, draw_y)
             PangoCairo.show_layout(cr, layout)
             cr.restore()
@@ -1317,6 +1421,22 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                     cr.stroke()
                     cr.set_source_rgba(handle_color_rgba.red, handle_color_rgba.green, handle_color_rgba.blue, 1.0)
                 cr.restore()
+
+        if self.view_mode and self.view_sel_rect:
+            sx1, sy1, sx2, sy2 = self.view_sel_rect
+            sel_dx = page_offset_x + sx1 * self.zoom_level
+            sel_dy = page_offset_y + sy1 * self.zoom_level
+            sel_dw = (sx2 - sx1) * self.zoom_level
+            sel_dh = (sy2 - sy1) * self.zoom_level
+            cr.save()
+            cr.set_source_rgba(0.12, 0.47, 0.9, 0.25)
+            cr.rectangle(sel_dx, sel_dy, sel_dw, sel_dh)
+            cr.fill()
+            cr.set_source_rgba(0.12, 0.47, 0.9, 0.85)
+            cr.set_line_width(1.5)
+            cr.rectangle(sel_dx, sel_dy, sel_dw, sel_dh)
+            cr.stroke()
+            cr.restore()
 
     def _find_text_at_pos(self, page_x, page_y):
         for text_obj in reversed(self.editable_texts):
@@ -1568,147 +1688,110 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.shape_stroke_button.handler_unblock_by_func(self.on_shape_format_changed)
             self.shape_stroke_width_spin.handler_unblock_by_func(self.on_shape_format_changed)
 
-    def _setup_text_editor(self, text_obj, drawing_area_click_x=None, drawing_area_click_y=None):
-        self.hide_text_editor()
-        if not text_obj: return
-
-        self.editing_text_object = text_obj
-        self.text_edit_popover = Gtk.Popover(autohide=False, has_arrow=True, position=Gtk.PositionType.TOP)
-
-        popover_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        popover_box.add_css_class("box")
-        self.text_edit_popover.set_child(popover_box)
-
-        if not text_obj.is_new and text_obj.original_text:
-            preview_label = Gtk.Label(wrap=True, wrap_mode=Pango.WrapMode.WORD_CHAR, xalign=0.0)
-            preview_text = (text_obj.original_text[:75] + '...') if len(text_obj.original_text) > 75 else text_obj.original_text
-            preview_label.set_markup(f"<small><i>Orijinal: {GLib.markup_escape_text(preview_text)}</i></small>")
-            preview_label.set_margin_bottom(6)
-            popover_box.append(preview_label)
-
-        scroll = Gtk.ScrolledWindow(
-            min_content_height=80,
-            max_content_height=300, 
-            min_content_width=250,
-            hscrollbar_policy=Gtk.PolicyType.AUTOMATIC, 
-            vscrollbar_policy=Gtk.PolicyType.AUTOMATIC
-        )
-        popover_box.append(scroll)
-        self.text_edit_view = Gtk.TextView(wrap_mode=Gtk.WrapMode.WORD_CHAR)
-        self.text_edit_view.set_left_margin(5); self.text_edit_view.set_right_margin(5)
-        self.text_edit_view.set_top_margin(5); self.text_edit_view.set_bottom_margin(5)
-        self.text_edit_view.get_buffer().set_text(text_obj.text)
-        self.text_edit_view.add_css_class("textview")
-        if text_obj.is_new:
-            self.text_edit_view.add_css_class("new-text-entry")
-        
-        focus_controller = Gtk.EventControllerFocus()
-        focus_controller.connect("leave", lambda w: False)
-        self.text_edit_view.add_controller(focus_controller)
-        
-        scroll.set_child(self.text_edit_view)
-        button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, halign=Gtk.Align.END)
-        done_button = Gtk.Button(label=_("btn_done"))
-        done_button.add_css_class("suggested-action")
-        done_button.connect("clicked", self.on_text_edit_done)
-        button_box.append(done_button)
-        popover_box.append(button_box)
-
-        drawing_area_width = self.pdf_view.get_allocated_width()
-        drawing_area_height = self.pdf_view.get_allocated_height()
-        page_w = self.current_pdf_page_width
-        page_h = self.current_pdf_page_height
-        page_offset_x = max(0, (drawing_area_width - page_w) / 2)
-        page_offset_y = max(0, (drawing_area_height - page_h) / 2)
-
-        rect_to_point_to = Gdk.Rectangle()
-
-        if text_obj.is_new and drawing_area_click_x is not None and drawing_area_click_y is not None:
-            anchor_offset = 5 
-            rect_to_point_to.x = int(drawing_area_click_x)
-            rect_to_point_to.y = int(drawing_area_click_y - anchor_offset) 
-            rect_to_point_to.width = 1
-            rect_to_point_to.height = 1
-        elif text_obj.bbox:
-            x1_unzoomed, y1_unzoomed, x2_unzoomed, y2_unzoomed = text_obj.bbox
-            widget_x1 = page_offset_x + (x1_unzoomed * self.zoom_level)
-            widget_y1 = page_offset_y + (y1_unzoomed * self.zoom_level)
-            widget_w = (x2_unzoomed - x1_unzoomed) * self.zoom_level
-
-            rect_to_point_to.x = int(widget_x1 + widget_w / 2) 
-            rect_to_point_to.y = int(widget_y1)                
-            rect_to_point_to.width = 1
-            rect_to_point_to.height = 1
-        else:
-            rect_to_point_to.x = drawing_area_width // 2
-            rect_to_point_to.y = drawing_area_height // 2
-            rect_to_point_to.width = 1; rect_to_point_to.height = 1
-            print("Warning: Could not determine precise popover anchor.")
-
-        self.text_edit_popover.set_parent(self.pdf_view)
-        self.text_edit_popover.set_pointing_to(rect_to_point_to)
-        self.text_edit_popover.popup()
-        self.text_edit_view.grab_focus()
-
-    def hide_text_editor(self):
-        if self.text_edit_popover:
-            self.text_edit_popover.popdown()
-            self.text_edit_popover = None
-            self.text_edit_view = None
-            self.editing_text_object = None
-
-    def _apply_and_hide_editor(self, force_apply=False):
-        if not self.text_edit_view or not self.editing_text_object:
-            self.hide_text_editor()
+    def _show_inline_editor(self, text_obj, click_x=None, click_y=None):
+        self._hide_inline_editor()
+        if not text_obj:
             return
 
-        text_obj_to_apply = self.editing_text_object
+        self.inline_editor_text_obj = text_obj
+
+        da_w = self.pdf_view.get_allocated_width()
+        da_h = self.pdf_view.get_allocated_height()
+        page_w = self.current_pdf_page_width
+        page_h = self.current_pdf_page_height
+        page_offset_x = max(0, (da_w - page_w) / 2)
+        page_offset_y = max(0, (da_h - page_h) / 2)
+
+        if text_obj.bbox:
+            x1, y1, x2, y2 = text_obj.bbox
+            ed_x = int(page_offset_x + x1 * self.zoom_level)
+            ed_y = int(page_offset_y + y1 * self.zoom_level)
+            ed_w = max(180, int((x2 - x1) * self.zoom_level) + 60)
+            ed_h = max(40, int((y2 - y1) * self.zoom_level) + 16)
+        elif click_x is not None:
+            ed_x = int(click_x)
+            ed_y = int(click_y) - 20
+            ed_w = 200
+            ed_h = 44
+
+        frame = Gtk.Frame()
+        frame.add_css_class("inline-editor-frame")
+        frame.set_halign(Gtk.Align.START)
+        frame.set_valign(Gtk.Align.START)
+        frame.set_margin_start(ed_x)
+        frame.set_margin_top(ed_y)
+        frame.set_size_request(ed_w, ed_h)
+
+        tv = Gtk.TextView(wrap_mode=Gtk.WrapMode.WORD_CHAR)
+        tv.set_left_margin(4)
+        tv.set_right_margin(4)
+        tv.set_top_margin(4)
+        tv.set_bottom_margin(4)
+        tv.get_buffer().set_text(text_obj.text)
+        tv.add_css_class("inline-editor-tv")
+        frame.set_child(tv)
+
+        focus_ctrl = Gtk.EventControllerFocus()
+        focus_ctrl.connect("leave", self._on_inline_editor_focus_leave)
+        tv.add_controller(focus_ctrl)
+
+        key_ctrl = Gtk.EventControllerKey()
+        key_ctrl.connect("key-pressed", self._on_inline_editor_key)
+        tv.add_controller(key_ctrl)
+
+        self.pdf_overlay.add_overlay(frame)
+        self.inline_editor_widget = frame
+        self.inline_editor_tv = tv
+        GLib.idle_add(tv.grab_focus)
+
+    def _hide_inline_editor(self):
+        if self.inline_editor_widget:
+            if hasattr(self, 'pdf_overlay') and self.pdf_overlay:
+                self.pdf_overlay.remove_overlay(self.inline_editor_widget)
+            self.inline_editor_widget = None
+            self.inline_editor_tv = None
+            self.inline_editor_text_obj = None
+
+    def _commit_inline_edit(self):
+        if not hasattr(self, 'inline_editor_tv') or not self.inline_editor_tv or not self.inline_editor_text_obj:
+            self._hide_inline_editor()
+            return
+
+        text_obj_to_apply = self.inline_editor_text_obj
         old_properties = copy.deepcopy(text_obj_to_apply.__dict__)
 
-        buffer = self.text_edit_view.get_buffer()
-        new_text = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), True)
-        
-        self.hide_text_editor()
+        buf = self.inline_editor_tv.get_buffer()
+        new_text = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
+
+        self._hide_inline_editor()
+
+        def _calc_bbox(obj, text):
+            x1, y1 = obj.x, obj.y
+            _surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1, 1)
+            _cr = cairo.Context(_surf)
+            layout = PangoCairo.create_layout(_cr)
+            desc = Pango.FontDescription.from_string(obj.font_family_base)
+            if obj.is_bold: desc.set_weight(Pango.Weight.BOLD)
+            if obj.is_italic: desc.set_style(Pango.Style.ITALIC)
+            desc.set_absolute_size(int(obj.font_size * Pango.SCALE))
+            layout.set_font_description(desc)
+            layout.set_text(text or "A", -1)
+            pw, ph = layout.get_size()
+            return (x1, y1, x1 + pw / Pango.SCALE, y1 + ph / Pango.SCALE)
 
         if text_obj_to_apply.is_new:
             text_obj_to_apply.text = new_text
             text_obj_to_apply.is_baked = True
-            
-            x1, y1, _, _ = text_obj_to_apply.bbox
-            import cairo
-            import gi
-            gi.require_version('Pango', '1.0')
-            from gi.repository import Pango
-            
-            _surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1, 1)
-            _cr = cairo.Context(_surf)
-            layout = PangoCairo.create_layout(_cr)
-            desc = Pango.FontDescription.from_string(text_obj_to_apply.font_family_base)
-            if text_obj_to_apply.is_bold: desc.set_weight(Pango.Weight.BOLD)
-            if text_obj_to_apply.is_italic: desc.set_style(Pango.Style.ITALIC)
-            desc.set_absolute_size(int(text_obj_to_apply.font_size * Pango.SCALE))
-            layout.set_font_description(desc)
-            layout.set_text(new_text, -1)
-            
-            _p_w, _p_h = layout.get_size()
-            _w = (_p_w / Pango.SCALE)
-            _h = (_p_h / Pango.SCALE)
-            text_obj_to_apply.bbox = (x1, y1, x1 + _w, y1 + _h)
-            
+            text_obj_to_apply.bbox = _calc_bbox(text_obj_to_apply, new_text)
             command = AddObjectCommand(self, text_obj_to_apply)
             command.execute()
-            self._refresh_thumbnail(self.current_page_index)
             self.undo_manager.add_command(command)
+            self._refresh_thumbnail(self.current_page_index)
         else:
             new_properties = copy.deepcopy(text_obj_to_apply.__dict__)
             new_properties['text'] = new_text
-            if old_properties['text'] != new_properties['text']:
-                x1, y1, _, _ = new_properties['bbox']
-                import cairo
-                import gi
-                gi.require_version('Pango', '1.0')
-                from gi.repository import Pango
-                
+            if old_properties['text'] != new_text:
+                x1, y1 = new_properties['bbox'][0], new_properties['bbox'][1]
                 _surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1, 1)
                 _cr = cairo.Context(_surf)
                 layout = PangoCairo.create_layout(_cr)
@@ -1717,20 +1800,41 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 if new_properties.get('is_italic'): desc.set_style(Pango.Style.ITALIC)
                 desc.set_absolute_size(int(new_properties['font_size'] * Pango.SCALE))
                 layout.set_font_description(desc)
-                layout.set_text(new_text, -1)
-                
-                _p_w, _p_h = layout.get_size()
-                _w = (_p_w / Pango.SCALE)
-                _h = (_p_h / Pango.SCALE)
-                new_properties['bbox'] = (x1, y1, x1 + _w, y1 + _h)
-
+                layout.set_text(new_text or "A", -1)
+                pw, ph = layout.get_size()
+                new_properties['bbox'] = (x1, y1, x1 + pw / Pango.SCALE, y1 + ph / Pango.SCALE)
                 command = EditObjectCommand(self, text_obj_to_apply, old_properties, new_properties)
-                command.execute() 
+                command.execute()
                 self.undo_manager.add_command(command)
                 self._refresh_thumbnail(self.current_page_index)
-        
+
         self._update_ui_state()
         self.pdf_view.queue_draw()
+
+    def _on_inline_editor_focus_leave(self, controller):
+        focus_widget = self.get_focus()
+        if focus_widget:
+            curr = focus_widget
+            while curr:
+                if curr == getattr(self, 'main_toolbar', None):
+                    return
+                curr = curr.get_parent()
+                
+        GLib.idle_add(self._commit_inline_edit)
+
+    def _on_inline_editor_key(self, controller, keyval, keycode, state):
+        if keyval == Gdk.KEY_Escape:
+            self._hide_inline_editor()
+            self._update_ui_state()
+            self.pdf_view.queue_draw()
+            return True
+        return False
+
+    def hide_text_editor(self):
+        self._hide_inline_editor()
+
+    def _apply_and_hide_editor(self, force_apply=False):
+        self._commit_inline_edit()
     #original
     '''
     def check_unsaved_changes(self):
@@ -2121,6 +2225,36 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         if not self.doc or self.current_pdf_page_width == 0 or self.current_pdf_page_height == 0:
             return
 
+        drawing_area_width = self.pdf_view.get_allocated_width()
+        drawing_area_height = self.pdf_view.get_allocated_height()
+        page_offset_x = max(0, (drawing_area_width - self.current_pdf_page_width) / 2)
+        page_offset_y = max(0, (drawing_area_height - self.current_pdf_page_height) / 2)
+
+        page_x_unzoomed = (x - page_offset_x) / self.zoom_level
+        page_y_unzoomed = (y - page_offset_y) / self.zoom_level
+
+        modifiers = Gtk.EventController.get_current_event_state(gesture)
+        ctrl_pressed = bool(modifiers & Gdk.ModifierType.CONTROL_MASK)
+
+        clicked_text = self._find_text_at_pos(page_x_unzoomed, page_y_unzoomed)
+        
+        if ctrl_pressed and clicked_text and clicked_text.is_link:
+            import webbrowser
+            import re
+            match = re.search(r'https?://[^\s]+', clicked_text.text)
+            if match:
+                webbrowser.open(match.group(0))
+            return
+
+        if self.view_mode:
+            if n_press == 1:
+                self.view_sel_start = None
+                self.view_sel_rect = None
+                self.view_selected_text = ""
+                self.pdf_view.queue_draw()
+                self._update_ui_state()
+            return
+
         if self.font_scan_in_progress:
             show_error_dialog(self, "Fontlar hala taranıyor. Lütfen bekleyin.", "Font Tarama")
             return
@@ -2143,7 +2277,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.commit_pending_format_change()
 
         if not is_on_page:
-            if self.text_edit_popover and self.text_edit_popover.is_visible():
+            if self.inline_editor_widget is not None:
                 self._apply_and_hide_editor()
             self.selected_text = None
             self.selected_image = None
@@ -2156,7 +2290,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
 
         if self.tool_mode == "select":
-            if self.text_edit_popover and self.text_edit_popover.is_visible():
+            if self.inline_editor_widget is not None:
                 self._apply_and_hide_editor()
 
             clicked_image = self._find_image_at_pos(page_x_unzoomed, page_y_unzoomed)
@@ -2167,19 +2301,21 @@ class PdfEditorWindow(Adw.ApplicationWindow):
                 self.selected_image = clicked_image
                 self.selected_text = None
                 self.selected_shape = None
-            elif clicked_shape:
-                self.selected_shape = clicked_shape
-                self.selected_text = None
-                self.selected_image = None
             elif clicked_text:
                 self.selected_image = None
                 self.selected_shape = None
                 if clicked_text == self.selected_text and n_press > 1:
-                    self._setup_text_editor(clicked_text, drawing_area_click_x=x, drawing_area_click_y=y)
+                    self._show_inline_editor(clicked_text, click_x=x, click_y=y)
                 else:
                     self.selected_text = clicked_text
                     self.pending_format_change_obj = self.selected_text
+                    import copy
                     self.before_format_change_state = copy.deepcopy(self.selected_text.__dict__)
+                    self._update_text_format_controls(self.selected_text)
+            elif clicked_shape:
+                self.selected_shape = clicked_shape
+                self.selected_text = None
+                self.selected_image = None
             else:
                 self.selected_text = None
                 self.selected_image = None
@@ -2189,7 +2325,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self._update_ui_state()
 
         elif self.tool_mode == "add_text":
-            if self.text_edit_popover and self.text_edit_popover.is_visible():
+            if self.inline_editor_widget is not None:
                 self._apply_and_hide_editor()
                 return
 
@@ -2232,7 +2368,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             self.selected_text = new_text_obj
             self.selected_image = None
             self._update_text_format_controls(self.selected_text)
-            self._setup_text_editor(new_text_obj, drawing_area_click_x=x, drawing_area_click_y=y)
+            self._show_inline_editor(new_text_obj, drawing_area_click_x=x, drawing_area_click_y=y)
             self._update_ui_state()
 
         elif self.tool_mode == "add_image":
@@ -2259,6 +2395,45 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self._last_is_italic = self.italic_button.get_active() if self.italic_button else False
         rgba = self.color_button.get_rgba()
         self._last_color = (rgba.red, rgba.green, rgba.blue)
+        
+        # Handle selective formatting if inline editor is open
+        if hasattr(self, 'inline_editor_tv') and self.inline_editor_tv and self.inline_editor_text_obj:
+            buf = self.inline_editor_tv.get_buffer()
+            has_sel, start_iter, end_iter = buf.get_selection_bounds()
+            if has_sel:
+                start_char = start_iter.get_offset()
+                end_char = end_iter.get_offset()
+                current_text = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
+                
+                # Close the editor since we are replacing the object
+                self._hide_inline_editor()
+                
+                target_obj = self.inline_editor_text_obj
+                target_obj.text = current_text
+                spans = target_obj.split_at_range(start_char, end_char)
+                
+                if len(spans) > 1:
+                    mid_index = 0 if start_char == 0 else 1
+                    mid_span = spans[mid_index]
+                    mid_span.font_family_base = self._last_font_family
+                    mid_span.font_size = self._last_font_size
+                    mid_span.color = self._last_color
+                    mid_span.is_bold = self._last_is_bold
+                    mid_span.is_italic = self._last_is_italic
+                    
+                    from .undo_manager import DeleteObjectCommand, AddObjectCommand, CompositeCommand
+                    commands = [DeleteObjectCommand(self, target_obj)]
+                    for span in spans:
+                        commands.append(AddObjectCommand(self, span))
+                    
+                    batch_cmd = CompositeCommand(self, commands)
+                    batch_cmd.execute()
+                    self.undo_manager.add_command(batch_cmd)
+                    self.selected_text = mid_span
+                    self.pending_format_change_obj = mid_span
+                    self._update_ui_state()
+                    self.pdf_view.queue_draw()
+                    return
 
         if self.pending_format_change_obj:
             
@@ -2338,7 +2513,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
             if changed:
                 obj = self.pending_format_change_obj
-                if self.text_edit_popover and self.text_edit_popover.is_visible():
+                if self.inline_editor_widget is not None:
                     self._apply_and_hide_editor(force_apply=True)
                 else:
                     new_properties = copy.deepcopy(obj.__dict__)
@@ -2392,8 +2567,25 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self._apply_and_hide_editor(force_apply=True)
 
     def on_key_pressed(self, controller, keyval, keycode, state):
+        ctrl = bool(state & Gdk.ModifierType.CONTROL_MASK)
+
+        if self.view_mode:
+            if keyval == Gdk.KEY_Escape:
+                self.view_sel_rect = None
+                self.view_sel_start = None
+                self.view_selected_text = ""
+                self.pdf_view.queue_draw()
+                self._update_ui_state()
+                return True
+            if ctrl and keyval in (Gdk.KEY_c, Gdk.KEY_C):
+                if self.view_selected_text:
+                    clipboard = self.get_clipboard()
+                    clipboard.set(self.view_selected_text)
+                return True
+            return False
+
         if keyval == Gdk.KEY_Escape:
-            if self.text_edit_popover and self.text_edit_popover.is_visible():
+            if self.inline_editor_widget is not None:
                  self.hide_text_editor()
                  if self.selected_text and self.selected_text.is_new:
                       self.selected_text = None
@@ -2414,7 +2606,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         elif keyval == Gdk.KEY_Delete:
             self.commit_pending_format_change()
             obj_to_delete = self.selected_text or self.selected_image or self.selected_shape
-            if obj_to_delete and not (self.text_edit_popover and self.text_edit_popover.is_visible()):
+            if obj_to_delete and not (self.inline_editor_widget is not None):
                 if isinstance(obj_to_delete, EditableText):
                     confirm_text = f"Seçilen metni sil?\n'{obj_to_delete.text[:50]}...'"
                 elif isinstance(obj_to_delete, EditableShape):
@@ -2449,7 +2641,7 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         return False
 
     def on_tool_selected(self, button, tool_name):
-        if self.text_edit_popover and self.text_edit_popover.is_visible():
+        if self.inline_editor_widget is not None:
              print("Araç değiştirilmeden önce değişiklikler uygulanıyor...")
              self._apply_and_hide_editor(force_apply=True)
 
@@ -2478,6 +2670,15 @@ class PdfEditorWindow(Adw.ApplicationWindow):
 
         page_x = (start_x - page_offset_x) / self.zoom_level
         page_y = (start_y - page_offset_y) / self.zoom_level
+
+        if self.view_mode:
+            gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+            self.view_drag_active = True
+            self.view_sel_start = (page_x, page_y)
+            self.view_sel_rect = (page_x, page_y, page_x, page_y)
+            self.view_selected_text = ""
+            self.pdf_view.queue_draw()
+            return
 
         if self.tool_mode == "add_ellipse":
             gesture.set_state(Gtk.EventSequenceState.CLAIMED)
@@ -2555,7 +2756,18 @@ class PdfEditorWindow(Adw.ApplicationWindow):
             gesture.set_state(Gtk.EventSequenceState.DENIED)
 
     def on_drag_update(self, gesture, offset_x, offset_y):
-        if self.text_edit_popover and self.text_edit_popover.is_visible():
+        if self.view_mode:
+            if self.view_sel_start and self.view_drag_active:
+                sx, sy = self.view_sel_start
+                dx = offset_x / self.zoom_level
+                dy = offset_y / self.zoom_level
+                cx = sx + dx
+                cy = sy + dy
+                self.view_sel_rect = (min(sx, cx), min(sy, cy), max(sx, cx), max(sy, cy))
+                self.pdf_view.queue_draw()
+            return
+
+        if self.inline_editor_widget is not None:
             gesture.set_state(Gtk.EventSequenceState.DENIED)
             return
             
@@ -2685,6 +2897,20 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.pdf_view.queue_draw()
 
     def on_drag_end(self, gesture, offset_x, offset_y):
+        if self.view_mode:
+            self.view_drag_active = False
+            if self.view_sel_rect:
+                x1, y1, x2, y2 = self.view_sel_rect
+                if (x2 - x1) > 2 and (y2 - y1) > 2:
+                    self.view_selected_text = pdf_handler.get_text_in_rect(
+                        self.doc, self.current_page_index, (x1, y1, x2, y2))
+                else:
+                    self.view_sel_rect = None
+                    self.view_selected_text = ""
+            self._update_ui_state()
+            self.pdf_view.queue_draw()
+            return
+
         if self.dragging_to_create:
             self.dragging_to_create = False
             if self.temp_shape:
@@ -2937,3 +3163,326 @@ class PdfEditorWindow(Adw.ApplicationWindow):
         self.pdf_view.queue_draw()
         return True
 
+    def _toggle_view_edit_mode(self, button=None):
+        self.view_mode = not self.view_mode
+        if self.view_mode:
+            self._apply_and_hide_editor()
+            self.selected_text = None
+            self.selected_image = None
+            self.selected_shape = None
+            self.tool_mode = "select"
+        else:
+            self.view_sel_start = None
+            self.view_sel_rect = None
+            self.view_selected_text = ""
+        self._update_ui_state()
+        self.pdf_view.queue_draw()
+
+    def on_highlight_clicked(self, button):
+        rgba = self.highlight_color_button.get_rgba()
+        color = (rgba.red, rgba.green, rgba.blue)
+        
+        target_rect = None
+        if self.view_mode and self.view_sel_rect:
+            target_rect = self.view_sel_rect
+        elif not self.view_mode and self.selected_text and self.selected_text.bbox:
+            target_rect = self.selected_text.bbox
+            
+        if not target_rect:
+            return
+            
+        x1, y1, x2, y2 = target_rect
+        success, err = pdf_handler.add_highlight_annotation(
+            self.doc, self.current_page_index, (x1, y1, x2, y2), color=color
+        )
+        if success:
+            self.document_modified = True
+            self.view_sel_start = None
+            self.view_sel_rect = None
+            self.view_selected_text = ""
+            self._refresh_thumbnail(self.current_page_index)
+            self._update_ui_state()
+            self.pdf_view.queue_draw()
+        else:
+            from .ui_components import show_error_dialog
+            show_error_dialog(self, f"Highlight failed: {err}")
+
+    def _on_right_click(self, gesture, n_press, x, y):
+        if not self.doc:
+            return
+        
+        drawing_area_width = self.pdf_view.get_allocated_width()
+        drawing_area_height = self.pdf_view.get_allocated_height()
+        page_offset_x = max(0, (drawing_area_width - self.current_pdf_page_width) / 2)
+        page_offset_y = max(0, (drawing_area_height - self.current_pdf_page_height) / 2)
+        click_x_zoomed = x - page_offset_x
+        click_y_zoomed = y - page_offset_y
+        page_x = click_x_zoomed / self.zoom_level
+        page_y = click_y_zoomed / self.zoom_level
+        
+        modifiers = Gtk.EventController.get_current_event_state(gesture)
+        ctrl_pressed = bool(modifiers & Gdk.ModifierType.CONTROL_MASK)
+
+        if self.view_mode:
+            # If no selection or clicked outside selection, auto-select word under cursor
+            if not self.view_sel_rect or not (self.view_sel_rect[0] <= page_x <= self.view_sel_rect[2] and self.view_sel_rect[1] <= page_y <= self.view_sel_rect[3]):
+                clicked_word = pdf_handler.get_word_at_pos(self.doc, self.current_page_index, (page_x, page_y))
+                if clicked_word:
+                    self.view_sel_rect = clicked_word['bbox']
+                    self.view_selected_text = clicked_word['text']
+                    self.pdf_view.queue_draw()
+                else:
+                    return
+            
+            if ctrl_pressed and self.view_selected_text:
+                import webbrowser
+                import re
+                match = re.search(r'https?://[^\s]+', self.view_selected_text)
+                if match:
+                    webbrowser.open(match.group(0))
+                return
+                    
+            popover_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            popover_box.set_margin_start(6); popover_box.set_margin_end(6)
+            popover_box.set_margin_top(6); popover_box.set_margin_bottom(6)
+            
+            btn_copy = Gtk.Button(label="Copy Text")
+            btn_copy.connect("clicked", lambda b: self._handle_context_action("copy_view", None, x, y))
+            popover_box.append(btn_copy)
+            
+            btn_hl = Gtk.Button(label="Highlight")
+            btn_hl.connect("clicked", lambda b: self._handle_context_action("highlight_view", None, x, y))
+            popover_box.append(btn_hl)
+            
+            self.context_popover = Gtk.Popover(autohide=True, has_arrow=True)
+            self.context_popover.set_child(popover_box)
+            self.context_popover.set_parent(self.pdf_view)
+            self.context_popover.set_pointing_to(Gdk.Rectangle(x=int(x), y=int(y), width=1, height=1))
+            self.context_popover.popup()
+            return
+
+        clicked_text = self._find_text_at_pos(page_x, page_y)
+        clicked_shape = self._find_shape_at_pos(page_x, page_y)
+        clicked_image = self._find_image_at_pos(page_x, page_y)
+        
+        popover_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        popover_box.set_margin_start(6); popover_box.set_margin_end(6)
+        popover_box.set_margin_top(6); popover_box.set_margin_bottom(6)
+        
+        if clicked_text:
+            self.selected_text = clicked_text
+            self.selected_shape = None
+            self.selected_image = None
+            
+            # Copy & Paste
+            btn_copy = Gtk.Button(label="Copy")
+            btn_copy.connect("clicked", lambda b: self.get_clipboard().set(clicked_text.text))
+            popover_box.append(btn_copy)
+            
+            btn_paste = Gtk.Button(label="Paste")
+            btn_paste.set_sensitive(False)  # Paste is disabled for existing text
+            popover_box.append(btn_paste)
+            popover_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+            
+            # Bold, Italic
+            btn_bold = Gtk.Button(label="Bold")
+            btn_italic = Gtk.Button(label="Italic")
+            btn_bold.connect("clicked", lambda b: self._handle_context_action("toggle_bold", clicked_text, x, y))
+            btn_italic.connect("clicked", lambda b: self._handle_context_action("toggle_italic", clicked_text, x, y))
+            popover_box.append(btn_bold)
+            popover_box.append(btn_italic)
+            popover_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+            
+            # Text Color, Highlight, Remove Highlight
+            btn_color = Gtk.Button(label="Text Color")
+            popover_box.append(btn_color)
+            
+            btn_hl = Gtk.Button(label="Highlight")
+            btn_hl.connect("clicked", lambda b: self._handle_context_action("highlight_edit", clicked_text, x, y))
+            popover_box.append(btn_hl)
+            
+            btn_rm_hl = Gtk.Button(label="Remove Highlight")
+            btn_rm_hl.connect("clicked", lambda b: self._handle_context_action("remove_highlight", clicked_text, x, y))
+            popover_box.append(btn_rm_hl)
+            
+            # Keep Edit and Delete at bottom
+            popover_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+            btn_edit = Gtk.Button(label="Edit Text")
+            btn_edit.connect("clicked", lambda b: self._handle_context_action("edit_text", clicked_text, x, y))
+            popover_box.append(btn_edit)
+            
+            btn_del = Gtk.Button(label="Delete")
+            btn_del.add_css_class("destructive-action")
+            btn_del.connect("clicked", lambda b: self._handle_context_action("delete", clicked_text, x, y))
+            popover_box.append(btn_del)
+            
+        elif clicked_shape:
+            self.selected_shape = clicked_shape
+            self.selected_text = None
+            self.selected_image = None
+            
+            btn_del = Gtk.Button(label="Delete Shape")
+            btn_del.add_css_class("destructive-action")
+            btn_del.connect("clicked", lambda b: self._handle_context_action("delete", clicked_shape, x, y))
+            popover_box.append(btn_del)
+            
+        elif clicked_image:
+            self.selected_image = clicked_image
+            self.selected_text = None
+            self.selected_shape = None
+            
+            btn_del = Gtk.Button(label="Delete Image")
+            btn_del.add_css_class("destructive-action")
+            btn_del.connect("clicked", lambda b: self._handle_context_action("delete", clicked_image, x, y))
+            popover_box.append(btn_del)
+            
+        else:
+            # Empty space - allow pasting to create new text
+            clipboard = self.get_clipboard()
+            def _on_clipboard_text(clipboard, task):
+                try:
+                    text = clipboard.read_text_finish(task)
+                    if text and text.strip():
+                        popover_box_empty = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                        popover_box_empty.set_margin_start(6); popover_box_empty.set_margin_end(6)
+                        popover_box_empty.set_margin_top(6); popover_box_empty.set_margin_bottom(6)
+                        btn_paste_new = Gtk.Button(label="Paste as New Text")
+                        btn_paste_new.connect("clicked", lambda b: self._handle_context_action("paste_new_text", (page_x, page_y, text), x, y))
+                        popover_box_empty.append(btn_paste_new)
+                        if hasattr(self, 'context_popover') and self.context_popover:
+                            self.context_popover.popdown()
+                        self.context_popover = Gtk.Popover(autohide=True, has_arrow=True)
+                        self.context_popover.set_child(popover_box_empty)
+                        self.context_popover.set_parent(self.pdf_view)
+                        self.context_popover.set_pointing_to(Gdk.Rectangle(x=int(x), y=int(y), width=1, height=1))
+                        self.context_popover.set_position(Gtk.PositionType.RIGHT)
+                        self.context_popover.popup()
+                except Exception as e:
+                    # Clipboard may contain non-text format or be empty; silently ignore
+                    pass
+            
+            clipboard.read_text_async(None, _on_clipboard_text)
+            return
+            
+        self._update_ui_state()
+        self.pdf_view.queue_draw()
+        
+        self.context_popover = Gtk.Popover(autohide=True, has_arrow=True)
+        self.context_popover.set_child(popover_box)
+        self.context_popover.set_parent(self.pdf_view)
+        # Position popover at cursor location in widget coordinates
+        self.context_popover.set_pointing_to(Gdk.Rectangle(x=int(x), y=int(y), width=1, height=1))
+        self.context_popover.set_position(Gtk.PositionType.RIGHT)
+        self.context_popover.popup()
+
+    def _handle_context_action(self, action, obj, x, y):
+        if hasattr(self, 'context_popover'):
+            self.context_popover.popdown()
+            
+        if action == "edit_text":
+            self._show_inline_editor(obj, click_x=x, click_y=y)
+        elif action == "delete":
+            self.selected_text = obj if type(obj).__name__ == 'EditableText' else None
+            self.selected_shape = obj if type(obj).__name__ == 'EditableShape' else None
+            if self.selected_text or self.selected_shape:
+                obj_to_delete = self.selected_text or self.selected_shape
+                command = DeleteObjectCommand(self, obj_to_delete)
+                command.execute()
+                self.undo_manager.add_command(command)
+                self.selected_text = None
+                self.selected_shape = None
+                self._update_ui_state()
+                self.pdf_view.queue_draw()
+        elif action == "copy_view":
+            if self.view_selected_text:
+                self.get_clipboard().set(self.view_selected_text)
+        elif action == "highlight_view":
+            self.on_highlight_clicked(None)
+        elif action == "highlight_edit":
+            # Highlight text in edit mode
+            self.on_highlight_clicked(None)
+        elif action == "remove_highlight":
+            # Remove highlight from text in edit mode
+            if obj and hasattr(obj, 'bbox'):
+                self._remove_highlight_at_region(obj.bbox)
+        elif action == "paste_new_text":
+            # Paste clipboard content as new text at position
+            page_x, page_y, text = obj
+            self._create_text_from_paste(page_x, page_y, text)
+        elif action == "toggle_bold":
+            self.bold_button.set_active(not self.bold_button.get_active())
+        elif action == "toggle_italic":
+            self.italic_button.set_active(not self.italic_button.get_active())
+
+    def _remove_highlight_at_region(self, bbox):
+        """Remove all highlight annotations from a region in the PDF."""
+        if not self.doc:
+            return
+        try:
+            page = self.doc.load_page(self.current_page_index)
+            x1, y1, x2, y2 = bbox
+            rect = fitz.Rect(x1, y1, x2, y2)
+            
+            # Get all annotations on the page
+            annots = page.annots()
+            removed_count = 0
+            if annots:
+                for annot in annots:
+                    annot_type = annot.type[0]
+                    # type 8 is Highlight annotation in fitz
+                    if annot_type == 8:
+                        annot_rect = annot.rect
+                        # Check if highlight overlaps with our target region
+                        if rect.intersects(annot_rect):
+                            page.delete_annot(annot)
+                            removed_count += 1
+            
+            if removed_count > 0:
+                self.document_modified = True
+                self._refresh_thumbnail(self.current_page_index)
+                self._update_ui_state()
+                self.pdf_view.queue_draw()
+        except Exception as e:
+            print(f"Error removing highlight: {e}")
+
+    def _create_text_from_paste(self, page_x, page_y, text):
+        """Create a new text object at the specified position with pasted content."""
+        if not self.doc or not text or not text.strip():
+            return
+        
+        try:
+            # Get current format settings
+            font_family = self._last_font_family or "Liberation Sans"
+            font_size = self._last_font_size or 11.0
+            is_bold = self._last_is_bold or False
+            is_italic = self._last_is_italic or False
+            color = self._last_color or (0.0, 0.0, 0.0)
+            
+            # Create new text object
+            new_text = EditableText(
+                x=page_x,
+                y=page_y,
+                text=text.strip(),
+                font_size=font_size,
+                font_family=font_family,
+                color=color,
+                is_new=True,
+                baseline=page_y + (font_size * 0.85)
+            )
+            new_text.is_bold = is_bold
+            new_text.is_italic = is_italic
+            new_text.page_number = self.current_page_index
+            
+            # Add to list and execute add command
+            self.editable_texts.append(new_text)
+            command = AddObjectCommand(self, new_text)
+            command.execute()
+            self.undo_manager.add_command(command)
+            
+            self.document_modified = True
+            self._refresh_thumbnail(self.current_page_index)
+            self._update_ui_state()
+            self.pdf_view.queue_draw()
+            
+        except Exception as e:
+            print(f"Error creating text from paste: {e}")

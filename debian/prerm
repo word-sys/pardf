@@ -1,12 +1,12 @@
 #!/bin/sh
 set -e
 
-INSTALL_DIR="/opt/fospx-pdf-editor"
+INSTALL_DIR="/opt/word-sys-pdf-editor"
 VENV_DIR="${INSTALL_DIR}/.venv"
 
 case "$1" in
     remove|upgrade|deconfigure)
-        echo "fospx-pdf-editor: Removing Python virtual environment..."
+        echo "word-sys-pdf-editor: Removing Python virtual environment..."
         rm -rf "${VENV_DIR}"
         ;;
 

@@ -1,6 +1,7 @@
 from gi.repository import GObject, GdkPixbuf
 from .utils import normalize_color
 import re
+import copy
 
 FLAG_SUPERSCRIPT = 1       # bit 0
 FLAG_ITALIC = 1 << 1       # bit 1
@@ -143,6 +144,47 @@ class EditableText:
         self.dragging = False
         self.drag_start_x = 0
         self.drag_start_y = 0
+
+    @property
+    def is_link(self):
+        return bool(self.text and re.search(r'https?://', self.text))
+
+    def split_at_range(self, start_char, end_char):
+        text = self.text
+        if start_char < 0: start_char = 0
+        if end_char > len(text): end_char = len(text)
+        if start_char >= end_char:
+            return [self]
+        parts = []
+        if start_char > 0:
+            pre = copy.deepcopy(self)
+            pre.text = text[:start_char]
+            pre.original_text = text[:start_char]
+            x1, y1, x2, y2 = self.bbox
+            ratio = start_char / max(len(text), 1)
+            pre.bbox = (x1, y1, x1 + (x2 - x1) * ratio, y2)
+            pre.original_bbox = pre.bbox
+            parts.append(pre)
+        mid = copy.deepcopy(self)
+        mid.text = text[start_char:end_char]
+        mid.original_text = text[start_char:end_char]
+        x1, y1, x2, y2 = self.bbox
+        r1 = start_char / max(len(text), 1)
+        r2 = end_char / max(len(text), 1)
+        mid.bbox = (x1 + (x2 - x1) * r1, y1, x1 + (x2 - x1) * r2, y2)
+        mid.original_bbox = mid.bbox
+        mid.is_new = True
+        parts.append(mid)
+        if end_char < len(text):
+            post = copy.deepcopy(self)
+            post.text = text[end_char:]
+            post.original_text = text[end_char:]
+            x1, y1, x2, y2 = self.bbox
+            ratio = end_char / max(len(text), 1)
+            post.bbox = (x1 + (x2 - x1) * ratio, y1, x2, y2)
+            post.original_bbox = post.bbox
+            parts.append(post)
+        return parts
 
 class EditableImage:
     def __init__(self, bbox, page_number, xref, image_bytes, is_new=False):

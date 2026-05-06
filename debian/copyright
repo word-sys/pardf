@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: FOSPX PDF Editor
-Source: https://github.com/fospx-org/fospx-pdf-editor
+Upstream-Name: word-sys's PDF Editor
+Source: https://github.com/word-sys/word-sys-pdf-editor
 
 Files: *
 Copyright: 2026 Barın Güzeldemirci <baringuzeldemir@gmail.com>

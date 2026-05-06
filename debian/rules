@@ -1,11 +1,11 @@
 #!/usr/bin/make -f
 
-PKGDDIR=debian/fospx-pdf-editor
-INSTALL_DIR=$(PKGDDIR)/opt/fospx-pdf-editor
+PKGDDIR=debian/word-sys-pdf-editor
+INSTALL_DIR=$(PKGDDIR)/opt/word-sys-pdf-editor
 BIN_DIR=$(PKGDDIR)/usr/bin
 
 ICON_NAME=f-pv1
-ICON_SOURCE_PATH=fospx_pdf_editor/img/f-pv1.svg
+ICON_SOURCE_PATH=word_sys_pdf_editor/img/f-pv1.svg
 ICON_SIZE_DIR=scalable
 ICON_INSTALL_DIR=$(PKGDDIR)/usr/share/icons/hicolor/$(ICON_SIZE_DIR)/apps
 
@@ -18,16 +18,16 @@ override_dh_auto_build:
 
 override_dh_install:
 	install -d $(INSTALL_DIR)
-	cp -r fospx_pdf_editor $(INSTALL_DIR)/
+	cp -r word_sys_pdf_editor $(INSTALL_DIR)/
 	install -m 644 run_pardf.py $(INSTALL_DIR)/
 
 	install -d $(BIN_DIR)
-	printf '#!/bin/sh\nexec /opt/fospx-pdf-editor/.venv/bin/python3 /opt/fospx-pdf-editor/run_pardf.py "$$@"\n' \
-		> $(BIN_DIR)/fospx-pdf-editor
-	chmod 755 $(BIN_DIR)/fospx-pdf-editor
+	printf '#!/bin/sh\nexec /opt/word-sys-pdf-editor/.venv/bin/python3 /opt/word-sys-pdf-editor/run_pardf.py "$$@"\n' \
+		> $(BIN_DIR)/word-sys-pdf-editor
+	chmod 755 $(BIN_DIR)/word-sys-pdf-editor
 
 	install -d $(PKGDDIR)/usr/share/applications
-	install -m 644 debian/fospx-pdf-editor.desktop $(PKGDDIR)/usr/share/applications/
+	install -m 644 debian/word-sys-pdf-editor.desktop $(PKGDDIR)/usr/share/applications/
 
 	install -d $(ICON_INSTALL_DIR)
 	install -m 644 $(ICON_SOURCE_PATH) $(ICON_INSTALL_DIR)/$(ICON_NAME).svg
@@ -38,4 +38,4 @@ override_dh_shlibdeps:
 
 override_dh_auto_clean:
 	dh_auto_clean
-	rm -rf __pycache__ fospx_pdf_editor/__pycache__
+	rm -rf __pycache__ word_sys_pdf_editor/__pycache__
