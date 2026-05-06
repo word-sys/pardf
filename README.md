@@ -3,7 +3,7 @@
 
 **word-sys's PDF Editor** is a simple and user-friendly tool developed for Pardus, Debian and other Linux distributions, focused on editing text content in PDF files. Developed from scratch in the spirit of #MilliTeknolojiHamlesi and TEKNOFEST to meet a need in the Pardus ecosystem, word-sys's PDF Editor is a free and open PDF editor serving both corporate and individual users — and the **FIRST PLACE** winner of the TEKNOFEST Pardus Development Competition.
 
-Developer: **Barın Güzeldemirci (word-sys) [word-sys]**  
+Developer: **Barın Güzeldemirci (word-sys)**  
 License: **GPL-3.0-or-later**
 
 ---
