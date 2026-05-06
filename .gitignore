@@ -8,7 +8,7 @@ dist/
 build/
 .build_venv
 
-debian/fospx-pdf-editor/
+debian/word-sys-pdf-editor/
 debian/*.log
 debian/*.substvars
 debian/files
