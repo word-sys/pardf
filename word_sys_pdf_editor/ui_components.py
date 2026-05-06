@@ -106,9 +106,10 @@ def show_confirm_dialog(parent_window, message, title="Confirm", destructive=Tru
     )
 
     dialog.add_buttons(
-        "_Cancel", Gtk.ResponseType.CANCEL,
-        "_Confirm", Gtk.ResponseType.ACCEPT
+        _("btn_cancel") if _("btn_cancel") != "btn_cancel" else "Cancel", Gtk.ResponseType.CANCEL,
+        _("btn_confirm") if _("btn_confirm") != "btn_confirm" else "Confirm", Gtk.ResponseType.ACCEPT
     )
+    dialog.set_default_size(450, -1)
     dialog.set_default_response(Gtk.ResponseType.CANCEL)
 
     response = None

@@ -3,13 +3,13 @@
 
 **word-sys's PDF Editor** is a simple and user-friendly tool developed for Pardus, Debian and other Linux distributions, focused on editing text content in PDF files. Developed from scratch in the spirit of #MilliTeknolojiHamlesi and TEKNOFEST to meet a need in the Pardus ecosystem, word-sys's PDF Editor is a free and open PDF editor serving both corporate and individual users — and the **FIRST PLACE** winner of the TEKNOFEST Pardus Development Competition.
 
-Developer: **Barın Güzeldemirci (word-sys) [word-sys]**  
+Developer: **Barın Güzeldemirci (word-sys)**  
 License: **GPL-3.0-or-later**
 
 ---
 
 > [!TIP]
-> **Recommended Stable Release: v1.8.3** — For the most stable experience, it is strongly recommended to use version **1.8.3**. See the installation sections below for details on how to install this version.
+> **Recommended Stable Release: v1.9.0** — For the most stable experience, it is strongly recommended to use version **1.9.0**. See the installation sections below for details on how to install this version.
 
 ---
 
@@ -26,7 +26,8 @@ License: **GPL-3.0-or-later**
 *   Add images to a page
 *   Font width/family support
 *   Move/reposition objects within the PDF
-*   Change font type, size, and color
+*   Change font type, size, color, and decoration
+*   Granular Word Selection and precise highlighting
 *   Save edited PDFs
 *   Export PDFs to DOCX or ODT (requires LibreOffice) and TXT formats
 *   User-friendly interface with page previews
@@ -47,18 +48,18 @@ There are two ways to install word-sys's PDF Editor on your system:
 
 This method is the easiest installation path for Linux distributions.
 
-1.  Download the latest `.deb` package from the [**GitHub Releases**](https://github.com/word-sys/word-sys-pdf-editor/releases) page. The file will typically be named something like `word-sys-pdf-editor_1.8.3_all.deb`.
+1.  Download the latest `.deb` package from the [**GitHub Releases**](https://github.com/word-sys/word-sys-pdf-editor/releases) page. The file will typically be named something like `word-sys-pdf-editor_1.9.0_all.deb`.
 
     > [!TIP]
-    > **Use version 1.8.3** for the most stable experience: look for `word-sys-pdf-editor_1.8.3_all.deb` on the releases page.
+    > **Use version 1.9.0** for the most stable experience: look for `word-sys-pdf-editor_1.9.0_all.deb` on the releases page.
 
 2.  Open a terminal in the directory where you downloaded the `.deb` file.
 3.  Run the following command to install the package:
     ```bash
     sudo apt update
-    sudo apt install ./word-sys-pdf-editor_1.8.3_all.deb
+    sudo apt install ./word-sys-pdf-editor_1.9.0_all.deb
     ```
-    *(Note: Replace `word-sys-pdf-editor_1.8.3_all.deb` with the exact filename you downloaded if different.)*
+    *(Note: Replace `word-sys-pdf-editor_1.9.0_all.deb` with the exact filename you downloaded if different.)*
 4.  If you encounter a dependency error during installation, try running the following command to fix missing dependencies:
     ```bash
     sudo apt --fix-broken install
@@ -72,7 +73,7 @@ This method is the easiest installation path for Linux distributions.
 This method is suitable for users who want to run the application directly from source code or contribute to development.
 
 > [!TIP]
-> For a stable experience, use the **v1.8.3** tag when cloning. If you want to test the latest development changes, you can clone the `main` branch directly — but note that it may be less stable.
+> For a stable experience, use the **v1.9.0** tag when cloning. If you want to test the latest development changes, you can clone the `main` branch directly — but note that it may be less stable.
 
 ---
 
@@ -95,9 +96,9 @@ This method is suitable for users who want to run the application directly from 
 
 2.  **Download the Source Code:**
 
-    **Recommended (stable v1.8.3):**
+    **Recommended (stable v1.9.0):**
     ```bash
-    git clone --branch 1.8.3 https://github.com/word-sys/word-sys-pdf-editor.git
+    git clone --branch 1.9.0 https://github.com/word-sys/word-sys-pdf-editor.git
     cd word-sys-pdf-editor
     ```
 
@@ -147,9 +148,9 @@ This method is suitable for users who want to run the application directly from 
 
 2.  **Download the Source Code:**
 
-    **Recommended (stable v1.8.3):**
+    **Recommended (stable v1.9.0):**
     ```bash
-    git clone --branch 1.8.3 https://github.com/word-sys/word-sys-pdf-editor.git
+    git clone --branch 1.9.0 https://github.com/word-sys/word-sys-pdf-editor.git
     cd word-sys-pdf-editor
     ```
 
@@ -182,9 +183,9 @@ This method is suitable for users who want to run the application directly from 
 
 1.  **Download the Source Code:**
 
-    **Recommended (stable v1.8.3):**
+    **Recommended (stable v1.9.0):**
     ```bash
-    git clone --branch 1.8.3 https://github.com/word-sys/word-sys-pdf-editor.git
+    git clone --branch 1.9.0 https://github.com/word-sys/word-sys-pdf-editor.git
     cd word-sys-pdf-editor
     ```
 

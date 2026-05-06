@@ -1,3 +1,16 @@
+word-sys-pdf-editor (1.9.0) bookworm; urgency=medium
+
+  * Added full Underline support (UI, context menu, and PDF export)
+  * Implemented granular word-level selection (Middle-Click)
+  * Enhanced Highlight tool to respect word-level selection
+  * Fixed stability issues: Resolved multiple UnboundLocalError and TypeError crashes
+  * Fixed overlapping text bug when formatting partial sentences
+  * Improved font width estimation and safe fallbacks for custom fonts
+  * Synchronized top toolbar formatting buttons (Bold, Italic, Underline)
+  * Fully localized new features in English and Turkish
+
+ -- Barın Güzeldemirci <baringuzeldemir@gmail.com>  Wed, 06 May 2026 23:30:00 +0300
+
 word-sys-pdf-editor (1.8.3) bookworm; urgency=medium
 
   * Renamed project from Word-Sys's PDF Editor to word-sys's PDF Editor

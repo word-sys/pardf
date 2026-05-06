@@ -338,37 +338,7 @@ def apply_text_edit(doc, text_obj: EditableText, new_text: str):
         print(f"ERROR applying text edit: {e}")
         traceback.print_exc()
         return False, f"Error during text application: {e}"
-#original
-'''  
-def save_document(doc, save_path, incremental=False):
-    if not doc:
-        return False, "No document to save."
-    try:
-        garbage_level = 0 if incremental else 4
 
-        if incremental:
-            encryption_setting = fitz.PDF_ENCRYPT_KEEP
-        else:
-            encryption_setting = fitz.PDF_ENCRYPT_NONE
-
-        doc.save(
-            save_path,
-            garbage=garbage_level,
-            deflate=True,
-            incremental=incremental,
-            encryption=encryption_setting
-        )
-        return True, None
-    except Exception as e:
-        if "save to original must be incremental" in str(e) and not incremental:
-             return False, f"Error saving PDF: Cannot overwrite original file without using incremental save. Try 'Save As...'."
-        if "incremental writes with garbage collection" in str(e):
-             return False, f"Error saving PDF: Internal conflict - Cannot perform garbage collection during incremental save."
-        if "incremental writes when changing encryption" in str(e):
-             return False, f"Error saving PDF: Cannot change encryption during incremental save. Check original file encryption."
-        return False, f"Error saving PDF: {e}"
-'''
-#patched
 def save_document(doc, save_path, incremental=False):
     if not doc:
         return False, "Kaydedilecek belge yok."
@@ -826,6 +796,15 @@ def _apply_single_object_to_page(doc, page, obj):
                 pos = fitz.Point(obj.x, obj.baseline + (i * line_height))
                 page.insert_text(pos, line, fontsize=obj.font_size,
                                  color=obj.color, overlay=True, **font_arg)
+                
+                if getattr(obj, 'is_underline', False):
+                    calc_font = font_arg.get("fontname", "helv")
+                    if calc_font.startswith("word-sys"):
+                        calc_font = "helv"
+                    text_len = fitz.get_text_length(line, fontname=calc_font, fontsize=obj.font_size)
+                    p1 = fitz.Point(obj.x, obj.baseline + (i * line_height) + 1.5)
+                    p2 = fitz.Point(obj.x + text_len, obj.baseline + (i * line_height) + 1.5)
+                    page.draw_line(p1, p2, color=obj.color, width=0.8)
     elif isinstance(obj, EditableImage):
         page.insert_image(obj.bbox, stream=obj.image_bytes, keep_proportion=False)
     elif isinstance(obj, EditableShape):
@@ -975,7 +954,6 @@ def add_highlight_annotation(doc, page_index, rect_unzoomed, color=(1, 0.93, 0))
         return False, f"Highlight annotation error: {e}"
 
 def remove_highlight_annotations(doc, page_index, rect_unzoomed=None):
-    """Remove highlight annotations from a page or region."""
     if not doc or not (0 <= page_index < doc.page_count):
         return False, "Invalid document or page index."
     try:
@@ -990,7 +968,6 @@ def remove_highlight_annotations(doc, page_index, rect_unzoomed=None):
             
             for annot in annots:
                 annot_type = annot.type[0]
-                # type 8 is Highlight annotation in fitz
                 if annot_type == 8:
                     if target_rect is None or target_rect.intersects(annot.rect):
                         page.delete_annot(annot)
@@ -1028,4 +1005,25 @@ def get_word_at_pos(doc, page_index, pos_unzoomed):
         return None
     except Exception as e:
         print(f"get_word_at_pos error: {e}")
+        return None
+
+def get_block_at_pos(doc, page_index, pos_unzoomed):
+    if not doc or not (0 <= page_index < doc.page_count):
+        return None
+    try:
+        page = doc.load_page(page_index)
+        x, y = pos_unzoomed
+        p = fitz.Point(x, y)
+        
+        text_dict = page.get_text("dict")
+        for block in text_dict["blocks"]:
+            if block["type"] == 0:
+                for line in block["lines"]:
+                    r = fitz.Rect(line["bbox"])
+                    if r.contains(p):
+                        line_text = "".join(span["text"] for span in line["spans"])
+                        return {'bbox': line["bbox"], 'text': line_text}
+        return None
+    except Exception as e:
+        print(f"get_block_at_pos error: {e}")
         return None

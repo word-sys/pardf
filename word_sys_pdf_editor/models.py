@@ -39,6 +39,7 @@ class EditableText:
 
         self.is_bold = bool(flags & FLAG_BOLD) 
         self.is_italic = bool(flags & FLAG_ITALIC)
+        self.is_underline = False
 
         name_after_prefix_removal = re.sub(r'^[A-Z]{6}\+', '', pdf_font_name_original)
         
@@ -144,6 +145,8 @@ class EditableText:
         self.dragging = False
         self.drag_start_x = 0
         self.drag_start_y = 0
+        
+        self.text_spans = []
 
     @property
     def is_link(self):
@@ -160,29 +163,34 @@ class EditableText:
             pre = copy.deepcopy(self)
             pre.text = text[:start_char]
             pre.original_text = text[:start_char]
+            pre.is_new = True
             x1, y1, x2, y2 = self.bbox
             ratio = start_char / max(len(text), 1)
             pre.bbox = (x1, y1, x1 + (x2 - x1) * ratio, y2)
             pre.original_bbox = pre.bbox
+            pre.x, pre.y = pre.bbox[0], pre.bbox[1]
             parts.append(pre)
         mid = copy.deepcopy(self)
         mid.text = text[start_char:end_char]
         mid.original_text = text[start_char:end_char]
+        mid.is_new = True
         x1, y1, x2, y2 = self.bbox
         r1 = start_char / max(len(text), 1)
         r2 = end_char / max(len(text), 1)
         mid.bbox = (x1 + (x2 - x1) * r1, y1, x1 + (x2 - x1) * r2, y2)
         mid.original_bbox = mid.bbox
-        mid.is_new = True
+        mid.x, mid.y = mid.bbox[0], mid.bbox[1]
         parts.append(mid)
         if end_char < len(text):
             post = copy.deepcopy(self)
             post.text = text[end_char:]
             post.original_text = text[end_char:]
+            post.is_new = True
             x1, y1, x2, y2 = self.bbox
             ratio = end_char / max(len(text), 1)
             post.bbox = (x1 + (x2 - x1) * ratio, y1, x2, y2)
             post.original_bbox = post.bbox
+            post.x, post.y = post.bbox[0], post.bbox[1]
             parts.append(post)
         return parts
 
